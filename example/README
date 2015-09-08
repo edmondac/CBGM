@@ -168,4 +168,81 @@ All variant units (41): 21/2, 21/6-8, 21/20-24, 21/28-30, 21/36, 22/3, 22/10, 22
 There are 23 unresolved variant units
 
 
-### ###
+### Hypotheses on unclear ###
+This script creates textual flow diagrams for all conceivable hypotheses for
+currently UNCL relationships in a specified variant unit.
+ed@roo:~/PhD/CBGM_ace/example$ ../hypotheses_on_unclear.py -v 21/28-30 example_input.py
+Will populate 21.28-30_0.db
+Wrote 41 variant units
+Creating textual flow diagram for 21/28-30
+Setting connectivity to 499
+Calculating genealogical coherence for A at 21/28-30
+Calculating genealogical coherence for 063 at 21/28-30
+Calculating genealogical coherence for 045 at 21/28-30
+Calculating genealogical coherence for 022 at 21/28-30
+Calculating genealogical coherence for 047 at 21/28-30
+Calculating genealogical coherence for 011 at 21/28-30
+Calculating genealogical coherence for 038 at 21/28-30
+Calculating genealogical coherence for 013 at 21/28-30
+Calculating genealogical coherence for 021 at 21/28-30
+Calculating genealogical coherence for 017 at 21/28-30
+Calculating genealogical coherence for 032 at 21/28-30
+Calculating genealogical coherence for 019 at 21/28-30
+Calculating genealogical coherence for 030 at 21/28-30
+Calculating genealogical coherence for 031 at 21/28-30
+Calculating genealogical coherence for 036 at 21/28-30
+Calculating genealogical coherence for 037 at 21/28-30
+Calculating genealogical coherence for 034 at 21/28-30
+Calculating genealogical coherence for 02 at 21/28-30
+Calculating genealogical coherence for 03 at 21/28-30
+Calculating genealogical coherence for 044 at 21/28-30
+Calculating genealogical coherence for 07 at 21/28-30
+Calculating genealogical coherence for 05 at 21/28-30
+Calculating genealogical coherence for 028 at 21/28-30
+Calculating genealogical coherence for 0141 at 21/28-30
+Calculating genealogical coherence for 0211 at 21/28-30
+Calculating genealogical coherence for 01 at 21/28-30
+Creating graph with 26 nodes and 25 edges
+Couldn't import dot_parser, loading of dot files will not be possible.
+Written to textual_flow_21_28-30_c499.svg
+Will populate 21.28-30_1.db
+Wrote 41 variant units
+Creating textual flow diagram for 21/28-30
+Setting connectivity to 499
+Calculating genealogical coherence for 063 at 21/28-30
+Calculating genealogical coherence for 045 at 21/28-30
+Calculating genealogical coherence for 022 at 21/28-30
+Calculating genealogical coherence for 047 at 21/28-30
+Calculating genealogical coherence for 011 at 21/28-30
+Calculating genealogical coherence for 038 at 21/28-30
+Calculating genealogical coherence for 013 at 21/28-30
+Calculating genealogical coherence for 021 at 21/28-30
+Calculating genealogical coherence for 017 at 21/28-30
+Calculating genealogical coherence for 032 at 21/28-30
+Calculating genealogical coherence for 019 at 21/28-30
+Calculating genealogical coherence for 030 at 21/28-30
+Calculating genealogical coherence for 031 at 21/28-30
+Calculating genealogical coherence for 036 at 21/28-30
+Calculating genealogical coherence for 037 at 21/28-30
+Calculating genealogical coherence for 034 at 21/28-30
+Calculating genealogical coherence for 02 at 21/28-30
+Calculating genealogical coherence for 03 at 21/28-30
+Calculating genealogical coherence for 044 at 21/28-30
+Calculating genealogical coherence for 07 at 21/28-30
+Calculating genealogical coherence for 05 at 21/28-30
+Calculating genealogical coherence for 028 at 21/28-30
+Calculating genealogical coherence for 0141 at 21/28-30
+Calculating genealogical coherence for 0211 at 21/28-30
+Calculating genealogical coherence for A at 21/28-30
+Calculating genealogical coherence for 01 at 21/28-30
+Creating graph with 26 nodes and 25 edges
+Written to textual_flow_21_28-30_c499.svg
+Opening browser...
+View the files in /tmp/tmpGqDCWX/index.html
+
+
+** See hypotheses/index.html
+
+
+### Combinations of Ancestors ###
+

@@ -21,7 +21,19 @@ long_line_behaviour=1
 long_line_column=80
 
 [files]
-current_page=-1
+current_page=11
+FILE_NAME_0=3157;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fhypotheses_on_unclear.py;0;4
+FILE_NAME_1=2146;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fpopulate_db.py;0;4
+FILE_NAME_2=40;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fstripes.py;0;4
+FILE_NAME_3=1991;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Flocal_stemma.py;0;4
+FILE_NAME_4=19;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fshared.py;0;4
+FILE_NAME_5=19;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fpre_genealogical_coherence.py;0;4
+FILE_NAME_6=1634;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fgenealogical_coherence.py;0;4
+FILE_NAME_7=3006;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Ftextual_flow.py;0;4
+FILE_NAME_8=40;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fcbgm.py;0;4
+FILE_NAME_9=0;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fcombinations_of_ancestors.py;0;4
+FILE_NAME_10=13585;None;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fexample%2FREADME;0;4
+FILE_NAME_11=70;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fexample%2Fexample_input.py;0;4
 
 [VTE]
 last_dir=/home/ed

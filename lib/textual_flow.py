@@ -81,3 +81,5 @@ def textual_flow(db_file, variant_unit, connectivity,
     subprocess.check_call(['dot', '-Tsvg', 'test.dot'], stdout=open(output_file, 'w'))
 
     print "Written to {}".format(output_file)
+
+    return output_file
