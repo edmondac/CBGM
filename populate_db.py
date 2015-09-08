@@ -1,8 +1,11 @@
 # encoding: utf-8
+# Script to populate a sqlite database given a suitable input file
+
 
 import sqlite3
 import os
 import importlib
+from lib.shared import INIT
 
 
 class AllBut(object):
@@ -24,10 +27,6 @@ class AllBut(object):
         for x in self.args:
             assert x in all_mss, (x, all_mss)
         return all_mss - set(self.args) - set(['A'])
-
-
-INIT = 'INIT'
-UNCL = 'UNCL'
 
 
 class Reading(object):
@@ -109,24 +108,22 @@ def populate(data, all_mss, db_file, force=False):
                     reading.ms_support & all_wits_found,
                     verse, vu)
 
-
                 all_wits_found = all_wits_found | reading.ms_support
 
                 if reading.lacuna:
                     # Ignore these as the witness can't support any reading
                     continue
 
-
                 reading_id += 1
                 sql = (u"""INSERT INTO reading
                               (id, variant_unit, label, text, parent)
                           VALUES ({}, \"{}/{}\", \"{}\", \"{}\", \"{}\")"""
-                        .format(reading_id,
-                                verse,
-                                vu,
-                                reading.label,
-                                reading.greek,
-                                reading.parent))
+                       .format(reading_id,
+                               verse,
+                               vu,
+                               reading.label,
+                               reading.greek,
+                               reading.parent))
 
                 c.execute(sql)
                 for ms in reading.ms_support:
@@ -142,7 +139,6 @@ def populate(data, all_mss, db_file, force=False):
                 print "Don't forget to include a LacunaReading if the witness isn't extant"
                 print "Missing witnesses: ", all_mss - all_wits_found
                 print "-------" * 10
-
 
     conn.commit()
     conn.close()
