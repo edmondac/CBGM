@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # encoding: utf-8
 # Script to populate a sqlite database given a suitable input file
 
@@ -68,6 +69,14 @@ class LacunaReading(Reading):
 
 
 def parse_input_file(filename):
+    """
+    Import and parse the input file.
+    """
+    # We need to add . to the path, so we can import the specified python file
+    # even if this script has been called by a full path.
+    import sys
+    sys.path.append(".")
+
     if filename.endswith('.py'):
         filename = filename[:-3]
     mod = importlib.import_module(filename)
@@ -84,6 +93,8 @@ def populate(data, all_mss, db_file, force=False):
     """
     Populate a database file based on the readings above
     """
+    print "Will populate {}".format(db_file)
+
     if os.path.exists(db_file):
         if force:
             os.unlink(db_file)
@@ -97,8 +108,10 @@ def populate(data, all_mss, db_file, force=False):
         c.execute(s)
 
     reading_id = 0
+    vu_count = 0
     for verse in data:
         for vu in data[verse]:
+            vu_count += 1
             all_wits_found = set()
             for reading in data[verse][vu]:
                 if not reading.lacuna:
@@ -142,7 +155,7 @@ def populate(data, all_mss, db_file, force=False):
 
     conn.commit()
     conn.close()
-    print "Done"
+    print "Wrote {} variant units".format(vu_count)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# encoding: utf-8
+
 import os
 import sys
 import tempfile
@@ -5,8 +8,9 @@ import webbrowser
 from copy import deepcopy
 from itertools import product
 from collections import defaultdict
-from populate_db import UNCL, INIT, populate, Reading, LacunaReading, parse_input_file
-from variant_units import textual_flow
+from populate_db import populate, Reading, LacunaReading, parse_input_file
+from lib.shared import UNCL, INIT
+from lib.textual_flow import textual_flow
 
 
 def single_hypothesis(stemmata, all_mss, vu, unique_ref, force=False, perfect_only=True,
@@ -163,10 +167,9 @@ def combo_recurse(readings, potential_parents, excluded_potential_parents=defaul
                 continue
             excluded_potential_parents[change] = reading.label
             options.append(((reading.label, change),
-                             combo_recurse(others,
-                                           potential_parents,
-                                           excluded_potential_parents)))
-
+                            combo_recurse(others,
+                                          potential_parents,
+                                          excluded_potential_parents)))
     return options
 
 if __name__ == "__main__":

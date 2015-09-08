@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 # Stage three - first pass at local stemmata
 
-from populate_db import Reading, LacunaReading, AllBut, UNCL, INIT
+from populate_db import Reading, LacunaReading, AllBut
+from lib.shared import UNCL, INIT
 
 all_mss = set(['P75', '01', '02', '03', '05', '07', '011', '013', '017', '019', '021', '022', '028', '030', '031', '032', '034', '036', '037', '038', '044', '045', '047', '063', '091', '0141', '0211'])
 
