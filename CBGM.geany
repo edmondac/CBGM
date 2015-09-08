@@ -15,14 +15,15 @@ indent_mode=1
 [project]
 name=CBGM
 base_path=/home/ed/PhD/CBGM_ace
+description=
 
 [long line marker]
 long_line_behaviour=1
 long_line_column=80
 
 [files]
-current_page=11
-FILE_NAME_0=3157;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fhypotheses_on_unclear.py;0;4
+current_page=9
+FILE_NAME_0=3656;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fhypotheses_on_unclear.py;0;4
 FILE_NAME_1=2146;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fpopulate_db.py;0;4
 FILE_NAME_2=40;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fstripes.py;0;4
 FILE_NAME_3=1991;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Flocal_stemma.py;0;4
@@ -30,10 +31,14 @@ FILE_NAME_4=19;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fshare
 FILE_NAME_5=19;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fpre_genealogical_coherence.py;0;4
 FILE_NAME_6=1634;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fgenealogical_coherence.py;0;4
 FILE_NAME_7=3006;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Ftextual_flow.py;0;4
-FILE_NAME_8=40;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fcbgm.py;0;4
-FILE_NAME_9=0;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fcombinations_of_ancestors.py;0;4
-FILE_NAME_10=13585;None;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fexample%2FREADME;0;4
+FILE_NAME_8=2165;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fcbgm.py;0;4
+FILE_NAME_9=2526;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fcombinations_of_ancestors.py;0;4
+FILE_NAME_10=12210;None;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fexample%2FREADME;0;4
 FILE_NAME_11=70;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fexample%2Fexample_input.py;0;4
+FILE_NAME_12=0;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FDocuments%2FEd%27s%20Documents%2FWork%2FBirmingham%20University%2FPhD%2FEssays%2FThesis%2FChapter2Includes%2Fjohn6_stage1.py;0;4
+FILE_NAME_13=0;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FDocuments%2FEd%27s%20Documents%2FWork%2FBirmingham%20University%2FPhD%2FEssays%2FThesis%2FChapter2Includes%2Fjohn6_stage2.py;0;4
+FILE_NAME_14=0;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FDocuments%2FEd%27s%20Documents%2FWork%2FBirmingham%20University%2FPhD%2FEssays%2FThesis%2FChapter2Includes%2Fjohn6_stage3.py;0;4
+FILE_NAME_15=0;None;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FDocuments%2FEd%27s%20Documents%2FWork%2FBirmingham%20University%2FPhD%2FEssays%2FThesis%2FChapter2Includes%2Fjohn6_chapter2_stage2.nex;0;4
 
 [VTE]
 last_dir=/home/ed

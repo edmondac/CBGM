@@ -64,6 +64,9 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
     @param max_comb_len: maximum length of combinations to check (-1 for unlimited)
     @param csv_file: output to a csv file rather than a tab-delim table (filename or None)
     """
+    # FIXME - might be good to have an argument to set a threshold of what to include
+    # in the output - instead of millions of rows...
+
     columns = ['Vorf', 'Vorfanz', 'Stellen', 'Post', 'Fragl', 'Offen',
                'Hinweis', 'vus_stellen', 'vus_post', 'vus_fragl', 'vus_offen']
     # Vorf = combinations

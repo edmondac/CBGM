@@ -245,4 +245,41 @@ View the files in /tmp/tmpGqDCWX/index.html
 
 
 ### Combinations of Ancestors ###
+ed@roo:~/PhD/CBGM_ace/example$ ../cbgm.py -f /tmp/test.db -a -w 05 -s --max-comb-len=1000000 -o 05.csv
+Using database: /tmp/test.db
+Found 20 potential ancestors for 05
+Witness 05 has reading 'a' at 21/2 with parent INIT
+Witness 05 has reading 'b' at 21/6-8 with parent UNCL
+Witness 05 has reading 'c' at 21/20-24 with parent UNCL
+Witness 05 has reading 'a' at 21/28-30 with parent UNCL
+Witness 05 has reading 'a' at 21/36 with parent INIT
+Witness 05 has reading 'a' at 22/3 with parent INIT
+Witness 05 has reading 'a' at 22/10 with parent UNCL
+Witness 05 has reading 'a' at 22/12 with parent INIT
+Witness 05 has reading 'c' at 22/20 with parent UNCL
+Witness 05 has reading 'b' at 22/40 with parent INIT
+Witness 05 has reading 'a' at 22/40-52 with parent b
+Witness 05 has reading 'a' at 22/42 with parent UNCL
+Witness 05 has reading 'a' at 22/46 with parent INIT
+Witness 05 has reading 'c' at 22/52 with parent a
+Witness 05 has reading 'c' at 23/2-10 with parent UNCL
+Witness 05 has reading 'a' at 24/28 with parent UNCL
+Witness 05 has reading 'b' at 24/30-38 with parent UNCL
+Witness 05 has reading 'b' at 24/38 with parent UNCL
+Witness 05 has reading 'a' at 24/50-52 with parent INIT
+Witness 05 has reading 'c' at 23/26-30 with parent UNCL
+Witness 05 has reading 'a' at 23/12-16 with parent UNCL
+Witness 05 has reading 'b' at 22/76 with parent UNCL
+Witness 05 has reading 'a' at 22/88 with parent UNCL
+Witness 05 has reading 'a' at 23/20-22 with parent UNCL
+Witness 05 has reading 'a' at 24/2-10 with parent UNCL
+Witness 05 has reading 'a' at 24/6 with parent UNCL
+Witness 05 has reading 'a' at 24/14-20 with parent UNCL
+Witness 05 has reading 'a' at 23/1 with parent INIT
+Witness 05 has reading 'a' at 24/14 with parent INIT
+Witness 05 has reading 'a' at 22/61 with parent INIT
+1000000/1000000 (100.00%) (Time taken: 6.0m, remaining 0s)  See 05.csv
+ed@roo:~/PhD/CBGM_ace/example$ ls -lah 05.csv
+-rw-rw-r-- 1 ed ed 324M Sep  8 11:28 05.csv
 
+** file deleted as it's so big!
