@@ -1,5 +1,7 @@
 # encoding: utf-8
 
+import sys
+import time
 import csv
 from itertools import chain, combinations
 from shared import UNCL, POSTERIOR, EQUAL, pretty_p, sorted_vus
@@ -40,6 +42,18 @@ def get_parent_reading(witness, vu, cursor):
     return data[0][1]
 
 
+def time_fmt(secs):
+    """
+    Return a string representing the number of seconds, in a human readable
+    unit.
+    """
+    if secs < 120:
+        return "{}s".format(int(secs))
+    if secs < 3600:
+        return "{}m".format(secs // 60)
+    return "{}h".format(secs // 3600)
+
+
 def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
     """
     Prints a table of combinations of potential ancestors ordered by
@@ -47,7 +61,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
 
     @param db_file: db file
     @param w1: witness
-    @param max_comb_len: maximum length of combinations to check
+    @param max_comb_len: maximum length of combinations to check (-1 for unlimited)
     @param csv_file: output to a csv file rather than a tab-delim table (filename or None)
     """
     columns = ['Vorf', 'Vorfanz', 'Stellen', 'Post', 'Fragl', 'Offen',
@@ -68,15 +82,18 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
     pot_an = coh.potential_ancestors()
 
     print "Found {} potential ancestors for {}".format(len(pot_an), w1)
-    powerset = list(chain.from_iterable(combinations(pot_an, n)
-                                        for n in range(min(len(pot_an) + 1, max_comb_len + 1))))
-    if len(powerset) > 100:
-        print ("WARNING: {} combinations of ancestors detected. This table will "
-               "be very large. Consider re-running with --max-comb-len set to a "
-               "smaller number".format(len(powerset)))
-        ok = raw_input("Continue? [Y/n]")
-        if ok.strip().lower() == 'n':
+    n_combs = 2 ** len(pot_an)
+    if n_combs > 100 and max_comb_len == -1:
+        print ("WARNING: {} combinations of ancestors detected. This table could "
+               "be very large and use a lot of RAM to create.\n"
+               "Consider re-running with --max-comb-len set to e.g. 100000"
+               .format(n_combs))
+        ok = raw_input("Continue? [y/N]")
+        if ok.strip().lower() != 'y':
             return False
+
+    powerset = chain.from_iterable(combinations(pot_an, n)
+                                   for n in range(min(len(pot_an) + 1, max_comb_len + 1)))
 
     sql = """SELECT variant_unit AS vu
              FROM reading, attestation
@@ -86,8 +103,21 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
     my_vus = sorted_vus(coh.cursor, sql)
     # We need to expain our reading for each vu in my_vus
     rows = []
-    print "Found {} combinations".format(len(powerset))
+    total = min(n_combs, max_comb_len)
+    done = 0
+    start = time.time()
+    report = max(total // 10000, 1)
     for combination in powerset:
+        if done >= total:
+            break
+        done += 1
+        if done % report == 0:
+            so_far = time.time() - start
+            perc = done * 100.0 / total
+            rem = (so_far * 100 / perc) - so_far
+            sys.stdout.write("\r{}/{} ({:.2f}%) (Time taken: {}, remaining {})\t"
+                             .format(done, total, perc, time_fmt(so_far), time_fmt(rem)))
+            sys.stdout.flush()
         if not combination:
             # The empty set
             continue
@@ -107,7 +137,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
 
         for i, result in enumerate(explanation):
             if result is None:
-                parent = get_parent_reading(witness, my_vus[i], coh.cursor)
+                parent = get_parent_reading(w1, my_vus[i], coh.cursor)
                 if parent == UNCL:
                     explanation[i] = UNCL
 
@@ -123,6 +153,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
         rows.append(row)
 
     # Now display it
+    print "\n" * 5
     rows = sorted(rows, key=lambda x: x['Fragl'])
     rows = sorted(rows, key=lambda x: x['Offen'])
     rows = sorted(rows, key=lambda x: x['Post'], reverse=True)

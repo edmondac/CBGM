@@ -47,8 +47,8 @@ if __name__ == "__main__":
                         help='write a textual flow diagram. This requires -v (which can be "all")')
     parser.add_argument('-a', '--combinations-of-ancestors', action='store_true',
                         default=False, help='show combinations of ancestors (requires -w)'),
-    parser.add_argument('-m', '--max-comb-len', default=999, metavar='N', type=int,
-                        help='Maximum number of ancestors in a combination (-a). Default is 999.')
+    parser.add_argument('-m', '--max-comb-len', default=-1, metavar='N', type=int,
+                        help='Maximum number of ancestors in a combination (-a). Default is unlimited.')
     parser.add_argument('-o', '--output-file', default=None,
                         help='Output filename (e.g. a csv file for -a)')
     parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,

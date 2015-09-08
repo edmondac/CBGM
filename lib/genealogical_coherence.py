@@ -47,7 +47,7 @@ class ReadingRelationship(object):
         self.cursor.execute(sql)
         parent = self.cursor.fetchone()[0]
         ret = [parent]
-        if parent not in (INIT, UNCL):
+        if parent not in (INIT, UNCL, 'lac'):
             ret.extend(self._find_ancestor_readings(parent))
         return ret
 
@@ -119,9 +119,12 @@ class GenealogicalCoherence(Coherence):
                 self.cursor.execute(sql.format(w2))
                 row = self.cursor.fetchone()
                 if row is None:
-                    # lacuna
+                    # Nothing for this witness at this place
                     continue
                 w2_label = row[0]
+                if w2_label == 'lac':
+                    # lacuna
+                    continue
                 rel = reading_obj.identify_relationship(w2_label)
                 self.reading_relationships[w2][vu] = rel
 

@@ -2,7 +2,6 @@
 # encoding: utf-8
 
 import os
-import sys
 import tempfile
 import webbrowser
 from copy import deepcopy
@@ -23,12 +22,13 @@ def single_hypothesis(stemmata, all_mss, vu, unique_ref, force=False, perfect_on
     populate(stemmata, all_mss, db, force)
 
     # 2. Make the textual flow diagram
-    png = '{}_{}.png'.format(vu.replace('/', '.'), unique_ref)
-    textual_flow(db, vu, png, connectivity, perfect_only)
-    return png
+    svg = textual_flow(db, vu, connectivity, perfect_only)
+    new_svg = '{}_{}'.format(unique_ref, svg)
+    os.rename(svg, new_svg)
+    return new_svg
 
 
-def hypotheses(data, all_mss, vu, out_f, force=False, perfect_only=True, connectivity=499):
+def hypotheses(data, all_mss, vu, force=False, perfect_only=True, connectivity=499):
     """
     Take a variant unit and create an html page with textual flow diagrams for all
     potential hypotheses for UNCL readings.
@@ -40,7 +40,7 @@ def hypotheses(data, all_mss, vu, out_f, force=False, perfect_only=True, connect
     unclear = [x for x in readings if x.parent == UNCL]
     initial_text = [x for x in readings if x.parent == INIT]
     changes = find_permutations(unclear,
-                                [x.label for x in readings],
+                                [x.label for x in readings if x.label != 'lac'],
                                 not initial_text)
 
     # 'changes' is a list of tuples, each one corresponding to a single
@@ -71,29 +71,30 @@ def hypotheses(data, all_mss, vu, out_f, force=False, perfect_only=True, connect
         my_stemmata = deepcopy(data)
         my_stemmata[v][u] = new_readings
         try:
-            png = single_hypothesis(my_stemmata, all_mss, vu, unique, force,
+            svg = single_hypothesis(my_stemmata, all_mss, vu, unique, force,
                                     perfect_only, connectivity)
         except Exception as e:
             raise
             print "ERROR doing {}, {}".format(ch, e)
             results.append((', '.join(desc), e))
         else:
-            results.append((', '.join(desc), png))
+            results.append((', '.join(desc), svg))
 
         unique += 1
 
     html = "<html><h1>Hypotheses for {} (connectivity={})</h1>".format(vu, connectivity)
     if perfect_only:
         html += "<p>Only showing perfect coherence - forests are hidden</p>"
-    for desc, png in results:
-        if 'png' in png:
+    for desc, svg in results:
+        if 'svg' in svg:
             html += ('<h2>{}</h2><img width="500px" src="{}" alt="{}"/><br/><hr/>\n'
-                     .format(desc, png, png))
+                     .format(desc, svg, svg))
         else:
             html += ('<h2>{}</h2><p>ERROR: {}</p><hr/>\n'
-                     .format(desc, png))
+                     .format(desc, svg))
     html += "</html>"
 
+    out_f = 'index.html'
     with open(out_f, 'w') as fh:
         fh.write(html)
 
@@ -107,7 +108,8 @@ def find_permutations(unclear, potential_parents, can_designate_initial_text):
     """
     Find all possible permutations of unclear elements
     """
-    # Every reading is a potential parent
+    assert 'lac' not in potential_parents
+
     # Only things marked as UNCL can change their parent
     # If there's no INIT, then any UNCL could be the INIT
     changes = []
@@ -154,23 +156,23 @@ def find_ancestors(ch_map, node):
     return ret
 
 
-def combo_recurse(readings, potential_parents, excluded_potential_parents=defaultdict(list)):
-    """
-    Loop through a list of readings making a list of all the possible
-    changes that could be made.
-    """
-    options = []
-    for reading in readings:
-        others = [x for x in readings if x != reading]
-        for change in potential_parents[reading]:
-            if change in excluded_potential_parents[reading.label]:
-                continue
-            excluded_potential_parents[change] = reading.label
-            options.append(((reading.label, change),
-                            combo_recurse(others,
-                                          potential_parents,
-                                          excluded_potential_parents)))
-    return options
+#~ def combo_recurse(readings, potential_parents, excluded_potential_parents=defaultdict(list)):
+    #~ """
+    #~ Loop through a list of readings making a list of all the possible
+    #~ changes that could be made.
+    #~ """
+    #~ options = []
+    #~ for reading in readings:
+        #~ others = [x for x in readings if x != reading]
+        #~ for change in potential_parents[reading]:
+            #~ if change in excluded_potential_parents[reading.label]:
+                #~ continue
+            #~ excluded_potential_parents[change] = reading.label
+            #~ options.append(((reading.label, change),
+                            #~ combo_recurse(others,
+                                          #~ potential_parents,
+                                          #~ excluded_potential_parents)))
+    #~ return options
 
 if __name__ == "__main__":
     import argparse
@@ -179,8 +181,6 @@ if __name__ == "__main__":
     parser.add_argument('inputfile', help='file containing variant reading definitions')
     parser.add_argument('-v', '--variant-unit', default=None, required=True,
                         help="Show extra data about this variant unit (e.g. 1/2-8)")
-    parser.add_argument('-o', '--output-file', metavar='FILENAME',
-                        default='hypothesis.html', help='write to this HTML file')
     parser.add_argument('--force', default=False, action='store_true',
                         help='force mode - overwrite any files that get in the way')
     parser.add_argument('-p', '--perfect', default=False, action='store_true',
@@ -189,11 +189,6 @@ if __name__ == "__main__":
                         help='Maximum allowed connectivity in a textual flow diagram')
 
     args = parser.parse_args()
-    if os.path.exists(args.output_file) and not args.force:
-        print "{} already exists - aborting".format(args.output_file)
-        sys.exit(1)
-
     struct, all_mss = parse_input_file(args.inputfile)
-    hypotheses(struct, all_mss, args.variant_unit,
-               args.output_file, args.force, args.perfect,
+    hypotheses(struct, all_mss, args.variant_unit, args.force, args.perfect,
                args.connectivity)
