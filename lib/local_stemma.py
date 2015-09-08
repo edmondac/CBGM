@@ -1,8 +1,10 @@
+# encoding: utf-8
+
 import networkx
 import sqlite3
 import subprocess
 import re
-
+from tempfile import NamedTemporaryFile
 from shared import INIT, UNCL, sort_mss
 
 
@@ -58,9 +60,10 @@ def local_stemma(db_file, variant_unit):
 
     print "Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                              G.number_of_edges())
-    networkx.write_dot(G, '.tmp.dot')
-    _post_process_dot('.tmp.dot')
-    subprocess.check_call(['dot', '-Tsvg', '.tmp.dot', '-o', output_file])
+    with NamedTemporaryFile() as dotfile:
+        networkx.write_dot(G, dotfile.name)
+        _post_process_dot(dotfile.name)
+        subprocess.check_call(['dot', '-Tsvg', dotfile.name, '-o', output_file])
 
     print "Written diagram to {}".format(output_file)
 

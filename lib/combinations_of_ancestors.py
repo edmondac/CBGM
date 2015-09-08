@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import csv
 from itertools import chain, combinations
 from shared import UNCL, POSTERIOR, EQUAL, pretty_p, sorted_vus

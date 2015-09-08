@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 import subprocess
 import sqlite3
 import networkx

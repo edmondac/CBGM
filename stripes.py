@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # encoding: utf-8
 
 import re
@@ -17,10 +18,12 @@ def main(db_file):
     sql = "SELECT DISTINCT variant_unit FROM reading"
     cursor.execute(sql)
     variant_units = [x[0] for x in cursor.fetchall()]
-    # sort by the two integer parts of the vu
+
     def intify(x):
         # Return a list of integers for a given vu ident
         return int(re.search('^([0-9]+).*', x).group(1))
+
+    # sort by the two integer parts of the vu
     variant_units.sort(key=lambda s: map(intify, s.split('/')))
 
     ms_readings = defaultdict(dict)
@@ -60,6 +63,7 @@ def main(db_file):
 
     for key in keys:
         print '{} {}'.format(key, r_ms_stripes[key])
+
 
 if __name__ == "__main__":
     import argparse

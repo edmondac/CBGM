@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 from collections import defaultdict
 
 from shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL
