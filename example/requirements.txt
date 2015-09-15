@@ -1,0 +1,5 @@
+decorator==4.0.2
+networkx==1.10
+pydot2==1.0.33
+pyparsing==2.0.3
+wheel==0.24.0

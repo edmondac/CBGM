@@ -5,7 +5,7 @@ import sqlite3
 import subprocess
 import re
 from tempfile import NamedTemporaryFile
-from shared import INIT, UNCL, sort_mss
+from .shared import INIT, UNCL, sort_mss
 
 
 def _post_process_dot(dotfile):
@@ -55,17 +55,17 @@ def local_stemma(db_file, variant_unit):
         elif parent and parent != UNCL:
             G.add_edge(parent, label)
         else:
-            print "WANRNING - {} has no parents".format(label)
+            print("WANRNING - {} has no parents".format(label))
             continue
 
-    print "Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
-                                                             G.number_of_edges())
+    print("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
+                                                             G.number_of_edges()))
     with NamedTemporaryFile() as dotfile:
         networkx.write_dot(G, dotfile.name)
         _post_process_dot(dotfile.name)
         subprocess.check_call(['dot', '-Tsvg', dotfile.name, '-o', output_file])
 
-    print "Written diagram to {}".format(output_file)
+    print("Written diagram to {}".format(output_file))
 
     all_mss = set([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM attestation WHERE witness != "A"')])
 
@@ -85,11 +85,11 @@ def local_stemma(db_file, variant_unit):
         extant = extant | set(wits)
         wits = sort_mss(wits)
         wits = ', '.join(wits)
-        table.append(u"{}\t{}\t{}".format(label, text, wits.replace(u'P', u'𝔓')))
+        table.append("{}\t{}\t{}".format(label, text, wits.replace('P', '𝔓')))
 
     if extant != all_mss:
         wits = sort_mss(list(all_mss - extant))
         wits = ', '.join(wits)
-        table.append(u"\tlac\t{}".format(wits.replace(u'P', u'𝔓')))
+        table.append("\tlac\t{}".format(wits.replace('P', '𝔓')))
 
     return ('\n'.join(table))

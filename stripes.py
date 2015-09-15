@@ -24,7 +24,7 @@ def main(db_file):
         return int(re.search('^([0-9]+).*', x).group(1))
 
     # sort by the two integer parts of the vu
-    variant_units.sort(key=lambda s: map(intify, s.split('/')))
+    variant_units.sort(key=lambda s: list(map(intify, s.split('/'))))
 
     ms_readings = defaultdict(dict)
 
@@ -55,14 +55,14 @@ def main(db_file):
             raise ValueError("What? {}".format(x))
 
     r_ms_stripes = {}
-    for stripe, wits in ms_stripes.items():
+    for stripe, wits in list(ms_stripes.items()):
         st_wits = ', '.join(sorted(wits, key=lambda x: witintify(x)))
         r_ms_stripes[st_wits] = stripe
 
-    keys = sorted(r_ms_stripes.keys(), key=lambda x: witintify(x))
+    keys = sorted(list(r_ms_stripes.keys()), key=lambda x: witintify(x))
 
     for key in keys:
-        print '{} {}'.format(key, r_ms_stripes[key])
+        print('{} {}'.format(key, r_ms_stripes[key]))
 
 
 if __name__ == "__main__":
@@ -74,6 +74,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print "Using database: {}".format(args.dbfile)
+    print("Using database: {}".format(args.dbfile))
 
     main(args.dbfile)

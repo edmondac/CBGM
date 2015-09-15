@@ -75,7 +75,7 @@ def hypotheses(data, all_mss, vu, force=False, perfect_only=True, connectivity=4
                                     perfect_only, connectivity)
         except Exception as e:
             raise
-            print "ERROR doing {}, {}".format(ch, e)
+            print("ERROR doing {}, {}".format(ch, e))
             results.append((', '.join(desc), e))
         else:
             results.append((', '.join(desc), svg))
@@ -98,10 +98,10 @@ def hypotheses(data, all_mss, vu, force=False, perfect_only=True, connectivity=4
     with open(out_f, 'w') as fh:
         fh.write(html)
 
-    print "Opening browser..."
+    print("Opening browser...")
     webbrowser.open(os.path.join(working_dir, out_f))
 
-    print "View the files in {}/{}".format(working_dir, out_f)
+    print("View the files in {}/{}".format(working_dir, out_f))
 
 
 def find_permutations(unclear, potential_parents, can_designate_initial_text):

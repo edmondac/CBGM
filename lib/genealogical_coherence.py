@@ -2,8 +2,8 @@
 
 from collections import defaultdict
 
-from shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL
-from pre_genealogical_coherence import Coherence
+from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL
+from .pre_genealogical_coherence import Coherence
 
 
 class ReadingRelationship(object):
@@ -151,7 +151,7 @@ class GenealogicalCoherence(Coherence):
         """
         How many times W2 has prior variants to W1
         """
-        row['W1<W2'] = len([x for x in self.reading_relationships[w2].values()
+        row['W1<W2'] = len([x for x in list(self.reading_relationships[w2].values())
                             if x == POSTERIOR])
         return True
 
@@ -159,7 +159,7 @@ class GenealogicalCoherence(Coherence):
         """
         How many times W2 has posterior variants to W1
         """
-        row['W1>W2'] = len([x for x in self.reading_relationships[w2].values()
+        row['W1>W2'] = len([x for x in list(self.reading_relationships[w2].values())
                             if x == PRIOR])
         return True
 
@@ -167,7 +167,7 @@ class GenealogicalCoherence(Coherence):
         """
         Count how many passages are unclear
         """
-        row['UNCL'] = len([x for x in self.reading_relationships[w2].values()
+        row['UNCL'] = len([x for x in list(self.reading_relationships[w2].values())
                            if x == UNCL])
 
         return True
@@ -192,7 +192,7 @@ class GenealogicalCoherence(Coherence):
                         row['W1>W2'] -
                         row['W1<W2'])
         # Double check all the logic:
-        norel_p = [x for x, y in self.reading_relationships[w2].items()
+        norel_p = [x for x, y in list(self.reading_relationships[w2].items())
                    if y == NOREL]
         assert row['NOREL'] == len(norel_p), (
             w2,
@@ -225,4 +225,4 @@ def gen_coherence(db_file, w1, variant_unit=None):
     """
     coh = GenealogicalCoherence(db_file, w1, variant_unit)
     return "{}\n{}".format("Potential ancestors for W1={}".format(w1),
-                           coh.tab_delim_table().encode('utf8'))
+                           coh.tab_delim_table())
