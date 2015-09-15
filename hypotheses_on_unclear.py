@@ -4,104 +4,203 @@
 import os
 import tempfile
 import webbrowser
+import threading
+import queue
+import time
 from copy import deepcopy
 from itertools import product
-from collections import defaultdict
 from populate_db import populate, Reading, LacunaReading, parse_input_file
 from lib.shared import UNCL, INIT
 from lib.textual_flow import textual_flow
 
 
-def single_hypothesis(stemmata, all_mss, vu, unique_ref, force=False, perfect_only=True,
-                      connectivity=499):
-    """
-    Generate the textual flow diagram for this variant unit in this set of stemmata
-    """
-    # 1. Populate the db
-    db = '{}_{}.db'.format(vu.replace('/', '.'), unique_ref)
-    populate(stemmata, all_mss, db, force)
+class Hypotheses(object):
+    def __init__(self, data, all_mss, vu, force=False,
+                 perfect_only=True, connectivity=499,
+                 mpi=False):
+        self.data = data
+        self.all_mss = all_mss
+        self.vu = vu
+        self.force = force
+        self.perfect_only = perfect_only
+        self.connectivity = connectivity
+        self.results = {}
+        self.working_dir = tempfile.mkdtemp()
+        os.chdir(self.working_dir)
 
-    # 2. Make the textual flow diagram
-    svg = textual_flow(db, vu, connectivity, perfect_only)
-    new_svg = '{}_{}'.format(unique_ref, svg)
-    os.rename(svg, new_svg)
-    return new_svg
+        self.mpicomm = None
+        self.mpi_queue = queue.Queue()
+        self.mpi_child_threads = []
+        self.mpi = mpi
+        if mpi:
+            self.mpi_run()
+        else:
+            self.hypotheses()
 
+    def single_hypothesis(self, stemmata, unique_ref):
+        """
+        Generate the textual flow diagram for this variant unit in this set of stemmata
+        """
+        # 1. Populate the db
+        db = '{}_{}.db'.format(self.vu.replace('/', '.'), unique_ref)
+        populate(stemmata, self.all_mss, db, self.force)
 
-def hypotheses(data, all_mss, vu, force=False, perfect_only=True, connectivity=499):
-    """
-    Take a variant unit and create an html page with textual flow diagrams for all
-    potential hypotheses for UNCL readings.
-    """
-    working_dir = tempfile.mkdtemp()
-    os.chdir(working_dir)
-    v, u = vu.split('/')
-    readings = data[v][u]
-    unclear = [x for x in readings if x.parent == UNCL]
-    initial_text = [x for x in readings if x.parent == INIT]
-    changes = find_permutations(unclear,
-                                [x.label for x in readings if x.label != 'lac'],
-                                not initial_text)
+        # 2. Make the textual flow diagram
+        svg = textual_flow(db, self.vu, self.connectivity, self.perfect_only)
+        new_svg = '{}_{}'.format(unique_ref, svg)
+        os.rename(svg, new_svg)
+        return new_svg
 
-    # 'changes' is a list of tuples, each one corresponding to a single
-    # set of changes to make to the data.
-    unique = 0
-    results = []
-    for ch in changes:
-        new_readings = []
-        i = 0
-        desc = []
-        for x in readings:
-            if isinstance(x, LacunaReading):
-                new_readings.append(x)
-                continue
+    def hypotheses(self):
+        """
+        Take a variant unit and create an html page with textual flow diagrams for all
+        potential hypotheses for UNCL readings.
+        """
+        v, u = self.vu.split('/')
+        readings = self.data[v][u]
+        unclear = [x for x in readings if x.parent == UNCL]
+        initial_text = [x for x in readings if x.parent == INIT]
+        changes = find_permutations(unclear,
+                                    [x.label for x in readings if x.label != 'lac'],
+                                    not initial_text)
 
-            if x.parent == UNCL:
-                par = ch[i]
-                # Special case for INIT
-                if par == '_':
-                    par = INIT
-                r = Reading(x.label, x.greek, x._ms_support, par)
-                new_readings.append(r)
-                desc.append("{} -> {}".format(r.parent, r.label))
-                i += 1
+        # 'changes' is a list of tuples, each one corresponding to a single
+        # set of changes to make to the data.
+        unique = 0
+        for ch in changes:
+            new_readings = []
+            i = 0
+            desc = []
+            for x in readings:
+                if isinstance(x, LacunaReading):
+                    new_readings.append(x)
+                    continue
+
+                if x.parent == UNCL:
+                    par = ch[i]
+                    # Special case for INIT
+                    if par == '_':
+                        par = INIT
+                    r = Reading(x.label, x.greek, x._ms_support, par)
+                    new_readings.append(r)
+                    desc.append("{} -> {}".format(r.parent, r.label))
+                    i += 1
+                else:
+                    new_readings.append(x)
+
+            my_stemmata = deepcopy(self.data)
+            my_stemmata[v][u] = new_readings
+            if self.mpi:
+                self.mpi_queue.put((my_stemmata, unique, ', '.join(desc)))
             else:
-                new_readings.append(x)
+                try:
+                    svg = self.single_hypothesis(my_stemmata, unique)
+                except Exception as e:
+                    raise
+                    print("ERROR doing {}, {}".format(ch, e))
+                    self.results[unique] = (', '.join(desc), e)
+                else:
+                    self.results[unique] = (', '.join(desc), svg)
 
-        my_stemmata = deepcopy(data)
-        my_stemmata[v][u] = new_readings
-        try:
-            svg = single_hypothesis(my_stemmata, all_mss, vu, unique, force,
-                                    perfect_only, connectivity)
-        except Exception as e:
-            raise
-            print("ERROR doing {}, {}".format(ch, e))
-            results.append((', '.join(desc), e))
+            unique += 1
+
+        if self.mpi:
+            self.mpi_wait()
+
+        html = ("<html><h1>Hypotheses for {} (connectivity={})</h1>"
+                .format(self.vu, self.connectivity))
+        if self.perfect_only:
+            html += "<p>Only showing perfect coherence - forests are hidden</p>"
+        for desc, svg in self.results.values():
+            if 'svg' in svg:
+                html += ('<h2>{}</h2><img width="500px" src="{}" alt="{}"/><br/><hr/>\n'
+                         .format(desc, svg, svg))
+            else:
+                html += ('<h2>{}</h2><p>ERROR: {}</p><hr/>\n'
+                         .format(desc, svg))
+        html += "</html>"
+
+        out_f = 'index.html'
+        with open(out_f, 'w') as fh:
+            fh.write(html)
+
+        print("View the files in {}/{}".format(self.working_dir, out_f))
+
+        print("Opening browser...")
+        webbrowser.open(os.path.join(self.working_dir, out_f))
+
+    def mpi_wait(self):
+        """
+        Wait for all work to be done, then tell things to stop
+        """
+        # When the queue is done, we can continue. The child threads
+        # have daemon=True and will just exit.
+        self.mpi_queue.join()
+
+        for child in range(1, self.mpicomm.size):
+            # Tell the remote child processes to exit
+            self.mpicomm.send(None, dest=child)
+
+    def mpi_manage_child(self, child):
+        """
+        Manage communications with the specified MPI child
+        """
+        print("Child manager {} starting".format(child))
+        while True:
+            # wait for something to do
+            stemmata, unique_ref, desc = self.mpi_queue.get()
+
+            # send it to the remote child
+            self.mpicomm.send({'stemmata': stemmata,
+                               'unique_ref': unique_ref}, dest=child)
+
+            # get the results back
+            ret = self.mpicomm.recv(source=child)
+
+            # recreate the svg locally
+            with open(ret['svgname'], 'wb') as f:
+                f.write(ret['svgdata'])
+
+            self.results[unique_ref] = (desc, ret['svgname'])
+
+            self.mpi_queue.task_done()
+
+    def mpi_run(self):
+        """
+        Top-level MPI method. Works out if we're a parent or child and
+        acts accordingly.
+        """
+        from mpi4py import MPI
+        self.mpicomm = MPI.COMM_WORLD
+        rank = self.mpicomm.Get_rank()
+        if rank == 0:
+            # parent
+            print("MPI-enabled version with {} processors available"
+                  .format(self.mpicomm.size))
+            for child in range(1, self.mpicomm.size):
+                t = threading.Thread(target=self.mpi_manage_child,
+                                     args=(child, ),
+                                     daemon=True)
+                t.start()
+                self.mpi_child_threads.append(t)
+
+            self.hypotheses()
         else:
-            results.append((', '.join(desc), svg))
+            print("Child {} starting".format(rank))
+            while True:
+                # child - wait to be given a data structure
+                data = self.mpicomm.recv(source=0)
+                if data is None:
+                    print("Child {} exiting".format(rank))
+                    break
+                print("Child {} received data".format(rank))
+                svg = self.single_hypothesis(data['stemmata'],
+                                             data['unique_ref'])
 
-        unique += 1
-
-    html = "<html><h1>Hypotheses for {} (connectivity={})</h1>".format(vu, connectivity)
-    if perfect_only:
-        html += "<p>Only showing perfect coherence - forests are hidden</p>"
-    for desc, svg in results:
-        if 'svg' in svg:
-            html += ('<h2>{}</h2><img width="500px" src="{}" alt="{}"/><br/><hr/>\n'
-                     .format(desc, svg, svg))
-        else:
-            html += ('<h2>{}</h2><p>ERROR: {}</p><hr/>\n'
-                     .format(desc, svg))
-    html += "</html>"
-
-    out_f = 'index.html'
-    with open(out_f, 'w') as fh:
-        fh.write(html)
-
-    print("Opening browser...")
-    webbrowser.open(os.path.join(working_dir, out_f))
-
-    print("View the files in {}/{}".format(working_dir, out_f))
+                with open(svg, 'rb') as f:
+                    self.mpicomm.send({'svgname': svg,
+                                       'svgdata': f.read()})
+                print("Child {} completed job".format(rank))
 
 
 def find_permutations(unclear, potential_parents, can_designate_initial_text):
@@ -156,30 +255,6 @@ def find_ancestors(ch_map, node):
     return ret
 
 
-def mpi_run():
-    from mpi4py import MPI
-    comm = MPI.COMM_WORLD
-    rank = comm.Get_rank()
-    if rank == 0:
-        # parent
-        print("MPI-enabled version with {} processors available".format(comm.size))
-
-        # Do this pair of loops as many times as needed to cover all the work...
-        for child in range(comm.size):
-            data = {'a': 7, 'b': 3.14, 'c': child}
-            comm.send(data, dest=child)
-
-        for child in range(comm.size):
-            ret = comm.recv(source=child)
-            print(ret)
-    else:
-        # child
-        data = comm.recv(source=0)
-        print("Child {} received {}".format(rank, data))
-        comm.send({'fromchild': rank})
-        print("Child sent")
-
-
 if __name__ == "__main__":
     import argparse
 
@@ -198,10 +273,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.mpi:
-        mpi_run()
-
-    else:
-        struct, all_mss = parse_input_file(args.inputfile)
-        hypotheses(struct, all_mss, args.variant_unit, args.force, args.perfect,
-                   args.connectivity)
+    struct, all_mss = parse_input_file(args.inputfile)
+    Hypotheses(struct, all_mss, args.variant_unit, args.force, args.perfect,
+               args.connectivity, args.mpi)
