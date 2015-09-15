@@ -37,7 +37,7 @@ def pretty_p(x):
     Turns P into a gothic 𝔓
     """
     if x.startswith('P'):
-        x = u'𝔓{}'.format(x[1:])
+        x = '𝔓{}'.format(x[1:])
     return x
 
 

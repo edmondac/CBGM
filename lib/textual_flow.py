@@ -3,7 +3,7 @@
 import subprocess
 import sqlite3
 import networkx
-from genealogical_coherence import GenealogicalCoherence
+from .genealogical_coherence import GenealogicalCoherence
 
 
 class ForestError(Exception):
@@ -15,10 +15,10 @@ def textual_flow(db_file, variant_unit, connectivity,
     """
     Create a textual flow diagram for the specified variant unit.
     """
-    print "Creating textual flow diagram for {}".format(variant_unit)
-    print "Setting connectivity to {}".format(connectivity)
+    print("Creating textual flow diagram for {}".format(variant_unit))
+    print("Setting connectivity to {}".format(connectivity))
     if perfect_only:
-        print "Insisting on perfect coherence..."
+        print("Insisting on perfect coherence...")
     G = networkx.DiGraph()
 
     sql = """SELECT witness, label, parent
@@ -34,7 +34,7 @@ def textual_flow(db_file, variant_unit, connectivity,
 
     rank_mapping = {}
     for w1, w1_reading, w1_parent in data:
-        print "Calculating genealogical coherence for {} at {}".format(w1, variant_unit)
+        print("Calculating genealogical coherence for {} at {}".format(w1, variant_unit))
         coh = GenealogicalCoherence(db_file, w1, variant_unit, False)
         coh._generate()
         best_parent = None
@@ -65,7 +65,7 @@ def textual_flow(db_file, variant_unit, connectivity,
             elif perfect_only:
                 raise ForestError("Nodes with no parents - forest detected")
 
-            print "WARNING - {} has no parents".format(w1)
+            print("WARNING - {} has no parents".format(w1))
             continue
 
         G.add_edge(best_parent['W2'], w1)
@@ -73,13 +73,13 @@ def textual_flow(db_file, variant_unit, connectivity,
     # Relable nodes to include the rank
     networkx.relabel_nodes(G, rank_mapping, copy=False)
 
-    print "Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
-                                                             G.number_of_edges())
+    print("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
+                                                             G.number_of_edges()))
     networkx.write_dot(G, 'test.dot')
 
     output_file = "textual_flow_{}_c{}.svg".format(variant_unit.replace('/', '_'), connectivity)
     subprocess.check_call(['dot', '-Tsvg', 'test.dot'], stdout=open(output_file, 'w'))
 
-    print "Written to {}".format(output_file)
+    print("Written to {}".format(output_file))
 
     return output_file

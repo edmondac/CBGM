@@ -93,7 +93,7 @@ def populate(data, all_mss, db_file, force=False):
     """
     Populate a database file based on the readings above
     """
-    print "Will populate {}".format(db_file)
+    print("Will populate {}".format(db_file))
 
     if os.path.exists(db_file):
         if force:
@@ -128,7 +128,7 @@ def populate(data, all_mss, db_file, force=False):
                     continue
 
                 reading_id += 1
-                sql = (u"""INSERT INTO reading
+                sql = ("""INSERT INTO reading
                               (id, variant_unit, label, text, parent)
                           VALUES ({}, \"{}/{}\", \"{}\", \"{}\", \"{}\")"""
                        .format(reading_id,
@@ -146,16 +146,16 @@ def populate(data, all_mss, db_file, force=False):
                     c.execute(sql)
 
             if all_mss - all_wits_found:
-                print "-------" * 10
-                print "WARNING " * 10
-                print "Witnesses don't match for vu {}/{}".format(verse, vu)
-                print "Don't forget to include a LacunaReading if the witness isn't extant"
-                print "Missing witnesses: ", all_mss - all_wits_found
-                print "-------" * 10
+                print("-------" * 10)
+                print("WARNING " * 10)
+                print("Witnesses don't match for vu {}/{}".format(verse, vu))
+                print("Don't forget to include a LacunaReading if the witness isn't extant")
+                print("Missing witnesses: ", all_mss - all_wits_found)
+                print("-------" * 10)
 
     conn.commit()
     conn.close()
-    print "Wrote {} variant units".format(vu_count)
+    print("Wrote {} variant units".format(vu_count))
 
 
 if __name__ == "__main__":

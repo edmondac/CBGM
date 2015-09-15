@@ -4,8 +4,8 @@ import sys
 import time
 import csv
 from itertools import chain, combinations
-from shared import UNCL, POSTERIOR, EQUAL, pretty_p, sorted_vus
-from genealogical_coherence import GenealogicalCoherence
+from .shared import UNCL, POSTERIOR, EQUAL, pretty_p, sorted_vus
+from .genealogical_coherence import GenealogicalCoherence
 
 
 class memoize(dict):
@@ -37,8 +37,8 @@ def get_parent_reading(witness, vu, cursor):
              AND witness = \"{}\"
              """.format(vu, witness)
     data = list(cursor.execute(sql))
-    print "Witness {} has reading '{}' at {} with parent {}".format(
-        witness, data[0][0], vu, data[0][1])
+    print("Witness {} has reading '{}' at {} with parent {}".format(
+        witness, data[0][0], vu, data[0][1]))
     return data[0][1]
 
 
@@ -84,14 +84,14 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
     coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
     pot_an = coh.potential_ancestors()
 
-    print "Found {} potential ancestors for {}".format(len(pot_an), w1)
+    print("Found {} potential ancestors for {}".format(len(pot_an), w1))
     n_combs = 2 ** len(pot_an)
     if n_combs > 100 and max_comb_len == -1:
-        print ("WARNING: {} combinations of ancestors detected. This table could "
+        print(("WARNING: {} combinations of ancestors detected. This table could "
                "be very large and use a lot of RAM to create.\n"
                "Consider re-running with --max-comb-len set to e.g. 100000"
-               .format(n_combs))
-        ok = raw_input("Continue? [y/N]")
+               .format(n_combs)))
+        ok = input("Continue? [y/N]")
         if ok.strip().lower() != 'y':
             return False
 
@@ -131,7 +131,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
         for w2 in combination:
             # What does this witness explain?
             #print coh.reading_relationships[w2]
-            for vu, result in coh.reading_relationships[w2].items():
+            for vu, result in list(coh.reading_relationships[w2].items()):
                 index = my_vus.index(vu)
                 if result == EQUAL:
                     explanation[index] = EQUAL
@@ -156,7 +156,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
         rows.append(row)
 
     # Now display it
-    print "\n" * 5
+    print("\n" * 5)
     rows = sorted(rows, key=lambda x: x['Fragl'])
     rows = sorted(rows, key=lambda x: x['Offen'])
     rows = sorted(rows, key=lambda x: x['Post'], reverse=True)
@@ -167,8 +167,8 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
             c = csv.writer(fd)
             c.writerow(columns)
             for row in rows:
-                c.writerow([row.get(x, u'') for x in columns])
-            print "See {}".format(csv_file)
+                c.writerow([row.get(x, '') for x in columns])
+            print("See {}".format(csv_file))
 
     else:
         header = r'{: ^25} | '.format(columns[0]) + r' | '.join([r'{: ^7}'.format(col) for col in columns[1:]])
@@ -177,4 +177,4 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
             bits = [r'{: ^25}'.format(row['Vorf'])] + [r'{: ^7}'.format(row.get(x)) for x in columns[1:]]
             lines.append(r' | '.join(bits))
 
-        print "{}\n{}".format(header, '\n'.join(lines))
+        print("{}\n{}".format(header, '\n'.join(lines)))

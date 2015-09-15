@@ -1,7 +1,7 @@
 # encoding: utf-8
 
 import sqlite3
-from shared import pretty_p
+from .shared import pretty_p
 
 
 class Coherence(object):
@@ -21,7 +21,7 @@ class Coherence(object):
             self.columns.extend(['READING', 'TEXT'])
 
         # Special formatters for the data (if required)
-        self.formatters = {'PERC1': u'{:.3f}'}
+        self.formatters = {'PERC1': '{:.3f}'}
         self.all_mss = [x[0] for x in self.cursor.execute('SELECT DISTINCT witness FROM attestation')]
 
     def _generate(self):
@@ -157,16 +157,7 @@ class Coherence(object):
         """
         Sort the (pre-populated) rows and supply the NR value in each case.
         """
-        def sort_fn(a, b):
-            if a['PERC1'] != b['PERC1']:
-                return cmp(b['PERC1'], a['PERC1'])
-            if a['EQ'] != b['EQ']:
-                return cmp(b['EQ'], a['EQ'])
-            if a['PASS'] != b['PASS']:
-                return cmp(b['PASS'], a['PASS'])
-            return cmp(a['W2'], b['W2'])
-
-        self.rows.sort(sort_fn)
+        self.rows.sort(key=lambda x: (x['PERC1'], x['EQ'], x['PASS'], x['W2']))
 
         rank = 0
         prev_perc = 0
@@ -197,11 +188,11 @@ class Coherence(object):
         header = ' \t '.join([r'{: ^7}'.format(col) for col in self.columns])
         lines = []
         for row in self.rows:
-            bits = [self.formatters.get(col, u'{: ^7}').format(row[col])
+            bits = [self.formatters.get(col, '{: ^7}').format(row[col])
                     for col in self.columns]
-            lines.append(u' \t '.join(bits))
+            lines.append(' \t '.join(bits))
 
-        return u"{}\n{}".format(header, u'\n'.join(lines))
+        return "{}\n{}".format(header, '\n'.join(lines))
 
 
 def pre_gen_coherence(db_file, w1, variant_unit=None):
@@ -213,4 +204,4 @@ def pre_gen_coherence(db_file, w1, variant_unit=None):
     """
     coh = Coherence(db_file, w1, variant_unit)
     return "{}\n{}".format("Pre-genealogical coherence for W1={}".format(w1),
-                           coh.tab_delim_table().encode('utf8'))
+                           coh.tab_delim_table())

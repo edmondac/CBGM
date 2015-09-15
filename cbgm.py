@@ -16,8 +16,8 @@ def status():
     Show useful status info about variant units
     """
     vus = sorted_vus(cursor)
-    print "All variant units ({}): ".format(len(vus)) + ', '.join(vus)
-    print
+    print("All variant units ({}): ".format(len(vus)) + ', '.join(vus))
+    print()
 
     n_uncl = 0
     for vu in vus:
@@ -25,10 +25,10 @@ def status():
         cursor.execute(sql)
         uncls = int(cursor.fetchone()[0])
         if uncls:
-            print "{} is unresolved ({} unclear parents)".format(vu, uncls)
+            print("{} is unresolved ({} unclear parents)".format(vu, uncls))
             n_uncl += 1
 
-    print "\nThere are {} unresolved variant units".format(n_uncl)
+    print("\nThere are {} unresolved variant units".format(n_uncl))
 
 
 if __name__ == "__main__":
@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print "Using database: {}".format(args.db_file)
+    print("Using database: {}".format(args.db_file))
 
     action = [x for x in [args.pre_genealogical_coherence,
                           args.potential_ancestors,
@@ -87,7 +87,7 @@ if __name__ == "__main__":
         if args.textual_flow or args.local_stemma:
             assert args.variant_unit, "Must specify a variant unit for -t or -l"
     except AssertionError as e:
-        print "ERROR: ", e
+        print("ERROR: ", e)
         parser.print_help()
         sys.exit(1)
 
@@ -96,7 +96,7 @@ if __name__ == "__main__":
 
     all_mss = sort_mss([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM attestation')])
     if args.witness and args.witness != 'all' and args.witness not in all_mss:
-        print "Can't find witness: {}".format(args.witness)
+        print("Can't find witness: {}".format(args.witness))
         sys.exit(2)
     if args.witness == 'all':
         do_mss = all_mss
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     all_vus = sorted_vus(cursor)
     if args.variant_unit and args.variant_unit != 'all' and args.variant_unit not in all_vus:
-        print "Can't find variant unit: {}".format(args.variant_unit)
+        print("Can't find variant unit: {}".format(args.variant_unit))
         sys.exit(3)
     if args.variant_unit == 'all':
         do_vus = all_vus
@@ -136,9 +136,9 @@ if __name__ == "__main__":
 
             elif args.textual_flow:
                 textual_flow(args.db_file, vu, args.connectivity, args.perfect)
-                print "Written {}".format(output)
+                print("Written {}".format(output))
 
             if args.strip_spaces:
                 output = output.replace(' ', '')
 
-            print output
+            print(output)
