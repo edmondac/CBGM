@@ -171,7 +171,10 @@ There are 23 unresolved variant units
 ### Hypotheses on unclear ###
 This script creates textual flow diagrams for all conceivable hypotheses for
 currently UNCL relationships in a specified variant unit.
+EITHER:
 ed@roo:~/PhD/CBGM_ace/example$ ../hypotheses_on_unclear.py -v 21/28-30 example_input.py
+OR - the MPI version:
+ed@roo:~/PhD/CBGM_ace/example$ mpiexec -n 5 python ../hypotheses_on_unclear.py -m -v 21/28-30 example_input.py
 Will populate 21.28-30_0.db
 Wrote 41 variant units
 Creating textual flow diagram for 21/28-30
