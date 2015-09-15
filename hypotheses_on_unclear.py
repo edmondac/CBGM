@@ -156,23 +156,29 @@ def find_ancestors(ch_map, node):
     return ret
 
 
-#~ def combo_recurse(readings, potential_parents, excluded_potential_parents=defaultdict(list)):
-    #~ """
-    #~ Loop through a list of readings making a list of all the possible
-    #~ changes that could be made.
-    #~ """
-    #~ options = []
-    #~ for reading in readings:
-        #~ others = [x for x in readings if x != reading]
-        #~ for change in potential_parents[reading]:
-            #~ if change in excluded_potential_parents[reading.label]:
-                #~ continue
-            #~ excluded_potential_parents[change] = reading.label
-            #~ options.append(((reading.label, change),
-                            #~ combo_recurse(others,
-                                          #~ potential_parents,
-                                          #~ excluded_potential_parents)))
-    #~ return options
+def mpi_run():
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    if rank == 0:
+        # parent
+        print("MPI-enabled version with {} processors available".format(comm.size))
+
+        # Do this pair of loops as many times as needed to cover all the work...
+        for child in range(comm.size):
+            data = {'a': 7, 'b': 3.14, 'c': child}
+            comm.send(data, dest=child)
+
+        for child in range(comm.size):
+            ret = comm.recv(source=child)
+            print(ret)
+    else:
+        # child
+        data = comm.recv(source=0)
+        print("Child {} received {}".format(rank, data))
+        comm.send({'fromchild': rank})
+        print("Child sent")
+
 
 if __name__ == "__main__":
     import argparse
@@ -187,8 +193,15 @@ if __name__ == "__main__":
                         help='perfect coherence - reject forests')
     parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,
                         help='Maximum allowed connectivity in a textual flow diagram')
+    parser.add_argument('-m', '--mpi', default=False, action='store_true',
+                        help='Use the MPI-enabled version')
 
     args = parser.parse_args()
-    struct, all_mss = parse_input_file(args.inputfile)
-    hypotheses(struct, all_mss, args.variant_unit, args.force, args.perfect,
-               args.connectivity)
+
+    if args.mpi:
+        mpi_run()
+
+    else:
+        struct, all_mss = parse_input_file(args.inputfile)
+        hypotheses(struct, all_mss, args.variant_unit, args.force, args.perfect,
+                   args.connectivity)
