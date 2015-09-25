@@ -157,7 +157,8 @@ class Coherence(object):
         """
         Sort the (pre-populated) rows and supply the NR value in each case.
         """
-        self.rows.sort(key=lambda x: (x['PERC1'], x['EQ'], x['PASS'], x['W2']))
+        self.rows.sort(key=lambda x: (x['PERC1'], x['EQ'], x['PASS'], x['W2']),
+                       reverse=True)
 
         rank = 0
         prev_perc = 0

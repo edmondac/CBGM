@@ -2,11 +2,11 @@
 # encoding: utf-8
 
 import os
+import sys
 import tempfile
 import webbrowser
 import threading
 import queue
-import time
 from copy import deepcopy
 from itertools import product
 from populate_db import populate, Reading, LacunaReading, parse_input_file
@@ -268,11 +268,17 @@ if __name__ == "__main__":
                         help='perfect coherence - reject forests')
     parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,
                         help='Maximum allowed connectivity in a textual flow diagram')
-    parser.add_argument('-m', '--mpi', default=False, action='store_true',
-                        help='Use the MPI-enabled version')
+    parser.add_argument('-s', '--single', default=False, action='store_true',
+                        help='Use the single process version (MPI-enabled is default)')
 
     args = parser.parse_args()
+    if not args.single:
+        if not 'OMPI_COMM_WORLD_SIZE' in os.environ:
+            # Not run with mpiexec
+            print("Running in MPI mode but not executed by mpiexec - aborting")
+            print("Consider running with '-s' or using mpiexec")
+            sys.exit(2)
 
     struct, all_mss = parse_input_file(args.inputfile)
     Hypotheses(struct, all_mss, args.variant_unit, args.force, args.perfect,
-               args.connectivity, args.mpi)
+               args.connectivity, not args.single)
