@@ -158,6 +158,16 @@ def populate(data, all_mss, db_file, force=False):
     print("Wrote {} variant units".format(vu_count))
 
 
+def main(in_f, out_f, force):
+    """
+    @param in_f: struct filename
+    @param out_f: db output filename
+    @param force: overwrite things if they're in the way
+    """
+    struct, all_mss = parse_input_file(in_f)
+    return populate(struct, all_mss, out_f, force=force)
+
+
 if __name__ == "__main__":
     import argparse
 
@@ -168,5 +178,4 @@ if __name__ == "__main__":
                         help='force mode - overwrite any files that get in the way')
 
     args = parser.parse_args()
-    struct, all_mss = parse_input_file(args.inputfile)
-    populate(struct, all_mss, args.dbfile, force=args.force)
+    main(args.inputfile, args.dbfile, force=args.force)

@@ -9,6 +9,9 @@ from lib.textual_flow import textual_flow
 from lib.combinations_of_ancestors import combinations_of_ancestors
 from lib.genealogical_coherence import gen_coherence
 from lib.pre_genealogical_coherence import pre_gen_coherence
+import populate_db
+
+DEFAULT_DB_FILE = '/tmp/_default_cbgm_db.db'
 
 
 def status():
@@ -35,8 +38,10 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Ed's CBGM implementation.")
-    parser.add_argument('-f', '--db-file',
-                        required=True, help='sqlite db filename (see populate.py)')
+    parser.add_argument('-d', '--db-file',
+                        help='sqlite db filename (see populate_db.py)')
+    parser.add_argument('-f', '--file',
+                        help='file containing variant reading definitions (will use populate_db.py internally). This is slower than -d if you\'re doing lots of calls.')
     parser.add_argument('-l', '--local-stemma', default=False, action='store_true',
                         help='print a table for a local stemma and write an svg file (requires -v)')
     parser.add_argument('-p', '--pre-genealogical-coherence', action='store_true',
@@ -66,7 +71,20 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print("Using database: {}".format(args.db_file))
+    if args.file and args.db_file:
+        print("Please only specify one of -d and -f")
+        sys.exit(2)
+
+    if args.file:
+        db_file = DEFAULT_DB_FILE
+        populate_db.main(args.file, db_file, force=True)
+    elif args.db_file:
+        db_file = args.db_file
+    else:
+        print("Please specify one of -d or -f")
+        sys.exit(3)
+
+    print("Using database: {}".format(db_file))
 
     action = [x for x in [args.pre_genealogical_coherence,
                           args.potential_ancestors,
@@ -91,13 +109,13 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
 
-    conn = sqlite3.connect(args.db_file)
+    conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
 
     all_mss = sort_mss([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM attestation')])
     if args.witness and args.witness != 'all' and args.witness not in all_mss:
         print("Can't find witness: {}".format(args.witness))
-        sys.exit(2)
+        sys.exit(4)
     if args.witness == 'all':
         do_mss = all_mss
     else:
@@ -106,7 +124,7 @@ if __name__ == "__main__":
     all_vus = sorted_vus(cursor)
     if args.variant_unit and args.variant_unit != 'all' and args.variant_unit not in all_vus:
         print("Can't find variant unit: {}".format(args.variant_unit))
-        sys.exit(3)
+        sys.exit(5)
     if args.variant_unit == 'all':
         do_vus = all_vus
     else:
@@ -119,7 +137,7 @@ if __name__ == "__main__":
     # Now loop over all requested witnesses
     for witness in do_mss:
         if args.combinations_of_ancestors:
-            combinations_of_ancestors(args.db_file, witness, args.max_comb_len,
+            combinations_of_ancestors(db_file, witness, args.max_comb_len,
                                       args.output_file)
             continue
 
@@ -128,14 +146,14 @@ if __name__ == "__main__":
             output = ''
             if coh_fn:
                 # Call our coherence function
-                output += coh_fn(args.db_file, witness, vu)
+                output += coh_fn(db_file, witness, vu)
                 output += '\n\n\n'
 
             elif args.local_stemma:
-                output += local_stemma(args.db_file, vu)
+                output += local_stemma(db_file, vu)
 
             elif args.textual_flow:
-                textual_flow(args.db_file, vu, args.connectivity, args.perfect)
+                textual_flow(db_file, vu, args.connectivity, args.perfect)
                 print("Written {}".format(output))
 
             if args.strip_spaces:

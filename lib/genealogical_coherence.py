@@ -14,6 +14,7 @@ class ReadingRelationship(object):
         self.variant_unit = variant_unit
         self.reading = reading
         self.cursor = cursor
+        self._recursion_history = []
 
     def identify_relationship(self, other_reading):
         """
@@ -36,19 +37,31 @@ class ReadingRelationship(object):
 
         return NOREL
 
-    def _find_ancestor_readings(self, reading):
+    def _find_ancestor_readings(self, reading, start=True):
         """
         Returns a list of ancestors, in order - possibly including UNCL
         at the end if the earliest identifiable ancestor has UNCL as parent.
         """
+        if start:
+            self._recursion_history = []
+
         sql = """SELECT parent FROM reading
                  WHERE variant_unit = \"{}\"
                  AND label = \"{}\"""".format(self.variant_unit, reading)
         self.cursor.execute(sql)
         parent = self.cursor.fetchone()[0]
         ret = [parent]
+        if (reading, parent) in self._recursion_history:
+            # infinite recursion
+            print("WARNING: Would recursive forever looking for {}'s parent. "
+                  "Aborting recursion..."
+                  .format(reading))
+            return ret
+
         if parent not in (INIT, UNCL, 'lac'):
-            ret.extend(self._find_ancestor_readings(parent))
+            self._recursion_history.append((reading, parent))
+            ret.extend(self._find_ancestor_readings(parent, False))
+
         return ret
 
 
