@@ -53,7 +53,9 @@ def local_stemma(db_file, variant_unit):
             # We don't show a separate blob for this
             pass
         elif parent and parent != UNCL:
-            G.add_edge(parent, label)
+            for p in parent.split('&'):
+                # multiple parents are separated by '&'
+                G.add_edge(p, label)
         else:
             print("WANRNING - {} has no parents".format(label))
             continue
