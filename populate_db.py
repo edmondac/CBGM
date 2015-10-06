@@ -6,7 +6,7 @@
 import sqlite3
 import os
 import importlib
-from lib.shared import INIT
+from lib.shared import INIT, LAC
 
 
 class AllBut(object):
@@ -64,7 +64,7 @@ class LacunaReading(Reading):
     def __init__(self, ms_support):
         self.ms_support = set(ms_support)
         self.lacuna = True
-        self.label = 'lac'
+        self.label = LAC
         self.parent = None
 
 

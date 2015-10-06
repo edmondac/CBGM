@@ -10,7 +10,7 @@ import queue
 from copy import deepcopy
 from itertools import product
 from populate_db import populate, Reading, LacunaReading, parse_input_file
-from lib.shared import UNCL, INIT
+from lib.shared import UNCL, INIT, LAC
 from lib.textual_flow import textual_flow
 
 
@@ -61,7 +61,7 @@ class Hypotheses(object):
         unclear = [x for x in readings if x.parent == UNCL]
         initial_text = [x for x in readings if x.parent == INIT]
         changes = find_permutations(unclear,
-                                    [x.label for x in readings if x.label != 'lac'],
+                                    [x.label for x in readings if x.label != LAC],
                                     not initial_text)
 
         # 'changes' is a list of tuples, each one corresponding to a single
@@ -207,7 +207,7 @@ def find_permutations(unclear, potential_parents, can_designate_initial_text):
     """
     Find all possible permutations of unclear elements
     """
-    assert 'lac' not in potential_parents
+    assert LAC not in potential_parents
 
     # Only things marked as UNCL can change their parent
     # If there's no INIT, then any UNCL could be the INIT

@@ -11,7 +11,7 @@ EQUAL = "EQUAL"
 # Constants for the user to define reading relationships
 INIT = "INIT"
 UNCL = "UNCL"
-
+LAC = "LAC"
 
 def sort_mss(ms_list):
     """

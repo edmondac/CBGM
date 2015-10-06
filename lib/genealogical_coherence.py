@@ -2,7 +2,7 @@
 
 from collections import defaultdict
 
-from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL
+from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL, LAC
 from .pre_genealogical_coherence import Coherence
 
 
@@ -50,7 +50,8 @@ class ReadingRelationship(object):
                  AND label = \"{}\"""".format(self.variant_unit, reading)
         self.cursor.execute(sql)
         parent = self.cursor.fetchone()[0]
-        ret = [parent]
+        ret = parent.split('&')  # multiple parents are separated by '&'
+
         if (reading, parent) in self._recursion_history:
             # infinite recursion
             print("WARNING: Would recursive forever looking for {}'s parent. "
@@ -58,9 +59,10 @@ class ReadingRelationship(object):
                   .format(reading))
             return ret
 
-        if parent not in (INIT, UNCL, 'lac'):
+        if parent not in (INIT, UNCL, LAC):
             self._recursion_history.append((reading, parent))
-            ret.extend(self._find_ancestor_readings(parent, False))
+            for p in parent.split('&'):
+                ret.extend(self._find_ancestor_readings(p, False))
 
         return ret
 
@@ -135,7 +137,7 @@ class GenealogicalCoherence(Coherence):
                     # Nothing for this witness at this place
                     continue
                 w2_label = row[0]
-                if w2_label == 'lac':
+                if w2_label == LAC:
                     # lacuna
                     continue
                 rel = reading_obj.identify_relationship(w2_label)

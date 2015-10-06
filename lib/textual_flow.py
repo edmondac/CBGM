@@ -49,8 +49,8 @@ def textual_flow(db_file, variant_unit, connectivity,
                 # This matches our reading and is within the connectivity threshold - take it
                 best_parent = row
                 break
-            if row['READING'] == w1_parent and best_parent is None:
-                # Take the best row where the reading matches our parent reading
+            if row['READING'] in w1_parent.split('&') and best_parent is None:
+                # Take the best row where the reading is one of our parents' readings
                 best_parent = row
 
         if best_parent is None or best_parent['_RANK'] == 1:
