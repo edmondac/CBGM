@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 from collections import defaultdict
+from itertools import product, chain
 
 from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL, LAC
 from .pre_genealogical_coherence import Coherence
@@ -23,7 +24,11 @@ class ReadingRelationship(object):
         if self.reading == other_reading:
             return EQUAL
 
-        #print "ID: {}, {}, {}".format(self.variant_unit, self.reading, other_reading)
+        # Even though some readings have multiple parents (c&d), the question
+        # here is not 'does X explain Y completely?' but instead it's 'which of
+        # X and Y is PRIOR?' Local stemma are not allowed loops, so we can
+        # always answer that question.
+
         r2_ancestors = self._find_ancestor_readings(other_reading)
         if self.reading in r2_ancestors:
             return PRIOR
@@ -37,19 +42,29 @@ class ReadingRelationship(object):
 
         return NOREL
 
-    def _find_ancestor_readings(self, reading, start=True):
+    def get_parent_reading(self, reading):
         """
-        Returns a list of ancestors, in order - possibly including UNCL
-        at the end if the earliest identifiable ancestor has UNCL as parent.
+        Get the parent reading for this reading
         """
-        if start:
-            self._recursion_history = []
-
         sql = """SELECT parent FROM reading
                  WHERE variant_unit = \"{}\"
                  AND label = \"{}\"""".format(self.variant_unit, reading)
         self.cursor.execute(sql)
-        parent = self.cursor.fetchone()[0]
+        return self.cursor.fetchone()[0]
+
+    def _find_ancestor_readings(self, reading, start=True):
+        """
+        Returns a list of ancestor readings, in generation order (mostly) -
+        possibly including UNCL at the end if the earliest identifiable ancestor
+        has UNCL as parent.
+        """
+        if start:
+            self._recursion_history = []
+
+        if reading == INIT:
+            return []
+
+        parent = self.get_parent_reading(reading)
         ret = parent.split('&')  # multiple parents are separated by '&'
 
         if (reading, parent) in self._recursion_history:
@@ -100,7 +115,6 @@ class GenealogicalCoherence(Coherence):
                 continue
 
             new_rows.append(row)
-
         self.rows = new_rows
 
         # Now re-sort
@@ -229,6 +243,81 @@ class GenealogicalCoherence(Coherence):
         self._generate()
         return [x['W2'] for x in self.rows
                 if x['_RANK'] != 0]
+
+    def parent_combinations(self, reading, parent_reading, max_rank=499, my_gen=1):
+        """
+        Return a list of possible parent combinations that explain this reading.
+
+        If the parent_reading is of length 3 (e.g. c&d&e) then the combinations be length 3 or less.
+
+        Returns a list of lists, e.g.:
+            [
+             # 05 explains this reading by itself
+             [('05' = witness, 4 = rank, 1 = generation)],
+
+             # 03 and P75 are both required to explain this reading and both
+             # are generation 2 (e.g. attest a parent reading)
+             [('03', 3, 2), ('P75', 6, 2)],
+
+             # A explains this reading by itself but it is generation 3 - in
+             # other words all witnesses attesting our parent readings all
+             # have A as their parent (one with rank 6 and one with rank 4)
+             [('A', 6, 3), ('A', 4, 3)],
+             ...
+             ]
+        """
+        self._generate()
+        ret = []
+        # Things that explain it by themselves:
+        for row in self.rows:
+            if row['_RANK'] > max_rank:
+                # Exceeds connectivity setting
+                continue
+            elif row['D'] == '-':
+                # Not a potential ancestor (undirected genealogical coherence)
+                continue
+            elif row['READING'] == reading:
+                # This matches our reading and is within the connectivity threshold - take it
+                ret.append([(row['W2'], row['_RANK'], my_gen)])
+
+        if reading == INIT:
+            # No parents - nothing further to do
+            return ret
+
+        # Now the parent reading
+        partial_explanations = []
+        bits = parent_reading.split('&')
+        for partial_parent in bits:
+            if partial_parent == INIT:
+                # Simple - who reads INIT?
+                partial_explanations.append(
+                    self.parent_combinations(INIT, None, max_rank, my_gen + 1))
+                continue
+
+            # We need to recurse, and find out what combinations explain our
+            # (partial) parent.
+            reading_obj = ReadingRelationship(self.variant_unit,
+                                              partial_parent,
+                                              self.cursor)
+            expl = self.parent_combinations(
+                partial_parent,
+                reading_obj.get_parent_reading(partial_parent),
+                max_rank,
+                my_gen + 1)
+
+            partial_explanations.append(expl)
+
+        if len(partial_explanations) == 1:
+            # We've got a single parent - simple
+            ret.extend(partial_explanations[0])
+            return ret
+
+        else:
+            # We now combine the lists in such a way as to get the same structure
+            # as above but now with (potentially) multiple tuples in the inner lists.
+            prod = product(*partial_explanations)
+            combined = list(list(set(chain(*x))) for x in prod)
+            return combined
 
 
 def gen_coherence(db_file, w1, variant_unit=None):

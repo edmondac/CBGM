@@ -4,30 +4,17 @@ import sys
 import time
 import csv
 from itertools import chain, combinations
-from .shared import UNCL, POSTERIOR, EQUAL, pretty_p, sorted_vus
+from .shared import UNCL, POSTERIOR, EQUAL, pretty_p, sorted_vus, memoize
 from .genealogical_coherence import GenealogicalCoherence
 
 
-class memoize(dict):
-    """
-    A memoize decorator based on:
-     http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
-    """
-    def __init__(self, func):
-        self.func = func
-
-    def __call__(self, *args):
-        return self[args]
-
-    def __missing__(self, key):
-        result = self[key] = self.func(*key)
-        return result
-
-
 @memoize
-def get_parent_reading(witness, vu, cursor):
+def is_parent_reading_unclear(witness, vu, cursor):
     """
-    Find the parent reading for this witness at this vu
+    Find the parent reading for this witness at this vu and return whether it's
+    UNCL.
+
+    @return: True for UNCL, False otherwise.
     """
     # Not yet explained.... could be UNCL parent
     sql = """SELECT label, parent
@@ -39,7 +26,7 @@ def get_parent_reading(witness, vu, cursor):
     data = list(cursor.execute(sql))
     print("Witness {} has reading '{}' at {} with parent {}".format(
         witness, data[0][0], vu, data[0][1]))
-    return data[0][1]
+    return data[0][1] == UNCL
 
 
 def time_fmt(secs):
@@ -104,7 +91,8 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
              AND attestation.witness = '{}';
           """.format(w1)
     my_vus = sorted_vus(coh.cursor, sql)
-    # We need to expain our reading for each vu in my_vus
+    # We need to expain our reading for each vu in my_vus - and some might
+    # require multiple ancestors to explain it (e.g. c&d parent)
     rows = []
     total = min(n_combs, max_comb_len)
     done = 0
@@ -125,8 +113,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
             # The empty set
             continue
 
-        row = {'Vorf': ', '.join([pretty_p(x) for x in combination]).encode("utf-8"),
-               'Vorfanz': len(combination)}
+
         explanation = [None for x in my_vus]
         for w2 in combination:
             # What does this witness explain?
@@ -140,18 +127,21 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
 
         for i, result in enumerate(explanation):
             if result is None:
-                parent = get_parent_reading(w1, my_vus[i], coh.cursor)
-                if parent == UNCL:
+                if is_parent_reading_unclear(w1, my_vus[i], coh.cursor):
                     explanation[i] = UNCL
 
-        row['Stellen'] = len([x for x in explanation if x == EQUAL])
-        row['vus_stellen'] = ', '.join([my_vus[i] for i, x in enumerate(explanation) if x == EQUAL])
-        row['Post'] = len([x for x in explanation if x == POSTERIOR])
-        row['vus_post'] = ', '.join([my_vus[i] for i, x in enumerate(explanation) if x == POSTERIOR])
-        row['Fragl'] = len([x for x in explanation if x == UNCL])
-        row['vus_fragl'] = ', '.join([my_vus[i] for i, x in enumerate(explanation) if x == UNCL])
-        row['Offen'] = len([x for x in explanation if x is None])
-        row['vus_offen'] = ', '.join([my_vus[i] for i, x in enumerate(explanation) if x is None])
+        row = {
+            'Vorf': ', '.join([pretty_p(x) for x in combination]).encode("utf-8"),
+            'Vorfanz': len(combination),
+            'Stellen': len([x for x in explanation if x == EQUAL]),
+            'vus_stellen': ', '.join([my_vus[i] for i, x in enumerate(explanation) if x == EQUAL]),
+            'Post': len([x for x in explanation if x == POSTERIOR]),
+            'vus_post': ', '.join([my_vus[i] for i, x in enumerate(explanation) if x == POSTERIOR]),
+            'Fragl': len([x for x in explanation if x == UNCL]),
+            'vus_fragl': ', '.join([my_vus[i] for i, x in enumerate(explanation) if x == UNCL]),
+            'Offen': len([x for x in explanation if x is None]),
+            'vus_offen': ', '.join([my_vus[i] for i, x in enumerate(explanation) if x is None]),
+        }
 
         rows.append(row)
 
