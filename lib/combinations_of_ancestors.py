@@ -113,7 +113,6 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
             # The empty set
             continue
 
-
         explanation = [None for x in my_vus]
         for w2 in combination:
             # What does this witness explain?
