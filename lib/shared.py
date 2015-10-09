@@ -14,28 +14,17 @@ UNCL = "UNCL"
 LAC = "LAC"
 
 
-#~ class memoize(dict):
-    #~ """
-    #~ A memoize decorator based on:
-     #~ http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
-    #~ """
-    #~ def __init__(self, func):
-        #~ self.func = func
-#~
-    #~ def __call__(self, *args):
-        #~ return self[args]
-#~
-    #~ def __missing__(self, key):
-        #~ result = self[key] = self.func(*key)
-        #~ return result
-
 def memoize(f):
+    """
+    Based on http://www.python-course.eu/python3_memoization.php
+    """
     memo = {}
     def helper(x):
         if x not in memo:
             memo[x] = f(x)
         return memo[x]
     return helper
+
 
 def sort_mss(ms_list):
     """
@@ -65,20 +54,24 @@ def pretty_p(x):
     return x
 
 
+def numify(vu):
+    """
+    Turn a variant unit into a pair of integers that can be sorted
+    """
+    a, b = vu.split('/')
+    if '-' in b:
+        bits = [int(x) for x in b.split('-')]
+        b = float("{}.{}".format(*bits))
+    else:
+        b = int(b)
+    a = int(a)
+    return [a, b]
+
+
 def sorted_vus(cursor, sql=None):
     """
     Return a full list of variant units, properly sorted.
     """
-    def numify(vu):
-        a, b = vu.split('/')
-        if '-' in b:
-            bits = [int(x) for x in b.split('-')]
-            b = float("{}.{}".format(*bits))
-        else:
-            b = int(b)
-        a = int(a)
-        return [a, b]
-
     if sql is None:
         sql = 'SELECT DISTINCT variant_unit FROM reading'
 
