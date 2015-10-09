@@ -115,6 +115,7 @@ class GenealogicalCoherence(Coherence):
                 continue
 
             new_rows.append(row)
+
         self.rows = new_rows
 
         # Now re-sort
@@ -301,7 +302,7 @@ class GenealogicalCoherence(Coherence):
                 # This matches our reading and is within the connectivity threshold - take it
                 ret.append([(row['W2'], row['_RANK'], my_gen)])
 
-        if reading == INIT:
+        if parent_reading in (INIT, UNCL):
             # No parents - nothing further to do
             return ret
 
@@ -320,6 +321,7 @@ class GenealogicalCoherence(Coherence):
             reading_obj = ReadingRelationship(self.variant_unit,
                                               partial_parent,
                                               self.cursor)
+
             expl = self.parent_combinations(
                 partial_parent,
                 reading_obj.get_parent_reading(partial_parent),

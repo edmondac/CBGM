@@ -4,7 +4,7 @@ import sys
 import time
 import csv
 from itertools import chain, combinations
-from .shared import UNCL, POSTERIOR, EQUAL, pretty_p, sorted_vus, memoize
+from .shared import UNCL, POSTERIOR, EQUAL, pretty_p, numify, memoize
 from .genealogical_coherence import GenealogicalCoherence
 
 
@@ -41,7 +41,7 @@ def time_fmt(secs):
     return "{}h".format(secs // 3600)
 
 
-def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
+def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None, connectivity=499):
     """
     Prints a table of combinations of potential ancestors ordered by
     the number required to account for all the readings in w1.
@@ -50,6 +50,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
     @param w1: witness
     @param max_comb_len: maximum length of combinations to check (-1 for unlimited)
     @param csv_file: output to a csv file rather than a tab-delim table (filename or None)
+    @param connectivity: maximum rank of ancestors to allow
     """
     # FIXME - might be good to have an argument to set a threshold of what to include
     # in the output - instead of millions of rows...
@@ -85,14 +86,29 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
     powerset = chain.from_iterable(combinations(pot_an, n)
                                    for n in range(min(len(pot_an) + 1, max_comb_len + 1)))
 
-    sql = """SELECT variant_unit AS vu
+    sql = """SELECT variant_unit, label, parent
              FROM reading, attestation
              WHERE reading.id = attestation.reading_id
              AND attestation.witness = '{}';
           """.format(w1)
-    my_vus = sorted_vus(coh.cursor, sql)
+    my_vus = sorted([x for x in coh.cursor.execute(sql)],
+                    key=lambda s: numify(s[0]))
+
     # We need to expain our reading for each vu in my_vus - and some might
     # require multiple ancestors to explain it (e.g. c&d parent)
+    # So we'll cache the combinations needed for each vu first...
+    vu_map = {}
+    print("Loading combinations for each variant unit...")
+    for idx, (vu, reading, parent) in enumerate(my_vus):
+        if parent == 'UNCL':
+            continue
+        vu_coh = GenealogicalCoherence(db_file, w1, vu, pretty_p=False)
+        vu_combs = vu_coh.parent_combinations(reading, parent, connectivity)
+        # Simplify that to just a list of tuples of witnesses
+        wit_combs = [set(x[0] for x in a) for a in vu_combs]
+        vu_map[vu] = (vu_combs, wit_combs)
+    print("Done")
+
     rows = []
     total = min(n_combs, max_comb_len)
     done = 0
@@ -106,40 +122,54 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None):
             so_far = time.time() - start
             perc = done * 100.0 / total
             rem = (so_far * 100 / perc) - so_far
-            sys.stdout.write("\r{}/{} ({:.2f}%) (Time taken: {}, remaining {})\t"
-                             .format(done, total, perc, time_fmt(so_far), time_fmt(rem)))
+            sys.stdout.write("\r{}/{} ({:.2f}%) (Time taken: {}, remaining {}) - found {}     "
+                             .format(done, total, perc, time_fmt(so_far), time_fmt(rem), len(rows)))
             sys.stdout.flush()
         if not combination:
             # The empty set
             continue
 
+        ok = True
+        comb_s = set(combination)
         explanation = [None for x in my_vus]
-        for w2 in combination:
-            # What does this witness explain?
-            #print coh.reading_relationships[w2]
-            for vu, result in list(coh.reading_relationships[w2].items()):
-                index = my_vus.index(vu)
-                if result == EQUAL:
-                    explanation[index] = EQUAL
-                elif result == POSTERIOR and explanation[index] is None:
-                    explanation[index] = POSTERIOR
+        for idx, (vu, reading, parent) in enumerate(my_vus):
+            if vu not in vu_map:
+                explanation[idx] = UNCL
+                continue
 
-        for i, result in enumerate(explanation):
-            if result is None:
-                if is_parent_reading_unclear(w1, my_vus[i], coh.cursor):
-                    explanation[i] = UNCL
+            vu_combs, wit_combs = vu_map[vu]
+            best_gen = None
+            for i, c in enumerate(wit_combs):
+                if c <= comb_s:
+                    # This one is catered for
+                    gen = max(x[2] for x in vu_combs[i])
+                    if best_gen is None or gen < best_gen:
+                        best_gen = gen
+
+            if best_gen is None:
+                # This combination doesn't work
+                ok = False
+                break
+
+            rel = EQUAL
+            if best_gen > 1:
+                rel = POSTERIOR
+            explanation[idx] = rel
+
+        if not ok:
+            continue
 
         row = {
             'Vorf': ', '.join([pretty_p(x) for x in combination]).encode("utf-8"),
             'Vorfanz': len(combination),
             'Stellen': len([x for x in explanation if x == EQUAL]),
-            'vus_stellen': ', '.join([my_vus[i] for i, x in enumerate(explanation) if x == EQUAL]),
+            'vus_stellen': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x == EQUAL]),
             'Post': len([x for x in explanation if x == POSTERIOR]),
-            'vus_post': ', '.join([my_vus[i] for i, x in enumerate(explanation) if x == POSTERIOR]),
+            'vus_post': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x == POSTERIOR]),
             'Fragl': len([x for x in explanation if x == UNCL]),
-            'vus_fragl': ', '.join([my_vus[i] for i, x in enumerate(explanation) if x == UNCL]),
+            'vus_fragl': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x == UNCL]),
             'Offen': len([x for x in explanation if x is None]),
-            'vus_offen': ', '.join([my_vus[i] for i, x in enumerate(explanation) if x is None]),
+            'vus_offen': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x is None]),
         }
 
         rows.append(row)
