@@ -3,6 +3,8 @@
 import subprocess
 import sqlite3
 import networkx
+from tempfile import NamedTemporaryFile
+
 from .genealogical_coherence import GenealogicalCoherence
 
 
@@ -42,40 +44,48 @@ def textual_flow(db_file, variant_unit, connectivity,
         coh = GenealogicalCoherence(db_file, w1, variant_unit, False)
         coh._generate()
         # we might need multiple parents if a reading requires it
+        best_parents_by_rank = []
+        best_rank = None
+        best_parents_by_gen = []
+        best_gen = None
         parents = []
-        for partial_parent in w1_parent.split('&'):
-            best_parent = None
-            for row in coh.rows:
-                if row['_RANK'] > connectivity:
-                    # Exceeds connectivity setting
-                    continue
-                if row['D'] == '-':
-                    # Not a potential ancestor (undirected genealogical coherence)
-                    continue
-                if row['READING'] == w1_reading:
-                    # This matches our reading and is within the connectivity threshold - take it
-                    best_parent = row
-                    break
-                if row['READING'] in w1_parent.split('&') and best_parent is None:
-                    # Take the best row where the reading is one of our parents' readings
-                    best_parent = row
+        for combination in coh.parent_combinations(w1_reading, w1_parent, connectivity):
+            rank = max(x[1] for x in combination)
+            gen = max(x[2] for x in combination)
+            if best_gen is None or gen < best_gen:
+                best_parents_by_gen = combination
+                best_gen = gen
+            elif gen == best_gen:
+                if rank < max(x[1] for x in best_parents_by_gen):
+                    # This is a better option for this generation
+                    best_parents_by_gen = combination
+                    best_gen = gen
 
-            if best_parent is None:
-                rank = "-"
-            else:
-                rank = best_parent['_RANK']
+            if best_rank is None or rank < best_rank:
+                best_parents_by_rank = combination
+                best_rank = rank
 
-            parents.append((best_parent, rank))
+        if best_gen == 1:
+            # We can do this with direct parents - use them
+            parents = best_parents_by_gen
+        else:
+            # Got to use ancestors, so use the best by rank
+            parents = best_parents_by_rank
+
+        print(" > Best parents: {}".format(parents))
 
         if len(parents) > 1:
             rank_mapping[w1] = "{}/[{}] ({})".format(
-                w1, ', '.join("{}.{}".format(x[0]['W2'], x[1]) for x in parents), w1_reading)
-        else:
+                w1, ', '.join("{}.{}".format(x[0], x[1]) for x in parents), w1_reading)
+        elif len(parents) == 1:
             # Just one parent
-            if best_parent is None or best_parent['_RANK'] == 1:
+            if parents[0][1] == 1:
                 rank_mapping[w1] = "{} ({})".format(w1, w1_reading)
             else:
-                rank_mapping[w1] = "{}/{} ({})".format(w1, best_parent['_RANK'], w1_reading)
+                rank_mapping[w1] = "{}/{} ({})".format(w1, parents[0][1], w1_reading)
+        else:
+            # no parents
+            rank_mapping[w1] = "{} ({})".format(w1, w1_reading)
 
         if all(x[0] is None for x in parents):
             if w1 == 'A':
@@ -88,17 +98,17 @@ def textual_flow(db_file, variant_unit, connectivity,
             continue
 
         for i, p in enumerate(parents):
-            G.add_edge(p[0]['W2'], w1)
+            G.add_edge(p[0], w1)
 
     # Relable nodes to include the rank
     networkx.relabel_nodes(G, rank_mapping, copy=False)
 
     print("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                              G.number_of_edges()))
-    networkx.write_dot(G, 'test.dot')
-
     output_file = "textual_flow_{}_c{}.svg".format(variant_unit.replace('/', '_'), connectivity)
-    subprocess.check_call(['dot', '-Tsvg', 'test.dot'], stdout=open(output_file, 'w'))
+    with NamedTemporaryFile() as dotfile:
+        networkx.write_dot(G, dotfile.name)
+        subprocess.check_call(['dot', '-Tsvg', dotfile.name], stdout=open(output_file, 'w'))
 
     print("Written to {}".format(output_file))
 

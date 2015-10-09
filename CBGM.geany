@@ -22,22 +22,22 @@ long_line_behaviour=1
 long_line_column=80
 
 [files]
-current_page=14
-FILE_NAME_0=126;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fhypotheses_on_unclear.py;0;4
-FILE_NAME_1=5484;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fpopulate_db.py;0;4
+current_page=9
+FILE_NAME_0=7331;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fhypotheses_on_unclear.py;0;4
+FILE_NAME_1=184;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fpopulate_db.py;0;4
 FILE_NAME_2=40;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fstripes.py;0;4
-FILE_NAME_3=1991;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Flocal_stemma.py;0;4
-FILE_NAME_4=19;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fshared.py;0;4
+FILE_NAME_3=1966;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Flocal_stemma.py;0;4
+FILE_NAME_4=256;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fshared.py;0;4
 FILE_NAME_5=5173;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fpre_genealogical_coherence.py;0;4
-FILE_NAME_6=1869;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fgenealogical_coherence.py;0;4
-FILE_NAME_7=3006;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Ftextual_flow.py;0;4
-FILE_NAME_8=3929;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fcbgm.py;0;4
-FILE_NAME_9=2526;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fcombinations_of_ancestors.py;0;4
+FILE_NAME_6=7916;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fgenealogical_coherence.py;0;4
+FILE_NAME_7=2762;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Ftextual_flow.py;0;4
+FILE_NAME_8=1999;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fcbgm.py;0;4
+FILE_NAME_9=4759;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Flib%2Fcombinations_of_ancestors.py;0;4
 FILE_NAME_10=6914;None;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fexample%2FREADME;0;4
-FILE_NAME_11=70;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fexample%2Fexample_input.py;0;4
+FILE_NAME_11=4024;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fexample%2Fexample_input.py;0;4
 FILE_NAME_12=1293;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter2Includes%2Fjohn6_stage1.py;0;4
 FILE_NAME_13=0;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter2Includes%2Fjohn6_stage2.py;0;4
-FILE_NAME_14=5353;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter2Includes%2Fjohn6_stage3.py;0;4
+FILE_NAME_14=3996;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter2Includes%2Fjohn6_stage3.py;0;4
 
 [VTE]
 last_dir=/home/ed
