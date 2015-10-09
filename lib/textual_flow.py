@@ -14,6 +14,10 @@ def textual_flow(db_file, variant_unit, connectivity,
                  perfect_only=False):
     """
     Create a textual flow diagram for the specified variant unit.
+
+    Because I put the whole textual flow in one diagram (unlike Munster who
+    show a textual flow diagram for a single reading) there can be multiple
+    ancestors for a witness...
     """
     print("Creating textual flow diagram for {}".format(variant_unit))
     print("Setting connectivity to {}".format(connectivity))
@@ -37,28 +41,43 @@ def textual_flow(db_file, variant_unit, connectivity,
         print("Calculating genealogical coherence for {} at {}".format(w1, variant_unit))
         coh = GenealogicalCoherence(db_file, w1, variant_unit, False)
         coh._generate()
-        best_parent = None
-        for row in coh.rows:
-            if row['_RANK'] > connectivity:
-                # Exceeds connectivity setting
-                continue
-            if row['D'] == '-':
-                # Not a potential ancestor (undirected genealogical coherence)
-                continue
-            if row['READING'] == w1_reading:
-                # This matches our reading and is within the connectivity threshold - take it
-                best_parent = row
-                break
-            if row['READING'] in w1_parent.split('&') and best_parent is None:
-                # Take the best row where the reading is one of our parents' readings
-                best_parent = row
+        # we might need multiple parents if a reading requires it
+        parents = []
+        for partial_parent in w1_parent.split('&'):
+            best_parent = None
+            for row in coh.rows:
+                if row['_RANK'] > connectivity:
+                    # Exceeds connectivity setting
+                    continue
+                if row['D'] == '-':
+                    # Not a potential ancestor (undirected genealogical coherence)
+                    continue
+                if row['READING'] == w1_reading:
+                    # This matches our reading and is within the connectivity threshold - take it
+                    best_parent = row
+                    break
+                if row['READING'] in w1_parent.split('&') and best_parent is None:
+                    # Take the best row where the reading is one of our parents' readings
+                    best_parent = row
 
-        if best_parent is None or best_parent['_RANK'] == 1:
-            rank_mapping[w1] = "{} ({})".format(w1, w1_reading)
+            if best_parent is None:
+                rank = "-"
+            else:
+                rank = best_parent['_RANK']
+
+            parents.append((best_parent, rank))
+
+        if len(parents) > 1:
+            rank_mapping[w1] = "{}/[{}] ({})".format(
+                w1, ', '.join("{}.{}".format(x[0]['W2'], x[1]) for x in parents), w1_reading)
         else:
-            rank_mapping[w1] = "{}/{} ({})".format(w1, best_parent['_RANK'], w1_reading)
+            # Just one parent
+            if best_parent is None or best_parent['_RANK'] == 1:
+                rank_mapping[w1] = "{} ({})".format(w1, w1_reading)
+            else:
+                rank_mapping[w1] = "{}/{} ({})".format(w1, best_parent['_RANK'], w1_reading)
 
-        if not best_parent:
+        if all(x[0] is None for x in parents):
             if w1 == 'A':
                 # That's ok...
                 continue
@@ -68,7 +87,8 @@ def textual_flow(db_file, variant_unit, connectivity,
             print("WARNING - {} has no parents".format(w1))
             continue
 
-        G.add_edge(best_parent['W2'], w1)
+        for i, p in enumerate(parents):
+            G.add_edge(p[0]['W2'], w1)
 
     # Relable nodes to include the rank
     networkx.relabel_nodes(G, rank_mapping, copy=False)
