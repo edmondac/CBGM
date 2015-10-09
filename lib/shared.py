@@ -14,21 +14,28 @@ UNCL = "UNCL"
 LAC = "LAC"
 
 
-class memoize(dict):
-    """
-    A memoize decorator based on:
-     http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
-    """
-    def __init__(self, func):
-        self.func = func
+#~ class memoize(dict):
+    #~ """
+    #~ A memoize decorator based on:
+     #~ http://wiki.python.org/moin/PythonDecoratorLibrary#Memoize
+    #~ """
+    #~ def __init__(self, func):
+        #~ self.func = func
+#~
+    #~ def __call__(self, *args):
+        #~ return self[args]
+#~
+    #~ def __missing__(self, key):
+        #~ result = self[key] = self.func(*key)
+        #~ return result
 
-    def __call__(self, *args):
-        return self[args]
-
-    def __missing__(self, key):
-        result = self[key] = self.func(*key)
-        return result
-
+def memoize(f):
+    memo = {}
+    def helper(x):
+        if x not in memo:
+            memo[x] = f(x)
+        return memo[x]
+    return helper
 
 def sort_mss(ms_list):
     """

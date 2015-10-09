@@ -3,7 +3,7 @@
 from collections import defaultdict
 from itertools import product, chain
 
-from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL, LAC
+from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL, LAC, memoize
 from .pre_genealogical_coherence import Coherence
 
 
@@ -120,6 +120,26 @@ class GenealogicalCoherence(Coherence):
         # Now re-sort
         self.sort()
 
+    @memoize
+    def all_attestations(self):
+        """
+        All attestations - getting this piecemeal is slow, so we'll cache it
+        """
+        ret = defaultdict(defaultdict)
+        for row in self.cursor.execute("""SELECT witness, variant_unit, label
+                                          FROM attestation, reading
+                                          WHERE attestation.reading_id = reading.id"""):
+            witness, vu, label = row
+            ret[witness][vu] = label
+
+        return ret
+
+    def get_attestation(self, witness, vu):
+        """
+        A cache to find out what a witness reads in a variant unit
+        """
+        return self.all_attestations()[witness].get(vu)
+
     def _calculate_reading_relationships(self):
         """
         Populates the self.reading_relationships dictionary.
@@ -140,17 +160,18 @@ class GenealogicalCoherence(Coherence):
             for w2 in self.all_mss:
                 if w2 == self.w1:
                     continue
-                sql = ("""SELECT label FROM attestation, reading
-                          WHERE witness = \"{}\"
-                          AND variant_unit = \"{}\"
-                          AND attestation.reading_id = reading.id"""
-                       .format(w2, vu))
-                self.cursor.execute(sql.format(w2))
-                row = self.cursor.fetchone()
-                if row is None:
+                #~ sql = ("""SELECT label FROM attestation, reading
+                          #~ WHERE witness = \"{}\"
+                          #~ AND variant_unit = \"{}\"
+                          #~ AND attestation.reading_id = reading.id"""
+                       #~ .format(w2, vu))
+                #~ self.cursor.execute(sql.format(w2))
+                #~ row = self.cursor.fetchone()
+                attestation = self.get_attestation(w2, vu)
+                if attestation is None:
                     # Nothing for this witness at this place
                     continue
-                w2_label = row[0]
+                w2_label = attestation
                 if w2_label == LAC:
                     # lacuna
                     continue
