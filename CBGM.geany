@@ -22,7 +22,7 @@ long_line_behaviour=1
 long_line_column=80
 
 [files]
-current_page=14
+current_page=17
 FILE_NAME_0=7331;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fhypotheses_on_unclear.py;0;4
 FILE_NAME_1=184;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fpopulate_db.py;0;4
 FILE_NAME_2=40;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fstripes.py;0;4
@@ -38,6 +38,12 @@ FILE_NAME_11=4024;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FCBGM_ace%2Fexample%
 FILE_NAME_12=1293;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter2Includes%2Fjohn6_stage1.py;0;4
 FILE_NAME_13=0;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter2Includes%2Fjohn6_stage2.py;0;4
 FILE_NAME_14=1197;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter2Includes%2Fjohn6_stage3.py;0;4
+FILE_NAME_15=1170;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2Fsandpit%2Fnexus_scripts%2Fnexus_subset.py;0;4
+FILE_NAME_16=484;None;0;EUTF-8;0;1;1;%2Fhome%2Fed%2Ftemp.rdf;0;4
+FILE_NAME_17=232;Python;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2Fsandpit%2Fnexus_scripts%2Fnexus_to_rdf.py;0;4
+FILE_NAME_18=3968;None;0;EUTF-8;0;1;0;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter4Includes%2Ffamily1%2Ffamily1.ami;0;4
+FILE_NAME_19=3378;None;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter4Includes%2Ffamily1%2Ffamily1.nex;0;4
+FILE_NAME_20=0;None;0;EUTF-8;0;1;1;%2Fhome%2Fed%2FPhD%2FEssays%20and%20Conferences%2FThesis%2FChapter4Includes%2Ffamily1%2Ffamily1.rdf;0;4
 
 [VTE]
 last_dir=/home/ed
