@@ -65,11 +65,11 @@ class Hypotheses(object):
         readings = self.data[v][u]
         unclear = [x for x in readings if x.parent == UNCL]
         initial_text = [x for x in readings if x.parent == INIT]
-        changes = find_permutations(unclear,
+        changes = iter_permutations(unclear,
                                     [x.label for x in readings if x.label != LAC],
                                     not initial_text)
-        # 'changes' is a list of tuples, each one corresponding to a single
-        # set of changes to make to the data.
+        # 'changes' is a generator yielding tuples, each one corresponding to a
+        # single set of changes to make to the data.
         unique = 0
         for ch in changes:
             new_readings = []
@@ -214,7 +214,7 @@ class Hypotheses(object):
                     print("Child {} completed job".format(rank))
 
 
-def find_permutations(unclear, potential_parents, can_designate_initial_text):
+def iter_permutations(unclear, potential_parents, can_designate_initial_text):
     """
     Find all possible permutations of unclear elements
     """
@@ -231,29 +231,12 @@ def find_permutations(unclear, potential_parents, can_designate_initial_text):
                 if i == j:
                     continue
                 ch[j] = [x for x in potential_parents if x != inner.label]
-            changes.extend(product(*ch))
+            yield from product(*ch)
     else:
         for i, unc in enumerate(unclear):
             ch = [None for x in unclear]
             ch[i] = [x for x in potential_parents if x != unc.label]
-            changes.extend(product(*ch))
-
-    # Look for cycle
-    good_changes = []
-    for ch in changes:
-        change_map = {}
-        for i, unc in enumerate(unclear):
-            goto = ch[i]
-            ancestors = find_ancestors(change_map, goto)
-            if unc.label in ancestors:
-                # This would be a loop
-                break
-            change_map[unc.label] = ch[i]
-        else:
-            # No break - must be good
-            good_changes.append(ch)
-
-    return good_changes
+            yield from product(*ch)
 
 
 def find_ancestors(ch_map, node):
