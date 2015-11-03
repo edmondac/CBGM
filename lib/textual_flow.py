@@ -46,7 +46,8 @@ def textual_flow(db_file, variant_unit, connectivity,
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
     data = list(cursor.execute(sql))
-    witnesses = [(x[0], {'fillcolor': COLOURMAP[x[1]],
+    # get the colour for the first char of the label (e.g. for b1 just get b)
+    witnesses = [(x[0], {'fillcolor': COLOURMAP.get(x[1][0], '#cccccc'),
                          'style': 'filled'})  # See http://www.graphviz.org/
                  for x in data]
     G.add_nodes_from(witnesses)
@@ -62,6 +63,7 @@ def textual_flow(db_file, variant_unit, connectivity,
         best_parents_by_gen = []
         best_gen = None
         parents = []
+        max_acceptable_gen = 2  # only allow my reading or my parent's
         for combination in coh.parent_combinations(w1_reading, w1_parent, connectivity):
             if not combination:
                 # Couldn't find anything to explain it
@@ -70,6 +72,9 @@ def textual_flow(db_file, variant_unit, connectivity,
 
             rank = max(x[1] for x in combination)
             gen = max(x[2] for x in combination)
+            if gen > max_acceptable_gen:
+                continue
+
             if best_gen is None or gen < best_gen:
                 best_parents_by_gen = combination
                 best_gen = gen
