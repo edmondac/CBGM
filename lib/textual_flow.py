@@ -75,6 +75,8 @@ def textual_flow(db_file, variant_unit, connectivity,
         print(" > Best parents: {}".format(parents))
 
         if len(parents) > 1:
+            # Multiple parents - caused by a reading with multiple parents in
+            # a local stemma.
             rank_mapping[w1] = "{}/[{}] ({})".format(
                 w1, ', '.join("{}.{}".format(x[0], x[1]) for x in parents), w1_reading)
         elif len(parents) == 1:
