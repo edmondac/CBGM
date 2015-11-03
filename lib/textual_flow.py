@@ -14,9 +14,9 @@ COLOURMAP = {'a': '#eeffee',
              'd': '#ffffee',
              'e': '#ffeeff',
              'f': '#eeffff',
-             'g': '#effeee',
-             'h': '#eeeffe',
-             'i': '#feeeef'}
+             'g': '#dffddd',
+             'h': '#dddffd',
+             'i': '#fddddf'}
 
 
 class ForestError(Exception):
