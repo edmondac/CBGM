@@ -50,6 +50,11 @@ def textual_flow(db_file, variant_unit, connectivity,
         best_gen = None
         parents = []
         for combination in coh.parent_combinations(w1_reading, w1_parent, connectivity):
+            if not combination:
+                # Couldn't find anything to explain it
+                print("Couldn't find any parent combination for {}".format(w1_reading))
+                continue
+
             rank = max(x[1] for x in combination)
             gen = max(x[2] for x in combination)
             if best_gen is None or gen < best_gen:

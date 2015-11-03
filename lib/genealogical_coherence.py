@@ -2,9 +2,18 @@
 
 from collections import defaultdict
 from itertools import product, chain
+from toposort import toposort
 
 from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL, LAC, memoize
 from .pre_genealogical_coherence import Coherence
+
+
+class TooManyAborts(Exception):
+    pass
+
+
+class CyclicDependency(Exception):
+    pass
 
 
 class ReadingRelationship(object):
@@ -16,6 +25,7 @@ class ReadingRelationship(object):
         self.reading = reading
         self.cursor = cursor
         self._recursion_history = []
+        self._abort_count = 0
 
     def identify_relationship(self, other_reading):
         """
@@ -60,6 +70,7 @@ class ReadingRelationship(object):
         """
         if start:
             self._recursion_history = []
+            self._abort_count = 0
 
         if reading == INIT:
             return []
@@ -69,15 +80,26 @@ class ReadingRelationship(object):
 
         if (reading, parent) in self._recursion_history:
             # infinite recursion
-            print("WARNING: Would recursive forever looking for {}'s parent. "
-                  "Aborting recursion..."
-                  .format(reading))
-            return ret
+            if self._abort_count > 10:
+                raise TooManyAborts
+            else:
+                print("WARNING: Would recursive forever looking for {}'s parent"
+                      " in {}. Aborting further recursion..."
+                      .format(reading, self.variant_unit))
+                self._abort_count += 1
+                return ret
 
         if parent not in (INIT, UNCL, LAC):
             self._recursion_history.append((reading, parent))
             for p in parent.split('&'):
-                ret.extend(self._find_ancestor_readings(p, False))
+                try:
+                    ret.extend(self._find_ancestor_readings(p, False))
+                except TooManyAborts:
+                    print("TRAP")
+                    # A loop or non-resolvable relationship
+                    print("Aborting any further calculations - will return {}"
+                          .format(ret))
+                    return ret
 
         return ret
 
@@ -99,11 +121,30 @@ class GenealogicalCoherence(Coherence):
         # Dict of witness-reading relationships
         # {W2: {variant_unit: relationship, }, }
         self.reading_relationships = defaultdict(dict)
+        self._already_generated = False
+        self._parent_search = set()
 
     def _generate(self):
         """
         Sub-classed method that hides rows that aren't potential ancestors
         """
+        if self._already_generated:
+            return
+
+        # Check for bad data
+        data = defaultdict(set)
+        sql = """SELECT label, parent FROM reading
+                 WHERE variant_unit = \"{}\"
+                 """.format(self.variant_unit)
+        self.cursor.execute(sql)
+        for row in self.cursor:
+            data[row[0]].add(row[1])
+        try:
+            topo = list(toposort(data))
+        except ValueError:
+            # There's a cycle in our data...
+            raise CyclicDependency
+
         self._calculate_reading_relationships()
         # print self.reading_relationships
         super(GenealogicalCoherence, self)._generate()
@@ -120,6 +161,8 @@ class GenealogicalCoherence(Coherence):
 
         # Now re-sort
         self.sort()
+
+        self._already_generated = True
 
     @memoize
     def all_attestations(self):
@@ -161,13 +204,6 @@ class GenealogicalCoherence(Coherence):
             for w2 in self.all_mss:
                 if w2 == self.w1:
                     continue
-                #~ sql = ("""SELECT label FROM attestation, reading
-                          #~ WHERE witness = \"{}\"
-                          #~ AND variant_unit = \"{}\"
-                          #~ AND attestation.reading_id = reading.id"""
-                       #~ .format(w2, vu))
-                #~ self.cursor.execute(sql.format(w2))
-                #~ row = self.cursor.fetchone()
                 attestation = self.get_attestation(w2, vu)
                 if attestation is None:
                     # Nothing for this witness at this place
@@ -270,7 +306,8 @@ class GenealogicalCoherence(Coherence):
         """
         Return a list of possible parent combinations that explain this reading.
 
-        If the parent_reading is of length 3 (e.g. c&d&e) then the combinations be length 3 or less.
+        If the parent_reading is of length 3 (e.g. c&d&e) then the combinations
+        will be length 3 or less.
 
         Returns a list of lists, e.g.:
             [
@@ -289,6 +326,10 @@ class GenealogicalCoherence(Coherence):
              ]
         """
         self._generate()
+        if my_gen == 1:
+            # top level
+            self._parent_search = set()
+
         ret = []
         # Things that explain it by themselves:
         for row in self.rows:
@@ -310,6 +351,12 @@ class GenealogicalCoherence(Coherence):
         partial_explanations = []
         bits = parent_reading.split('&')
         for partial_parent in bits:
+            if partial_parent in self._parent_search:
+                # Already been here - must be looping...
+                continue
+
+            self._parent_search.add(partial_parent)
+
             if partial_parent == INIT:
                 # Simple - who reads INIT?
                 partial_explanations.append(
@@ -329,6 +376,10 @@ class GenealogicalCoherence(Coherence):
                 my_gen + 1)
 
             partial_explanations.append(expl)
+
+        if not partial_explanations:
+            # We couldn't find anything
+            return []
 
         if len(partial_explanations) == 1:
             # We've got a single parent - simple
