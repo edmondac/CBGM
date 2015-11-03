@@ -8,6 +8,17 @@ from tempfile import NamedTemporaryFile
 from .genealogical_coherence import GenealogicalCoherence
 
 
+COLOURMAP = {'a': '#eeffee',
+             'b': '#eeeeff',
+             'c': '#ffeeee',
+             'd': '#ffffee',
+             'e': '#ffeeff',
+             'f': '#eeffff',
+             'g': '#effeee',
+             'h': '#eeeffe',
+             'i': '#feeeef'}
+
+
 class ForestError(Exception):
     pass
 
@@ -35,7 +46,9 @@ def textual_flow(db_file, variant_unit, connectivity,
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
     data = list(cursor.execute(sql))
-    witnesses = [x[0] for x in data]
+    witnesses = [(x[0], {'fillcolor': COLOURMAP[x[1]],
+                         'style': 'filled'})  # See http://www.graphviz.org/
+                 for x in data]
     G.add_nodes_from(witnesses)
 
     rank_mapping = {}

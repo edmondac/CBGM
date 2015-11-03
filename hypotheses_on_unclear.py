@@ -116,7 +116,7 @@ class Hypotheses(object):
         if self.perfect_only:
             html += "<p>Only showing perfect coherence - forests are hidden</p>"
         for desc, svg in self.results.values():
-            if 'svg' in svg:
+            if svg is not None and 'svg' in svg:
                 html += ('<h2>{}</h2><img width="500px" src="{}" alt="{}"/><br/><hr/>\n'
                          .format(desc, svg, svg))
             else:
