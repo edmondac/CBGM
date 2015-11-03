@@ -12,6 +12,7 @@ from itertools import product
 from populate_db import populate, Reading, LacunaReading, parse_input_file
 from lib.shared import UNCL, INIT, LAC
 from lib.textual_flow import textual_flow
+from lib.genealogical_coherence import CyclicDependency
 
 
 class Hypotheses(object):
@@ -46,7 +47,11 @@ class Hypotheses(object):
         populate(stemmata, self.all_mss, db, self.force)
 
         # 2. Make the textual flow diagram
-        svg = textual_flow(db, self.vu, self.connectivity, self.perfect_only)
+        try:
+            svg = textual_flow(db, self.vu, self.connectivity, self.perfect_only)
+        except CyclicDependency:
+            return None
+
         new_svg = '{}_{}'.format(unique_ref, svg)
         os.rename(svg, new_svg)
         return new_svg
@@ -63,7 +68,6 @@ class Hypotheses(object):
         changes = find_permutations(unclear,
                                     [x.label for x in readings if x.label != LAC],
                                     not initial_text)
-
         # 'changes' is a list of tuples, each one corresponding to a single
         # set of changes to make to the data.
         unique = 0
@@ -156,12 +160,15 @@ class Hypotheses(object):
 
             # get the results back
             ret = self.mpicomm.recv(source=child)
+            if ret is None:
+                # error calculating this one
+                self.results[unique_ref] = (desc, 'ERROR DETECTED')
+            else:
+                # recreate the svg locally
+                with open(ret['svgname'], 'wb') as f:
+                    f.write(ret['svgdata'])
 
-            # recreate the svg locally
-            with open(ret['svgname'], 'wb') as f:
-                f.write(ret['svgdata'])
-
-            self.results[unique_ref] = (desc, ret['svgname'])
+                self.results[unique_ref] = (desc, ret['svgname'])
 
             self.mpi_queue.task_done()
 
@@ -196,11 +203,15 @@ class Hypotheses(object):
                 print("Child {} received data".format(rank))
                 svg = self.single_hypothesis(data['stemmata'],
                                              data['unique_ref'])
-
-                with open(svg, 'rb') as f:
-                    self.mpicomm.send({'svgname': svg,
-                                       'svgdata': f.read()})
-                print("Child {} completed job".format(rank))
+                if svg is None:
+                    # Nothing was generated
+                    self.mpicomm.send(None)
+                    print("Child {} aborted job".format(rank))
+                else:
+                    with open(svg, 'rb') as f:
+                        self.mpicomm.send({'svgname': svg,
+                                           'svgdata': f.read()})
+                    print("Child {} completed job".format(rank))
 
 
 def find_permutations(unclear, potential_parents, can_designate_initial_text):
@@ -276,7 +287,7 @@ if __name__ == "__main__":
         if not 'OMPI_COMM_WORLD_SIZE' in os.environ:
             # Not run with mpiexec
             print("Running in MPI mode but not executed by mpiexec - aborting")
-            print("Consider running with '-s' or using mpiexec")
+            print("Consider running with '-s' or using, e.g., 'mpiexec -np 4'")
             sys.exit(2)
 
     struct, all_mss = parse_input_file(args.inputfile)

@@ -189,7 +189,7 @@ class Coherence(object):
         header = ' \t '.join([r'{: ^7}'.format(col) for col in self.columns])
         lines = []
         for row in self.rows:
-            bits = [self.formatters.get(col, '{: ^7}').format(row[col])
+            bits = [self.formatters.get(col, '{: ^7}').format(row[col] if row[col] else '')
                     for col in self.columns]
             lines.append(' \t '.join(bits))
 
