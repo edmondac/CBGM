@@ -20,9 +20,10 @@ def single_hypothesis(stemmata, unique_ref, all_mss, force,
     """
     Generate the textual flow diagram for this variant unit in this set of stemmata
     """
+    # Do this in our own temp dir
+    mytemp = tempfile.mkdtemp()
+    os.chdir(mytemp)
     # 1. Populate the db
-    os.makedirs(working_dir, exist_ok=True)
-    os.chdir(working_dir)
     db = '{}_{}.db'.format(vu.replace('/', '.'), unique_ref)
     populate(stemmata, all_mss, db, force)
 
@@ -32,8 +33,10 @@ def single_hypothesis(stemmata, unique_ref, all_mss, force,
     except CyclicDependency:
         return None
 
+    # Copy it into the main working dir
     new_svg = '{}_{}'.format(unique_ref, svg)
-    os.rename(svg, new_svg)
+    os.makedirs(working_dir, exist_ok=True)
+    os.rename(svg, os.path.join(working_dir, new_svg))
     return new_svg
 
 
@@ -227,7 +230,7 @@ def mpi_child():
             mpicomm.send(None)
             print("Child {} aborted job".format(rank))
         else:
-            with open(svg, 'rb') as f:
+            with open(os.path.join(data['working_dir'], svg), 'rb') as f:
                 mpicomm.send({'svgname': svg, 'svgdata': f.read()})
             print("Child {} completed job".format(rank))
 
