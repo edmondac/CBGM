@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# MPI running for my local network
+
+echo "Don't forget that the remote hosts need the same python files... (e.g. scp -r ...)"
+
+cat > /tmp/.mpihostfile << EOF
+localhost slots=2
+server slots=3
+EOF
+
+mpiexec -hostfile /tmp/.mpihostfile -np 5 /home/ed/virtualenv/cbgm/bin/python $@
