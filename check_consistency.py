@@ -23,7 +23,9 @@ def main(inputfile, connectivity):
         populate_db.main(inputfile, db.name, force=True)
         conn = sqlite3.connect(db.name)
         cursor = conn.cursor()
-        for vu in sorted_vus(cursor):
+        vus = list(sorted_vus(cursor))
+        for vu in vus:
+            # FIXME - check for UNCL in this vu
             svg = textual_flow(db.name, vu, connectivity, perfect_only=False)
             if svg is not None and 'svg' in svg:
                 html += ('<h2>{}</h2><img width="500px" src="{}" alt="{}"/><br/><hr/>\n'
