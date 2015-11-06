@@ -153,8 +153,8 @@ if __name__ == "__main__":
                 output += local_stemma(db_file, vu)
 
             elif args.textual_flow:
-                textual_flow(db_file, vu, args.connectivity, args.perfect)
-                print("Written {}".format(output))
+                svg = textual_flow(db_file, vu, args.connectivity, args.perfect)
+                output.append("See {}".format(svg))
 
             if args.strip_spaces:
                 output = output.replace(' ', '')
