@@ -15,6 +15,28 @@ from lib.textual_flow import textual_flow
 from lib.genealogical_coherence import CyclicDependency
 
 
+def single_hypothesis(stemmata, unique_ref, all_mss, force,
+                      vu, connectivity, perfect_only, working_dir):
+    """
+    Generate the textual flow diagram for this variant unit in this set of stemmata
+    """
+    # 1. Populate the db
+    os.makedirs(working_dir, exist_ok=True)
+    os.chdir(working_dir)
+    db = '{}_{}.db'.format(vu.replace('/', '.'), unique_ref)
+    populate(stemmata, all_mss, db, force)
+
+    # 2. Make the textual flow diagram
+    try:
+        svg = textual_flow(db, vu, connectivity, perfect_only)
+    except CyclicDependency:
+        return None
+
+    new_svg = '{}_{}'.format(unique_ref, svg)
+    os.rename(svg, new_svg)
+    return new_svg
+
+
 class Hypotheses(object):
     def __init__(self, data, all_mss, vu, force=False,
                  perfect_only=True, connectivity=499,
@@ -37,24 +59,6 @@ class Hypotheses(object):
             self.mpi_run()
         else:
             self.hypotheses()
-
-    def single_hypothesis(self, stemmata, unique_ref):
-        """
-        Generate the textual flow diagram for this variant unit in this set of stemmata
-        """
-        # 1. Populate the db
-        db = '{}_{}.db'.format(self.vu.replace('/', '.'), unique_ref)
-        populate(stemmata, self.all_mss, db, self.force)
-
-        # 2. Make the textual flow diagram
-        try:
-            svg = textual_flow(db, self.vu, self.connectivity, self.perfect_only)
-        except CyclicDependency:
-            return None
-
-        new_svg = '{}_{}'.format(unique_ref, svg)
-        os.rename(svg, new_svg)
-        return new_svg
 
     def hypotheses(self):
         """
@@ -98,7 +102,11 @@ class Hypotheses(object):
                 self.mpi_queue.put((my_stemmata, unique, ', '.join(desc)))
             else:
                 try:
-                    svg = self.single_hypothesis(my_stemmata, unique)
+                    svg = self.single_hypothesis(my_stemmata, unique,
+                                                 self.all_mss, self.force,
+                                                 self.vu, self.connectivity,
+                                                 self.perfect_only,
+                                                 self.working_dir)
                 except Exception as e:
                     raise
                     print("ERROR doing {}, {}".format(ch, e))
@@ -156,7 +164,13 @@ class Hypotheses(object):
 
             # send it to the remote child
             self.mpicomm.send({'stemmata': stemmata,
-                               'unique_ref': unique_ref}, dest=child)
+                               'unique_ref': unique_ref,
+                               'all_mss': self.all_mss,
+                               'force': self.force,
+                               'vu': self.vu,
+                               'connectivity': self.connectivity,
+                               'perfect_only': self.perfect_only,
+                               'working_dir': self.working_dir}, dest=child)
 
             # get the results back
             ret = self.mpicomm.recv(source=child)
@@ -177,41 +191,45 @@ class Hypotheses(object):
         Top-level MPI method. Works out if we're a parent or child and
         acts accordingly.
         """
-        from mpi4py import MPI
         self.mpicomm = MPI.COMM_WORLD
         rank = self.mpicomm.Get_rank()
-        if rank == 0:
-            # parent
-            print("MPI-enabled version with {} processors available"
-                  .format(self.mpicomm.size))
-            for child in range(1, self.mpicomm.size):
-                t = threading.Thread(target=self.mpi_manage_child,
-                                     args=(child, ),
-                                     daemon=True)
-                t.start()
-                self.mpi_child_threads.append(t)
+        assert rank == 0
+        # parent
+        print("MPI-enabled version with {} processors available"
+              .format(self.mpicomm.size))
+        for child in range(1, self.mpicomm.size):
+            t = threading.Thread(target=self.mpi_manage_child,
+                                 args=(child, ),
+                                 daemon=True)
+            t.start()
+            self.mpi_child_threads.append(t)
 
-            self.hypotheses()
+        self.hypotheses()
+
+
+def mpi_child():
+    mpicomm = MPI.COMM_WORLD
+    rank = mpicomm.Get_rank()
+    print("Child {} starting".format(rank))
+    while True:
+        # child - wait to be given a data structure
+        data = mpicomm.recv(source=0)
+        if data is None:
+            print("Child {} exiting".format(rank))
+            break
+        print("Child {} received data".format(rank))
+        svg = single_hypothesis(data['stemmata'], data['unique_ref'],
+                                data['all_mss'], data['force'], data['vu'],
+                                data['connectivity'], data['perfect_only'],
+                                data['working_dir'])
+        if svg is None:
+            # Nothing was generated
+            mpicomm.send(None)
+            print("Child {} aborted job".format(rank))
         else:
-            print("Child {} starting".format(rank))
-            while True:
-                # child - wait to be given a data structure
-                data = self.mpicomm.recv(source=0)
-                if data is None:
-                    print("Child {} exiting".format(rank))
-                    break
-                print("Child {} received data".format(rank))
-                svg = self.single_hypothesis(data['stemmata'],
-                                             data['unique_ref'])
-                if svg is None:
-                    # Nothing was generated
-                    self.mpicomm.send(None)
-                    print("Child {} aborted job".format(rank))
-                else:
-                    with open(svg, 'rb') as f:
-                        self.mpicomm.send({'svgname': svg,
-                                           'svgdata': f.read()})
-                    print("Child {} completed job".format(rank))
+            with open(svg, 'rb') as f:
+                mpicomm.send({'svgname': svg, 'svgdata': f.read()})
+            print("Child {} completed job".format(rank))
 
 
 def iter_permutations(unclear, potential_parents, can_designate_initial_text):
@@ -266,13 +284,24 @@ if __name__ == "__main__":
                         help='Use the single process version (MPI-enabled is default)')
 
     args = parser.parse_args()
+    rank = 0
     if not args.single:
         if not 'OMPI_COMM_WORLD_SIZE' in os.environ:
             # Not run with mpiexec
             print("Running in MPI mode but not executed by mpiexec - aborting")
             print("Consider running with '-s' or using, e.g., 'mpiexec -np 4'")
+            print("Also consider making a hostfile for mpiexec.")
             sys.exit(2)
 
-    struct, all_mss = parse_input_file(args.inputfile)
-    Hypotheses(struct, all_mss, args.variant_unit, args.force, args.perfect,
-               args.connectivity, not args.single)
+        from mpi4py import MPI
+        mpicomm = MPI.COMM_WORLD
+        rank = mpicomm.Get_rank()
+
+    if rank == 0:
+        # parent or only process
+        struct, all_mss = parse_input_file(args.inputfile)
+        Hypotheses(struct, all_mss, args.variant_unit, args.force, args.perfect,
+                   args.connectivity, not args.single)
+    else:
+        # child
+        mpi_child()
