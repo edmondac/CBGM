@@ -10,6 +10,18 @@ import webbrowser
 from lib.shared import sorted_vus
 from lib.textual_flow import textual_flow
 import populate_db
+from lib.shared import UNCL
+
+
+def has_unclear(vu, cursor):
+    """
+    Check if the given variant unit has any UNCL relationships
+    """
+    sql = """SELECT parent FROM reading
+             WHERE variant_unit = \"{}\"
+             AND label = \"{}\"""".format(vu, UNCL)
+    cursor.execute(sql)
+    return bool(cursor.fetchall())
 
 
 def main(inputfile, connectivity):
@@ -25,7 +37,11 @@ def main(inputfile, connectivity):
         cursor = conn.cursor()
         vus = list(sorted_vus(cursor))
         for vu in vus:
-            # FIXME - check for UNCL in this vu
+            if has_unclear(vu, cursor):
+                html += ('<h2>{}</h2><p>UNCL relationships detected</p><hr/>\n'
+                         .format(vu))
+                continue
+
             svg = textual_flow(db.name, vu, connectivity, perfect_only=False)
             if svg is not None and 'svg' in svg:
                 html += ('<h2>{}</h2><img width="500px" src="{}" alt="{}"/><br/><hr/>\n'
