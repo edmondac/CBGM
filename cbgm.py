@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
             elif args.textual_flow:
                 svg = textual_flow(db_file, vu, args.connectivity, args.perfect)
-                output.append("See {}".format(svg))
+                output += "See {}".format(svg)
 
             if args.strip_spaces:
                 output = output.replace(' ', '')
