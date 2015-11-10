@@ -137,6 +137,8 @@ if __name__ == "__main__":
     # Now loop over all requested witnesses
     for witness in do_mss:
         if args.combinations_of_ancestors:
+            # combinations_of_ancestors(db_file, witness, args.max_comb_len,
+            #                          args.output_file, debug=True)
             combinations_of_ancestors(db_file, witness, args.max_comb_len,
                                       args.output_file)
             continue

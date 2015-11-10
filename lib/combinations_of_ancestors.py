@@ -41,7 +41,8 @@ def time_fmt(secs):
     return "{}h".format(secs // 3600)
 
 
-def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None, connectivity=499):
+def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None,
+                              connectivity=499, debug=False):
     """
     Prints a table of combinations of potential ancestors ordered by
     the number required to account for all the readings in w1.
@@ -56,7 +57,12 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None, connecti
     # in the output - instead of millions of rows...
 
     columns = ['Vorf', 'Vorfanz', 'Stellen', 'Post', 'Fragl', 'Offen',
-               'Hinweis', 'vus_stellen', 'vus_post', 'vus_fragl', 'vus_offen']
+               'Hinweis']
+    if debug:
+        columns.extend(['vus_stellen', 'vus_post', 'vus_fragl', 'vus_offen'])
+    else:
+        # Just include this one
+        columns.extend(['vus_post'])
     # Vorf = combinations
     # Vorfanz = # of ancestors
     # Stellen = # of variants explained by agreement with an ancestor (sort by)
@@ -83,9 +89,6 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None, connecti
         if ok.strip().lower() != 'y':
             return False
 
-    powerset = chain.from_iterable(combinations(pot_an, n)
-                                   for n in range(min(len(pot_an) + 1, max_comb_len + 1)))
-
     sql = """SELECT variant_unit, label, parent
              FROM reading, attestation
              WHERE reading.id = attestation.reading_id
@@ -109,6 +112,12 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None, connecti
         vu_map[vu] = (vu_combs, wit_combs)
     print("Done")
 
+    if max_comb_len == -1:
+        # Unlimited
+        max_comb_len = n_combs
+
+    powerset = chain.from_iterable(combinations(pot_an, n)
+                                   for n in range(min(len(pot_an) + 1, max_comb_len + 1)))
     rows = []
     total = min(n_combs, max_comb_len)
     done = 0
@@ -152,15 +161,19 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None, connecti
                 break
 
             rel = EQUAL
-            if best_gen > 1:
+            if best_gen == 2:
+                # Direct parent
                 rel = POSTERIOR
+            elif best_gen > 2:
+                # Too distant a relative
+                rel = None
             explanation[idx] = rel
 
         if not ok:
             continue
 
         row = {
-            'Vorf': ', '.join([pretty_p(x) for x in combination]).encode("utf-8"),
+            'Vorf': ', '.join([pretty_p(x) for x in combination]),
             'Vorfanz': len(combination),
             'Stellen': len([x for x in explanation if x == EQUAL]),
             'vus_stellen': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x == EQUAL]),
@@ -173,6 +186,8 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None, connecti
         }
 
         rows.append(row)
+
+    print("\nCreated {} rows".format(len(rows)))
 
     # Now display it
     print("\n" * 5)
@@ -190,10 +205,10 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None, connecti
             print("See {}".format(csv_file))
 
     else:
-        header = r'{: ^25} | '.format(columns[0]) + r' | '.join([r'{: ^7}'.format(col) for col in columns[1:]])
+        header = '{}|'.format(columns[0]) + '|'.join([col for col in columns[1:]])
         lines = []
         for row in rows:
-            bits = [r'{: ^25}'.format(row['Vorf'])] + [r'{: ^7}'.format(row.get(x)) for x in columns[1:]]
-            lines.append(r' | '.join(bits))
+            bits = [row['Vorf']] + [str(row.get(x, '')) for x in columns[1:]]
+            lines.append('|'.join(bits))
 
-        print("{}\n{}".format(header, '\n'.join(lines)))
+        print("{}\n{}\n\n".format(header, '\n'.join(lines)))
