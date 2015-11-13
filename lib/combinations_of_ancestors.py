@@ -3,6 +3,7 @@
 import sys
 import time
 import csv
+import os
 from itertools import chain, combinations
 from .shared import UNCL, POSTERIOR, EQUAL, pretty_p, numify, memoize
 from .genealogical_coherence import GenealogicalCoherence
@@ -41,7 +42,7 @@ def time_fmt(secs):
     return "{}h".format(secs // 3600)
 
 
-def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None,
+def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
                               connectivity=499, debug=False):
     """
     Prints a table of combinations of potential ancestors ordered by
@@ -50,9 +51,15 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None,
     @param db_file: db file
     @param w1: witness
     @param max_comb_len: maximum length of combinations to check (-1 for unlimited)
-    @param csv_file: output to a csv file rather than a tab-delim table (filename or None)
+    @param csv_file: output to a csv file rather than a tab-delim table
     @param connectivity: maximum rank of ancestors to allow
     """
+    if csv_file:
+        output_file = "{}.csv".format(w1)
+        if os.path.exists(output_file):
+            print("SKIPPING {} as {} already exists".format(w1, output_file))
+            return None
+
     # FIXME - might be good to have an argument to set a threshold of what to include
     # in the output - instead of millions of rows...
 
@@ -80,14 +87,23 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None,
 
     print("Found {} potential ancestors for {}".format(len(pot_an), w1))
     n_combs = 2 ** len(pot_an)
-    if n_combs > 100 and max_comb_len == -1:
+    if n_combs > 10000 and max_comb_len == -1:
         print(("WARNING: {} combinations of ancestors detected. This table could "
-               "be very large and use a lot of RAM to create.\n"
-               "Consider re-running with --max-comb-len set to e.g. 100000"
+               "be very large and take a long time to create.\n"
+               "Consider re-running with --max-comb-len set to e.g. 1000000"
                .format(n_combs)))
         ok = input("Continue? [y/N]")
         if ok.strip().lower() != 'y':
             return False
+
+    if n_combs > max_comb_len:
+        print("Would create {} combinations, but limited by max-comb-len to {}"
+              .format(n_combs, max_comb_len))
+
+    # NOTE: Limiting the number of combinations is ok because we will iterate
+    # over the combinations starting with the smallest and getting bigger. So
+    # there should be a limit (e.g. 100000) that means we've got all the
+    # combinatios that we would ever actually consider as an optimal substemma.
 
     sql = """SELECT variant_unit, label, parent
              FROM reading, attestation
@@ -196,13 +212,13 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=None,
     rows = sorted(rows, key=lambda x: x['Post'], reverse=True)
     rows = sorted(rows, key=lambda x: x['Stellen'], reverse=True)
 
-    if csv_file is not None:
-        with open(csv_file, 'w') as fd:
+    if csv_file:
+        with open(output_file, 'w') as fd:
             c = csv.writer(fd)
             c.writerow(columns)
             for row in rows:
                 c.writerow([row.get(x, '') for x in columns])
-            print("See {}".format(csv_file))
+            print("See {}".format(output_file))
 
     else:
         header = '{}|'.format(columns[0]) + '|'.join([col for col in columns[1:]])
