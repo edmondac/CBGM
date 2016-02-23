@@ -162,11 +162,13 @@ class Coherence(object):
 
         rank = 0
         prev_perc = 0
+        prev_rank = 0
         for row in self.rows:
             if row["NR"] == 0:
                 # Something has already populated NR as 0 - so we set rank as
                 # 0 too
                 row['_RANK'] = 0
+                row['_NR'] = 0
                 prev_perc = 0  # reset it
                 continue
 
@@ -174,11 +176,14 @@ class Coherence(object):
             rank += 1
             if row['PERC1'] == prev_perc:
                 row['NR'] = ""
-                row['_RANK'] = rank
+                row['_NR'] = prev_rank  # I.e. joint 6th will be 6 here
+                row['_RANK'] = rank  # I.e. joint 6th could be 7, or 8 etc. here
             else:
                 row['NR'] = rank
+                row['_NR'] = rank
                 row['_RANK'] = rank
                 prev_perc = row['PERC1']
+                prev_rank = rank
 
     def tab_delim_table(self):
         """

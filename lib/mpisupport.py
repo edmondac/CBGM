@@ -72,6 +72,7 @@ class MpiParent(object):
         # parent
         print("MPI-enabled version with {} processors available"
               .format(self.mpicomm.size))
+        assert self.mpicomm.size > 1, "Please run this under MPI with more than one processor"
         for child in range(1, self.mpicomm.size):
             t = threading.Thread(target=self.mpi_manage_child,
                                  args=(child, ),

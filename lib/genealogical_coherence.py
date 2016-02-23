@@ -300,7 +300,7 @@ class GenealogicalCoherence(Coherence):
         """
         self._generate()
         return [x['W2'] for x in self.rows
-                if x['_RANK'] != 0]
+                if x['_NR'] != 0]
 
     def parent_combinations(self, reading, parent_reading, max_rank=499, my_gen=1):
         """
@@ -333,7 +333,9 @@ class GenealogicalCoherence(Coherence):
         ret = []
         # Things that explain it by themselves:
         for row in self.rows:
-            if row['_RANK'] > max_rank:
+            # Check the real rank (_NR) - so joint 6th => 6. _RANK here could be
+            # 7, 8, 9 etc. for joint 6th.
+            if row['_NR'] > max_rank:
                 # Exceeds connectivity setting
                 continue
             elif row['D'] == '-':
@@ -341,7 +343,7 @@ class GenealogicalCoherence(Coherence):
                 continue
             elif row['READING'] == reading:
                 # This matches our reading and is within the connectivity threshold - take it
-                ret.append([(row['W2'], row['_RANK'], my_gen)])
+                ret.append([(row['W2'], row['_NR'], my_gen)])
 
         if parent_reading in (INIT, UNCL):
             # No parents - nothing further to do
