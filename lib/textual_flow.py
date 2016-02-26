@@ -3,20 +3,39 @@
 import subprocess
 import sqlite3
 import networkx
+import string
 from tempfile import NamedTemporaryFile
 
 from .genealogical_coherence import GenealogicalCoherence
 
+# Colours from http://www.hitmill.com/html/pastels.html
+COLOURS = ("#FF8A8A", "#FF86E3", "#FF86C2", "#FE8BF0", "#EA8DFE", "#DD88FD", "#AD8BFE",
+           "#FFA4FF", "#EAA6EA", "#D698FE", "#CEA8F4", "#BCB4F3", "#A9C5EB", "#8CD1E6",
+           "#8C8CFF", "#99C7FF", "#99E0FF", "#63E9FC", "#74FEF8", "#62FDCE", "#72FE95",
+           "#4AE371", "#80B584", "#89FC63", "#36F200", "#66FF00", "#DFDF00", "#DFE32D")
 
-COLOURMAP = {'a': '#eeffee',
-             'b': '#eeeeff',
-             'c': '#ffeeee',
-             'd': '#ffffee',
-             'e': '#ffeeff',
-             'f': '#eeffff',
-             'g': '#dffddd',
-             'h': '#dddffd',
-             'i': '#fddddf'}
+# with open('/tmp/col.html', 'w') as f:
+#     colours = ""
+#     for col in COLOURS:
+#         colours += '<table><tr><td bgcolor="{}">HELLO THERE {}</td></tr></table>\n'.format(col, col)
+#     f.write("""<html>{}</html>""".format(colours))
+
+COLOURMAP = {x: COLOURS[(i * 7) % len(COLOURS)]
+             for (i, x) in enumerate(string.ascii_lowercase)}
+
+
+def darken(col, by=75):
+    """
+    Darken a colour by specified amount
+    """
+    assert col[0] == '#'
+    r, g, b = int(col[1:3], 16), int(col[3:5], 16), int(col[5:7], 16)
+
+    def dark(x, by=by):
+            new = max(x - by, 0)
+            return str(hex(new))[2:]
+
+    return '#{}{}{}'.format(dark(r), dark(g), dark(b))
 
 
 class ForestError(Exception):
@@ -47,7 +66,8 @@ def textual_flow(db_file, variant_unit, connectivity,
     cursor = conn.cursor()
     data = list(cursor.execute(sql))
     # get the colour for the first char of the label (e.g. for b1 just get b)
-    witnesses = [(x[0], {'fillcolor': COLOURMAP.get(x[1][0], '#cccccc'),
+    witnesses = [(x[0], {'color': darken(COLOURMAP.get(x[1][0], '#cccccc')),
+                         'fillcolor': COLOURMAP.get(x[1][0], '#cccccc'),
                          'style': 'filled'})  # See http://www.graphviz.org/
                  for x in data]
     G.add_nodes_from(witnesses)
