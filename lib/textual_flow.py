@@ -20,7 +20,7 @@ COLOURS = ("#FF8A8A", "#FF86E3", "#FF86C2", "#FE8BF0", "#EA8DFE", "#DD88FD", "#A
 #         colours += '<table><tr><td bgcolor="{}">HELLO THERE {}</td></tr></table>\n'.format(col, col)
 #     f.write("""<html>{}</html>""".format(colours))
 
-COLOURMAP = {x: COLOURS[(i * 7) % len(COLOURS)]
+COLOURMAP = {x: COLOURS[(i * 10) % len(COLOURS)]
              for (i, x) in enumerate(string.ascii_lowercase)}
 
 
