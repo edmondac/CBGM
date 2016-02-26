@@ -48,11 +48,17 @@ def local_stemma(db_file, variant_unit):
 
     G.add_nodes_from(labels)
 
+    added_uncl = False
     for label, parent in data:
         if parent == INIT:
             # We don't show a separate blob for this
             pass
-        elif parent and parent != UNCL:
+        elif parent == UNCL:
+            if not added_uncl:
+                G.add_node('?')
+                added_uncl = True
+            G.add_edge('?', label)
+        elif parent:
             for p in parent.split('&'):
                 # multiple parents are separated by '&'
                 G.add_edge(p, label)
