@@ -5,8 +5,11 @@ import time
 import csv
 import os
 from itertools import chain, combinations
+from collections import defaultdict
 from .shared import UNCL, POSTERIOR, EQUAL, pretty_p, numify, memoize
 from .genealogical_coherence import GenealogicalCoherence
+
+DELIM = "\t"
 
 
 @memoize
@@ -96,9 +99,11 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
         if ok.strip().lower() != 'y':
             return False
 
-    if n_combs > max_comb_len:
+    if n_combs > max_comb_len and max_comb_len != -1:
         print("Would create {} combinations, but limited by max-comb-len to {}"
               .format(n_combs, max_comb_len))
+    else:
+        print("Creating {} combinations".format(n_combs))
 
     # NOTE: Limiting the number of combinations is ok because we will iterate
     # over the combinations starting with the smallest and getting bigger. So
@@ -139,6 +144,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
     done = 0
     start = time.time()
     report = max(total // 10000, 1)
+    best_explanations = defaultdict(int)  # for working out "Hinweis"
     for combination in powerset:
         if done >= total:
             break
@@ -181,17 +187,22 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
                 # Direct parent
                 rel = POSTERIOR
             elif best_gen > 2:
-                # Too distant a relative
+                # Too distant a relative. Ancestors in optimal substemmata
+                # must read the same or the direct parent reading.
                 rel = None
             explanation[idx] = rel
 
         if not ok:
             continue
 
+        ex_by_agreement = len([x for x in explanation if x == EQUAL])
+        size = len(combination)
+        best_explanations[size] = max(best_explanations[size], ex_by_agreement)
+
         row = {
             'Vorf': ', '.join([pretty_p(x) for x in combination]),
-            'Vorfanz': len(combination),
-            'Stellen': len([x for x in explanation if x == EQUAL]),
+            'Vorfanz': size,
+            'Stellen': ex_by_agreement,
             'vus_stellen': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x == EQUAL]),
             'Post': len([x for x in explanation if x == POSTERIOR]),
             'vus_post': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x == POSTERIOR]),
@@ -212,6 +223,11 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
     rows = sorted(rows, key=lambda x: x['Post'], reverse=True)
     rows = sorted(rows, key=lambda x: x['Stellen'], reverse=True)
 
+    # Calculate "Hinweis" rows
+    for row in rows:
+        if row['Stellen'] == best_explanations[row['Vorfanz']]:
+            row['Hinweis'] = '<<'
+
     if csv_file:
         with open(output_file, 'w') as fd:
             c = csv.writer(fd)
@@ -221,10 +237,10 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
             print("See {}".format(output_file))
 
     else:
-        header = '{}|'.format(columns[0]) + '|'.join([col for col in columns[1:]])
+        header = '{: <20}{}'.format(columns[0], DELIM) + DELIM.join([col for col in columns[1:]])
         lines = []
         for row in rows:
-            bits = [row['Vorf']] + [str(row.get(x, '')) for x in columns[1:]]
-            lines.append('|'.join(bits))
+            bits = ['{: <20}'.format(row['Vorf'])] + [str(row.get(x, '')) for x in columns[1:]]
+            lines.append(DELIM.join(bits))
 
         print("{}\n{}\n\n".format(header, '\n'.join(lines)))
