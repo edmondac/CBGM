@@ -149,6 +149,10 @@ if __name__ == "__main__":
         status(cursor)
         sys.exit(0)
 
+    if args.combinations_of_ancestors and not args.witness:
+        print("Must specify -w")
+        sys.exit(1)
+
     # Now loop over all requested witnesses
     for witness in do_mss:
         if args.combinations_of_ancestors:
