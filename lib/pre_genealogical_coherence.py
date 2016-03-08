@@ -164,18 +164,11 @@ class Coherence(object):
         prev_perc = 0
         prev_rank = 0
         for row in self.rows:
-            if row['D'] == '-':
-                # Undirected coherence
-                row['_RANK'] = 0
-                row['_NR'] = 0
-                continue
-
             if row["NR"] == 0:
                 # Something has already populated NR as 0 - so we set rank as
                 # 0 too
                 row['_RANK'] = 0
                 row['_NR'] = 0
-                prev_perc = 0  # reset it
                 continue
 
             # Increment our count

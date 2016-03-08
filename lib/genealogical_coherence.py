@@ -62,47 +62,6 @@ class ReadingRelationship(object):
         self.cursor.execute(sql)
         return self.cursor.fetchone()[0]
 
-    #~ def _find_ancestor_readings(self, reading, start=True):
-        #~ """
-        #~ Returns a list of ancestor readings, in generation order (mostly) -
-        #~ possibly including UNCL at the end if the earliest identifiable ancestor
-        #~ has UNCL as parent.
-        #~ """
-        #~ if start:
-            #~ self._recursion_history = []
-            #~ self._abort_count = 0
-
-        #~ if reading == INIT:
-            #~ return []
-
-        #~ parent = self.get_parent_reading(reading)
-        #~ ret = parent.split('&')  # multiple parents are separated by '&'
-
-        #~ if (reading, parent) in self._recursion_history:
-            #~ # infinite recursion
-            #~ if self._abort_count > 10:
-                #~ raise TooManyAborts
-            #~ else:
-                #~ print("WARNING: Would recursive forever looking for {}'s parent"
-                      #~ " in {}. Aborting further recursion..."
-                      #~ .format(reading, self.variant_unit))
-                #~ self._abort_count += 1
-                #~ return ret
-
-        #~ if parent not in (INIT, UNCL, LAC):
-            #~ self._recursion_history.append((reading, parent))
-            #~ for p in parent.split('&'):
-                #~ try:
-                    #~ ret.extend(self._find_ancestor_readings(p, False))
-                #~ except TooManyAborts:
-                    #~ print("TRAP")
-                    #~ # A loop or non-resolvable relationship
-                    #~ print("Aborting any further calculations - will return {}"
-                          #~ .format(ret))
-                    #~ return ret
-
-        #~ return ret
-
 
 class GenealogicalCoherence(Coherence):
     """
