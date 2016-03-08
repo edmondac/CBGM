@@ -66,7 +66,7 @@ if __name__ == "__main__":
     parser.add_argument('-m', '--max-comb-len', default=-1, metavar='N', type=int,
                         help='Maximum number of ancestors in a combination (-a). Default is unlimited.')
     parser.add_argument('--csv', default=False, action="store_true",
-                        help='Write a csv file for -a rather than printing the output')
+                        help='Write a csv file for -A rather than printing the output')
     parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,
                         help='Maximum allowed connectivity in a textual flow diagram')
     parser.add_argument('-w', '--witness', default=None,
