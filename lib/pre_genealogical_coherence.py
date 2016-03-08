@@ -164,6 +164,12 @@ class Coherence(object):
         prev_perc = 0
         prev_rank = 0
         for row in self.rows:
+            if row['D'] == '-':
+                # Undirected coherence
+                row['_RANK'] = 0
+                row['_NR'] = 0
+                continue
+
             if row["NR"] == 0:
                 # Something has already populated NR as 0 - so we set rank as
                 # 0 too
@@ -194,8 +200,12 @@ class Coherence(object):
         header = ' \t '.join([r'{: ^7}'.format(col) for col in self.columns])
         lines = []
         for row in self.rows:
-            bits = [self.formatters.get(col, '{: ^7}').format(row[col] if row[col] else '')
-                    for col in self.columns]
+            bits = []
+            for col in self.columns:
+                if col in self.formatters:
+                    bits.append(self.formatters[col].format(row[col]))
+                else:
+                    bits.append(self.formatters.get(col, '{: ^7}').format(row[col] if row[col] else ''))
             lines.append(' \t '.join(bits))
 
         return "{}\n{}".format(header, '\n'.join(lines))

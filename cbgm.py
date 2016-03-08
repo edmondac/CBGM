@@ -9,7 +9,7 @@ from lib.textual_flow import textual_flow
 from lib.combinations_of_ancestors import combinations_of_ancestors
 from lib.genealogical_coherence import gen_coherence
 from lib.pre_genealogical_coherence import pre_gen_coherence
-from lib.global_stemma import global_stemma
+from lib.global_stemma import global_stemma, optimal_substemma
 import populate_db
 
 DEFAULT_DB_FILE = '/tmp/_default_cbgm_db.db'
@@ -53,6 +53,8 @@ if __name__ == "__main__":
                         default=False, help='show combinations of ancestors')
     parser.add_argument('-S', '--global-stemma', action='store_true',
                         default=False, help='draw the global stemma')
+    parser.add_argument('-O', '--optimal-substemma', action='store_true',
+                        default=False, help='draw the optimal substemma for a particular witness')
     parser.add_argument('-X', '--status', default=False, action="store_true",
                         help="Show the status of all variant units (e.g. how many are unresolved)")
 
@@ -73,8 +75,8 @@ if __name__ == "__main__":
                         help='Show extra data about this variant unit (e.g. 1,2-8) ("all" shows all in sequence)')
     parser.add_argument('-r', '--perfect', default=False, action="store_true",
                         help="Insist on perfect coherence in a textual flow diagram")
-    parser.add_argument('-s', '--strip-spaces', default=False, action="store_true",
-                        help="Strip spaces from the output, making it easier to import into a spreadsheet")
+    parser.add_argument('-n', '--no-strip-spaces', default=False, action="store_true",
+                        help="Don't strip spaces from the output (stripped is better for importing into a spreadsheet)")
 
     args = parser.parse_args()
 
@@ -99,7 +101,8 @@ if __name__ == "__main__":
                           args.textual_flow,
                           args.combinations_of_ancestors,
                           args.status,
-                          args.global_stemma] if x]
+                          args.global_stemma,
+                          args.optimal_substemma] if x]
     coh_fn = None
     if args.pre_genealogical_coherence:
         coh_fn = pre_gen_coherence
@@ -128,6 +131,17 @@ if __name__ == "__main__":
         do_mss = all_mss
     else:
         do_mss = [args.witness]
+
+    if args.optimal_substemma:
+        if not args.file:
+            print("A data file is required to create the global stemma ('-f')")
+            sys.exit(1)
+        if not do_mss:
+            print("A witness (can be 'all') must be specified ('-w')")
+            sys.exit(1)
+        for wit in do_mss:
+            optimal_substemma(args.file, wit)
+        sys.exit(0)
 
     if args.global_stemma:
         if not args.file:
@@ -177,7 +191,7 @@ if __name__ == "__main__":
                 svg = textual_flow(db_file, vu, args.connectivity, args.perfect)
                 output += "See {}".format(svg)
 
-            if args.strip_spaces:
+            if not args.no_strip_spaces:
                 output = output.replace(' ', '')
 
             print(output)
