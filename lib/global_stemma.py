@@ -58,6 +58,62 @@ def pick_best(w1, combinations, dbfile):
     return best_comb
 
 
+def optimal_substemma(inputfile, w1):
+    """
+    Create an image for the optimal substemma of a particular witness.
+    """
+    output_file = 'optimal_substemma_{}.svg'.format(w1)
+
+    populate_db.main(inputfile, DEFAULT_DB_FILE, force=True)
+    optsub = load(inputfile)
+    comb_anc = optsub[w1]
+
+    print("{}: {}".format(w1, comb_anc))
+    best = pick_best(w1, comb_anc, DEFAULT_DB_FILE)
+
+    print(" > {}".format(best))
+    nodes = {x for x in best}
+    edges = {(x, w1) for x in nodes}
+    for node in best:
+        if '<' in node:
+            # This is an intermediary node...
+            for newnode in node.split('<'):
+                nodes.add(newnode)
+                edges.add((node, newnode))
+
+                if newnode != w1:
+                    # Need the parents of this one too...
+                    other_best = pick_best(newnode, optsub[newnode], DEFAULT_DB_FILE)
+                    for other_p in other_best:
+                        if other_p in nodes:
+                            # Only include parents that we've already got, since
+                            # we're creating the optimal substemma of w1 not
+                            # newnode.
+                            edges.add((other_p, newnode))
+
+            for parent in best:
+                if parent != node:
+                    edges.add((parent, node))
+
+        assert '>' not in node, "Intermediary nodes should be specified with '<'"
+
+    print(nodes)
+    print(edges)
+
+    G = networkx.DiGraph()
+    G.add_nodes_from(nodes)
+    for pri, post in edges:
+        G.add_edge(pri, post)
+
+    print("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
+                                                             G.number_of_edges()))
+    with NamedTemporaryFile() as dotfile:
+        networkx.write_dot(G, dotfile.name)
+        subprocess.check_call(['dot', '-Tsvg', dotfile.name, '-o', output_file])
+
+    print("Written diagram to {}".format(output_file))
+
+
 def global_stemma(inputfile):
     """
     Make the global stemma
