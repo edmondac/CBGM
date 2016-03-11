@@ -67,6 +67,10 @@ if __name__ == "__main__":
                         help='Maximum number of ancestors in a combination (-a). Default is unlimited.')
     parser.add_argument('--csv', default=False, action="store_true",
                         help='Write a csv file for -A rather than printing the output')
+    parser.add_argument('-i', '--incomplete', default=False, action="store_true",
+                        help='Allow incomplete combinations of ancestors')
+    parser.add_argument('--debug', default=False, action="store_true",
+                        help='Show more columns in combinations of ancestors')
     parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,
                         help='Maximum allowed connectivity in a textual flow diagram')
     parser.add_argument('-w', '--witness', default=None,
@@ -173,7 +177,9 @@ if __name__ == "__main__":
             # combinations_of_ancestors(db_file, witness, args.max_comb_len,
             #                          args.csv, debug=True)
             combinations_of_ancestors(db_file, witness, args.max_comb_len,
-                                      args.csv)
+                                      csv_file=args.csv,
+                                      allow_incomplete=args.incomplete,
+                                      debug=args.debug)
             continue
 
         # Loop over all requested variant units

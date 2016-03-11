@@ -5,7 +5,7 @@ import sqlite3
 import subprocess
 import re
 from tempfile import NamedTemporaryFile
-from .shared import INIT, UNCL, sort_mss
+from .shared import INIT, OL_PARENT, UNCL, sort_mss
 
 
 def _post_process_dot(dotfile):
@@ -50,7 +50,7 @@ def local_stemma(db_file, variant_unit):
 
     added_uncl = False
     for label, parent in data:
-        if parent == INIT:
+        if parent in (INIT, OL_PARENT):
             # We don't show a separate blob for this
             pass
         elif parent == UNCL:

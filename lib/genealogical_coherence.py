@@ -4,7 +4,7 @@ from collections import defaultdict
 from itertools import product, chain
 from toposort import toposort
 
-from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, UNCL, LAC, memoize
+from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, OL_PARENT, UNCL, LAC, memoize
 from .pre_genealogical_coherence import Coherence
 
 
@@ -304,7 +304,7 @@ class GenealogicalCoherence(Coherence):
                 # This matches our reading and is within the connectivity threshold - take it
                 ret.append([(row['W2'], row['_NR'], my_gen)])
 
-        if parent_reading in (INIT, UNCL):
+        if parent_reading in (INIT, OL_PARENT, UNCL):
             # No parents - nothing further to do
             return ret
 
@@ -322,6 +322,11 @@ class GenealogicalCoherence(Coherence):
                 # Simple - who reads INIT?
                 partial_explanations.append(
                     self.parent_combinations(INIT, None, max_rank, my_gen + 1))
+                continue
+            if partial_parent == OL_PARENT:
+                # Simple - who reads OL_PARENT?
+                partial_explanations.append(
+                    self.parent_combinations(OL_PARENT, None, max_rank, my_gen + 1))
                 continue
 
             # We need to recurse, and find out what combinations explain our

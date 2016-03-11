@@ -45,8 +45,9 @@ def time_fmt(secs):
     return "{}h".format(secs // 3600)
 
 
-def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
-                              connectivity=499, debug=False):
+def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
+                              connectivity=499, allow_incomplete=False,
+                              debug=False):
     """
     Prints a table of combinations of potential ancestors ordered by
     the number required to account for all the readings in w1.
@@ -56,6 +57,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
     @param max_comb_len: maximum length of combinations to check (-1 for unlimited)
     @param csv_file: output to a csv file rather than a tab-delim table
     @param connectivity: maximum rank of ancestors to allow
+    @param allow_incomplete: show combinations that don't explain everything
     """
     if csv_file:
         output_file = "{}.csv".format(w1)
@@ -177,13 +179,16 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
                     if best_gen is None or gen < best_gen:
                         best_gen = gen
 
-            if best_gen is None:
+            if best_gen is None and not allow_incomplete:
                 # This combination doesn't work
                 ok = False
                 break
 
             rel = EQUAL
-            if best_gen == 2:
+            if best_gen is None:
+                # This doesn't explain everything
+                rel = None
+            elif best_gen == 2:
                 # Direct parent
                 rel = POSTERIOR
             elif best_gen > 2:
@@ -195,9 +200,12 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
         if not ok:
             continue
 
+        unexplained = len([x for x in explanation if x is None])
         ex_by_agreement = len([x for x in explanation if x == EQUAL])
         size = len(combination)
-        best_explanations[size] = max(best_explanations[size], ex_by_agreement)
+        if not unexplained:
+            # Look for the best
+            best_explanations[size] = max(best_explanations[size], ex_by_agreement)
 
         row = {
             'Vorf': ', '.join([pretty_p(x) for x in combination]),
@@ -208,7 +216,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
             'vus_post': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x == POSTERIOR]),
             'Fragl': len([x for x in explanation if x == UNCL]),
             'vus_fragl': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x == UNCL]),
-            'Offen': len([x for x in explanation if x is None]),
+            'Offen': unexplained,
             'vus_offen': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x is None]),
         }
 

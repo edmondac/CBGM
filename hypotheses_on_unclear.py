@@ -8,7 +8,7 @@ import webbrowser
 from copy import deepcopy
 from itertools import product
 from populate_db import populate, Reading, LacunaReading, parse_input_file
-from lib.shared import UNCL, INIT, LAC
+from lib.shared import UNCL, INIT, LAC, OL_PARENT
 from lib.textual_flow import textual_flow
 from lib.genealogical_coherence import CyclicDependency
 from lib import mpisupport
@@ -63,10 +63,10 @@ class Hypotheses(mpisupport.MpiParent):
         v, u = self.vu.split('/')
         readings = self.data[v][u]
         unclear = [x for x in readings if x.parent == UNCL]
-        initial_text = [x for x in readings if x.parent == INIT]
+        parent_is_known = bool([x for x in readings if x.parent in (INIT, OL_PARENT)])
         changes = iter_permutations(unclear,
                                     [x.label for x in readings if x.label != LAC],
-                                    not initial_text)
+                                    not parent_is_known)
         # 'changes' is a generator yielding tuples, each one corresponding to a
         # single set of changes to make to the data.
         unique = 0
@@ -81,9 +81,9 @@ class Hypotheses(mpisupport.MpiParent):
 
                 if x.parent == UNCL:
                     par = ch[i]
-                    # Special case for INIT
+                    # Special case for INIT/OL_PARENT
                     if par == '_':
-                        par = INIT
+                        par = INIT  # For this it doesn't matter if we call it INIT or OL_PARENT
                     r = Reading(x.label, x.greek, x._ms_support, par)
                     new_readings.append(r)
                     desc.append("{} -> {}".format(r.parent, r.label))
@@ -173,15 +173,15 @@ def mpi_single_hypothesis(*args):
             return {'svgname': svg, 'svgdata': f.read()}
 
 
-def iter_permutations(unclear, potential_parents, can_designate_initial_text):
+def iter_permutations(unclear, potential_parents, can_designate_generation_zero):
     """
     Find all possible permutations of unclear elements
     """
     assert LAC not in potential_parents
 
     # Only things marked as UNCL can change their parent
-    # If there's no INIT, then any UNCL could be the INIT
-    if can_designate_initial_text:
+    # If there's no INIT/OL_PARENT, then any UNCL could be the INIT/OL_PARENT
+    if can_designate_generation_zero:
         for i, unc in enumerate(unclear):
             ch = [None for x in unclear]
             ch[i] = '_'
