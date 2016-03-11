@@ -8,7 +8,6 @@ import networkx
 from tempfile import NamedTemporaryFile
 import subprocess
 import populate_db
-from lib.genealogical_coherence import GenealogicalCoherence
 
 DEFAULT_DB_FILE = '/tmp/glob_stem.db'
 
@@ -27,35 +26,38 @@ def load(inputfile):
     return mod.optimal_substemmata
 
 
-def pick_best(w1, combinations, dbfile):
+def nodes_and_edges(w1, comb_anc, optsub):
     """
-    Pick the best of the supplied combinations, looking for the combination of
-    highest ranking potential ancestors.
+    Calculate the nodes and edges for the supplied optimal substemma of w1
     """
-    gc = GenealogicalCoherence(dbfile, w1)
-    gc._generate()
+    nodes = {x for x in comb_anc}
+    edges = {(x, w1) for x in nodes}
+    for node in comb_anc:
+        if '<' in node:
+            # This is an intermediary node...
+            for newnode in node.split('<'):
+                nodes.add(newnode)
+                edges.add((node, newnode))
 
-    def rank(w2):
-        for row in gc.rows:
-            if row['W2'] == w2.replace('P', '𝔓'):
-                return row['_RANK']
-        else:
-            # import pdb; pdb.set_trace()
-            raise ValueError("Couldn't find {} in pot anc of {}".format(w2, gc.w1))
+                if newnode != w1:
+                    # Need the parents of this one too...
+                    other_comb = optsub[newnode]
+                    if len(other_comb) > 1:
+                        raise ValueError("Can't draw a single optimal substemma")
+                    for other_p in other_comb[0]:
+                        if other_p in nodes:
+                            # Only include parents that we've already got, since
+                            # we're creating the optimal substemma of w1 not
+                            # newnode.
+                            edges.add((other_p, newnode))
 
-    best_rank = None
-    best_comb = None
-    for combination in combinations:
-        ranks = [rank(x) for x in combination]
-        avg_rank = sum(ranks) / float(len(ranks))
-        if best_rank is None or avg_rank < best_rank:
-            best_rank = avg_rank
-            best_comb = combination
-        elif best_rank == avg_rank:
-            raise ValueError("Two combinations have the same average rank")
+            for parent in comb_anc:
+                if parent != node:
+                    edges.add((parent, node))
 
-    assert best_comb is not None
-    return best_comb
+        assert '>' not in node, "Intermediary nodes should be specified with '<'"
+
+    return nodes, edges
 
 
 def optimal_substemma(inputfile, w1):
@@ -69,37 +71,11 @@ def optimal_substemma(inputfile, w1):
     comb_anc = optsub[w1]
 
     print("{}: {}".format(w1, comb_anc))
-    best = pick_best(w1, comb_anc, DEFAULT_DB_FILE)
 
-    print(" > {}".format(best))
-    nodes = {x for x in best}
-    edges = {(x, w1) for x in nodes}
-    for node in best:
-        if '<' in node:
-            # This is an intermediary node...
-            for newnode in node.split('<'):
-                nodes.add(newnode)
-                edges.add((node, newnode))
+    if len(comb_anc) > 1:
+        raise ValueError("Can't draw a single optimal substemma")
 
-                if newnode != w1:
-                    # Need the parents of this one too...
-                    other_best = pick_best(newnode, optsub[newnode], DEFAULT_DB_FILE)
-                    for other_p in other_best:
-                        if other_p in nodes:
-                            # Only include parents that we've already got, since
-                            # we're creating the optimal substemma of w1 not
-                            # newnode.
-                            edges.add((other_p, newnode))
-
-            for parent in best:
-                if parent != node:
-                    edges.add((parent, node))
-
-        assert '>' not in node, "Intermediary nodes should be specified with '<'"
-
-    print(nodes)
-    print(edges)
-
+    nodes, edges = nodes_and_edges(w1, comb_anc[0], optsub)
     G = networkx.DiGraph()
     G.add_nodes_from(nodes)
     for pri, post in edges:
@@ -121,19 +97,34 @@ def global_stemma(inputfile):
     output_file = 'global_stemma.svg'
 
     populate_db.main(inputfile, DEFAULT_DB_FILE, force=True)
-    glob_stem = {}
     optsub = load(inputfile)
+    G = networkx.DiGraph()
     for w1, comb_anc in optsub.items():
         print("{}: {}".format(w1, comb_anc))
-        best = pick_best(w1, comb_anc, DEFAULT_DB_FILE)
-        print(" > {}".format(best))
-        glob_stem[w1] = best
+        if len(comb_anc) == 0:
+            raise ValueError("No optimal substemma for {}".format(w1))
+        elif len(comb_anc) == 1:
+            # Simple case
+            nodes, edges = nodes_and_edges(w1, comb_anc[0], optsub)
+            G.add_nodes_from(nodes)
+            for pri, post in edges:
+                G.add_edge(pri, post)
+        else:
+            # Complex case - multiple alternatives
+            all_edges = []
+            for comb in comb_anc:
+                nodes, edges = nodes_and_edges(w1, comb, optsub)
+                G.add_nodes_from(nodes)
+                all_edges.append(edges)
 
-    G = networkx.DiGraph()
-    G.add_nodes_from(optsub.keys())
-    for w1, comb in glob_stem.items():
-        for w2 in comb:
-            G.add_edge(w2, w1)
+            common = set.intersection(*all_edges)
+            for pri, post in common:
+                G.add_edge(pri, post)
+            for alternative in all_edges:
+                for pri, post in alternative:
+                    if (pri, post) in common:
+                        continue
+                    G.add_edge(pri, post, style='dashed')
 
     print("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                              G.number_of_edges()))

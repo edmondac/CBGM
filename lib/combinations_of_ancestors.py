@@ -69,7 +69,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
     # in the output - instead of millions of rows...
 
     columns = ['Vorf', 'Vorfanz', 'Stellen', 'Post', 'Fragl', 'Offen',
-               'Hinweis']
+               'Hinweis', 'sum_rank', 'ranks']
     if debug:
         columns.extend(['vus_stellen', 'vus_post', 'vus_fragl', 'vus_offen'])
     else:
@@ -147,6 +147,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
     start = time.time()
     report = max(total // 10000, 1)
     best_explanations = defaultdict(int)  # for working out "Hinweis"
+    ranks = {x['W2']: x['_NR'] for x in coh.rows}
     for combination in powerset:
         if done >= total:
             break
@@ -218,6 +219,8 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
             'vus_fragl': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x == UNCL]),
             'Offen': unexplained,
             'vus_offen': ', '.join([my_vus[i][0] for i, x in enumerate(explanation) if x is None]),
+            'sum_rank': sum(ranks[x] for x in combination),
+            'ranks': ", ".join(str(ranks[x]) for x in combination),
         }
 
         rows.append(row)
