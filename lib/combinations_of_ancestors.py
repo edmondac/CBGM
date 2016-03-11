@@ -46,7 +46,7 @@ def time_fmt(secs):
 
 
 def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
-                              connectivity=499, allow_incomplete=False,
+                              connectivity=499, allow_incomplete=True,
                               debug=False):
     """
     Prints a table of combinations of potential ancestors ordered by
@@ -204,7 +204,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
         ex_by_agreement = len([x for x in explanation if x == EQUAL])
         size = len(combination)
         if not unexplained:
-            # Look for the best
+            # Look for the best - which must explain everything
             best_explanations[size] = max(best_explanations[size], ex_by_agreement)
 
         row = {
