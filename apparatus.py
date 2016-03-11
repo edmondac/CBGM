@@ -4,7 +4,7 @@
 import re
 import sqlite3
 from collections import defaultdict
-from lib.shared import INIT
+from lib.shared import INIT, OL_PARENT
 
 
 def main(db_file):
@@ -47,6 +47,9 @@ def main(db_file):
         def sorter(x):
             if x['parent'] == INIT:
                 # This will show up first...
+                return '_'
+            elif x['parent'] == OL_PARENT:
+                # Parent reading of an overlapped unit where the initial text is lacunose
                 return '_'
             else:
                 return x['label']

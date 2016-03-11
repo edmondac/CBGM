@@ -9,9 +9,13 @@ NOREL = "NOREL"
 EQUAL = "EQUAL"
 
 # Constants for the user to define reading relationships
-INIT = "INIT"
-UNCL = "UNCL"
-LAC = "LAC"
+INIT = "INIT"  # The initial text
+# The parent reading in an overlapped unit. This is used where the overlapping
+# unit has an omission as INIT, and so the initial text is lacunose in the
+# overlapped units.
+OL_PARENT = "OL_PARENT"
+UNCL = "UNCL"  # Unclear
+LAC = "LAC"  # Lacuna
 
 
 def memoize(f):
