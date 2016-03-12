@@ -5,7 +5,7 @@ import sqlite3
 import networkx
 import string
 from tempfile import NamedTemporaryFile
-
+from .shared import OL_PARENT
 from .genealogical_coherence import GenealogicalCoherence
 
 # Colours from http://www.hitmill.com/html/pastels.html
@@ -115,6 +115,10 @@ def textual_flow(db_file, variant_unit, connectivity,
             # Got to use ancestors, so use the best by rank
             parents = best_parents_by_rank
 
+        if w1_parent == OL_PARENT and not parents:
+            # Top level in an overlapping unit with an omission in the initial text
+            parents = [('OL_PARENT', -1, 1)]
+
         print(" > Best parents: {}".format(parents))
 
         if len(parents) > 1:
@@ -136,6 +140,7 @@ def textual_flow(db_file, variant_unit, connectivity,
             if w1 == 'A':
                 # That's ok...
                 continue
+
             elif perfect_only:
                 raise ForestError("Nodes with no parents - forest detected")
 
