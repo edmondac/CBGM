@@ -213,8 +213,11 @@ class GenealogicalCoherence(Coherence):
         """
         Count how many passages are unclear
         """
-        row['UNCL'] = len([x for x in list(self.reading_relationships[w2].values())
-                           if x == UNCL])
+        uncls = [k for k, v in self.reading_relationships[w2].items()
+                 if v == UNCL]
+        if uncls:
+            print("UNCL with {} in {}".format(w2, ', '.join(uncls)))
+        row['UNCL'] = len(uncls)
 
         return True
 
@@ -237,6 +240,7 @@ class GenealogicalCoherence(Coherence):
                         row['UNCL'] -
                         row['W1>W2'] -
                         row['W1<W2'])
+
         # Double check all the logic:
         norel_p = [x for x, y in list(self.reading_relationships[w2].items())
                    if y == NOREL]
@@ -251,6 +255,9 @@ class GenealogicalCoherence(Coherence):
             self.reading_relationships[w2],
             len(self.reading_relationships[w2]),
             norel_p)
+        if norel_p:
+            print("NOREL with {} in {}".format(w2, ', '.join(norel_p)))
+
         return True
 
     def potential_ancestors(self):
