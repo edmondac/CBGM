@@ -60,11 +60,11 @@ def nodes_and_edges(w1, comb_anc, optsub):
     return nodes, edges
 
 
-def optimal_substemma(inputfile, w1):
+def optimal_substemma(inputfile, w1, prefix=''):
     """
     Create an image for the optimal substemma of a particular witness.
     """
-    output_file = 'optimal_substemma_{}.svg'.format(w1)
+    output_file = '{}optimal_substemma_{}.svg'.format(prefix, w1)
 
     populate_db.main(inputfile, DEFAULT_DB_FILE, force=True)
     optsub = load(inputfile)
@@ -90,11 +90,11 @@ def optimal_substemma(inputfile, w1):
     print("Written diagram to {}".format(output_file))
 
 
-def global_stemma(inputfile):
+def global_stemma(inputfile, prefix=''):
     """
     Make the global stemma
     """
-    output_file = 'global_stemma.svg'
+    output_file = '{}global_stemma.svg'.format(prefix)
 
     populate_db.main(inputfile, DEFAULT_DB_FILE, force=True)
     optsub = load(inputfile)
