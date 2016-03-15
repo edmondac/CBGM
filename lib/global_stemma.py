@@ -95,6 +95,7 @@ def global_stemma(inputfile, suffix=''):
     Make the global stemma
     """
     output_file = 'global_stemma{}.svg'.format(suffix)
+    dot_file = 'global_stemma{}.dot'.format(suffix)
 
     populate_db.main(inputfile, DEFAULT_DB_FILE, force=True)
     optsub = load(inputfile)
@@ -128,8 +129,12 @@ def global_stemma(inputfile, suffix=''):
 
     print("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                              G.number_of_edges()))
-    with NamedTemporaryFile() as dotfile:
-        networkx.write_dot(G, dotfile.name)
-        subprocess.check_call(['dot', '-Tsvg', dotfile.name, '-o', output_file])
+    with open(dot_file, 'w') as dotfile:
+        networkx.write_dot(G, dot_file)
+
+    subprocess.check_call(['dot', '-Tsvg', dot_file, '-o', output_file])
 
     print("Written diagram to {}".format(output_file))
+
+    print("For different layouts try running dot's synonyms like 'circo -Tsvg {} -o circo_{}'"
+          .format(dot_file, output_file))
