@@ -73,8 +73,8 @@ if __name__ == "__main__":
                         help='Show more columns in combinations of ancestors')
     parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,
                         help='Maximum allowed connectivity in a textual flow diagram')
-    parser.add_argument('-p', '--prefix', default='',
-                        help='Filename prefix for generated files')
+    parser.add_argument('-s', '--suffix', default='',
+                        help='Filename suffix for generated files (before the extension)')
     parser.add_argument('-w', '--witness', default=None,
                         help='W1 witness ("all" shows all in sequence)')
     parser.add_argument('-v', '--variant-unit', default=None,
@@ -146,14 +146,14 @@ if __name__ == "__main__":
             print("A witness (can be 'all') must be specified ('-w')")
             sys.exit(1)
         for wit in do_mss:
-            optimal_substemma(args.file, wit, prefix=args.prefix)
+            optimal_substemma(args.file, wit, suffix=args.suffix)
         sys.exit(0)
 
     if args.global_stemma:
         if not args.file:
             print("A data file is required to create the global stemma ('-f')")
             sys.exit(1)
-        global_stemma(args.file, prefix=args.prefix)
+        global_stemma(args.file, suffix=args.suffix)
         sys.exit(0)
 
     all_vus = sorted_vus(cursor)
@@ -181,7 +181,7 @@ if __name__ == "__main__":
             combinations_of_ancestors(db_file, witness, args.max_comb_len,
                                       csv_file=args.csv,
                                       allow_incomplete=not args.only_complete,
-                                      debug=args.debug, prefix=args.prefix)
+                                      debug=args.debug, suffix=args.suffix)
             continue
 
         # Loop over all requested variant units
@@ -189,15 +189,15 @@ if __name__ == "__main__":
             output = ''
             if coh_fn:
                 # Call our coherence function
-                output += coh_fn(db_file, witness, vu)
+                output += coh_fn(db_file, witness, vu, debug=args.debug)
                 output += '\n\n\n'
 
             elif args.local_stemma:
-                output += local_stemma(db_file, vu, prefix=args.prefix)
+                output += local_stemma(db_file, vu, suffix=args.suffix)
 
             elif args.textual_flow:
                 textual_flow(db_file, vu, args.connectivity, args.perfect,
-                             prefix=args.prefix)
+                             suffix=args.suffix)
 
             if not args.no_strip_spaces:
                 output = output.replace(' ', '')

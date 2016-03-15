@@ -43,7 +43,7 @@ class ForestError(Exception):
 
 
 def textual_flow(db_file, variant_unit, connectivity,
-                 perfect_only=False, prefix=''):
+                 perfect_only=False, suffix=''):
     """
     Create a textual flow diagram for the specified variant unit.
 
@@ -75,7 +75,7 @@ def textual_flow(db_file, variant_unit, connectivity,
     rank_mapping = {}
     for w1, w1_reading, w1_parent in data:
         print("Calculating genealogical coherence for {} at {}".format(w1, variant_unit))
-        coh = GenealogicalCoherence(db_file, w1, variant_unit, False)
+        coh = GenealogicalCoherence(db_file, w1, variant_unit, pretty_p=False)
         coh._generate()
         # we might need multiple parents if a reading requires it
         best_parents_by_rank = []
@@ -155,8 +155,8 @@ def textual_flow(db_file, variant_unit, connectivity,
 
     print("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                              G.number_of_edges()))
-    output_file = "{}textual_flow_{}_c{}.svg".format(
-        prefix, variant_unit.replace('/', '_'), connectivity)
+    output_file = "textual_flow_{}_c{}{}.svg".format(
+        variant_unit.replace('/', '_'), connectivity, suffix)
     with NamedTemporaryFile() as dotfile:
         networkx.write_dot(G, dotfile.name)
         subprocess.check_call(['dot', '-Tsvg', dotfile.name], stdout=open(output_file, 'w'))

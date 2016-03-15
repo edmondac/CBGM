@@ -67,9 +67,8 @@ class GenealogicalCoherence(Coherence):
     """
     Class representing genealogical coherence (potential ancestors)
     """
-    def __init__(self, db_file, w1, variant_unit=None, pretty_p=True):
-        super(GenealogicalCoherence, self).__init__(db_file, w1,
-                                                    variant_unit, pretty_p)
+    def __init__(self, *o, **k):
+        super().__init__(*o, **k)
 
         self.columns.insert(2, 'D')
         self.columns.extend(["W1<W2",  # Prior variants in W2
@@ -215,7 +214,7 @@ class GenealogicalCoherence(Coherence):
         """
         uncls = [k for k, v in self.reading_relationships[w2].items()
                  if v == UNCL]
-        if uncls:
+        if uncls and self.debug:
             print("UNCL with {} in {}".format(w2, ', '.join(uncls)))
         row['UNCL'] = len(uncls)
 
@@ -255,7 +254,7 @@ class GenealogicalCoherence(Coherence):
             self.reading_relationships[w2],
             len(self.reading_relationships[w2]),
             norel_p)
-        if norel_p:
+        if norel_p and self.debug:
             print("NOREL with {} in {}".format(w2, ', '.join(norel_p)))
 
         return True
@@ -367,13 +366,13 @@ class GenealogicalCoherence(Coherence):
             return combined
 
 
-def gen_coherence(db_file, w1, variant_unit=None):
+def gen_coherence(db_file, w1, variant_unit=None, *, debug=False):
     """
     Show a table of potential ancestors of w1.
 
     If variant_unit is supplied, then two extra columns are output
     showing the reading supported by each witness.
     """
-    coh = GenealogicalCoherence(db_file, w1, variant_unit)
+    coh = GenealogicalCoherence(db_file, w1, variant_unit, debug=debug)
     return "{}\n{}".format("Potential ancestors for W1={}".format(w1),
                            coh.tab_delim_table())
