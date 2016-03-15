@@ -29,11 +29,11 @@ def _post_process_dot(dotfile):
         w.write(''.join(output))
 
 
-def local_stemma(db_file, variant_unit, prefix=''):
+def local_stemma(db_file, variant_unit, suffix=''):
     """
     Create a local stemma for the specified variant unit.
     """
-    output_file = "{}{}.svg".format(prefix, variant_unit.replace('/', '_'))
+    output_file = "{}{}.svg".format(variant_unit.replace('/', '_'), suffix)
 
     G = networkx.DiGraph()
 

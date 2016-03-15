@@ -47,7 +47,7 @@ def time_fmt(secs):
 
 def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
                               connectivity=499, allow_incomplete=True,
-                              debug=False, prefix=''):
+                              debug=False, suffix=''):
     """
     Prints a table of combinations of potential ancestors ordered by
     the number required to account for all the readings in w1.
@@ -60,7 +60,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
     @param allow_incomplete: show combinations that don't explain everything
     """
     if csv_file:
-        output_file = "{}{}.csv".format(prefix, w1)
+        output_file = "{}{}.csv".format(w1, suffix)
         if os.path.exists(output_file):
             print("SKIPPING {} as {} already exists".format(w1, output_file))
             return None

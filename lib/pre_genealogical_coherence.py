@@ -9,13 +9,14 @@ class Coherence(object):
     Class representing pre-genealogical coherence that can be extended
     to give more info.
     """
-    def __init__(self, db_file, w1, variant_unit=None, pretty_p=True):
+    def __init__(self, db_file, w1, variant_unit=None, *, pretty_p=True, debug=False):
         self.conn = sqlite3.connect(db_file)
         self.cursor = self.conn.cursor()
         self.w1 = w1
         self.rows = []
         self.columns = ['W2', 'NR', 'PERC1', 'EQ', 'PASS']
         self.pretty_p = pretty_p  # normal P or gothic one...
+        self.debug = debug
         self.variant_unit = variant_unit
         if variant_unit:
             self.columns.extend(['READING', 'TEXT'])
@@ -204,13 +205,13 @@ class Coherence(object):
         return "{}\n{}".format(header, '\n'.join(lines))
 
 
-def pre_gen_coherence(db_file, w1, variant_unit=None):
+def pre_gen_coherence(db_file, w1, variant_unit=None, *, debug=False):
     """
     Show a table of pre-genealogical coherence of all witnesses compared to w1.
 
     If variant_unit is supplied, then two extra columns are output
     showing the reading supported by each witness.
     """
-    coh = Coherence(db_file, w1, variant_unit)
+    coh = Coherence(db_file, w1, variant_unit, debug=debug)
     return "{}\n{}".format("Pre-genealogical coherence for W1={}".format(w1),
                            coh.tab_delim_table())
