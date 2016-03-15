@@ -89,7 +89,10 @@ class Coherence(object):
             return False
         if 'EQ' not in row:
             return False
-        row['PERC1'] = 100.0 * row['EQ'] / row['PASS']
+        if row['PASS']:
+            row['PERC1'] = 100.0 * row['EQ'] / row['PASS']
+        else:
+            row['PERC1'] = 0.0
         return True
 
     def add_EQ(self, w2, row):
