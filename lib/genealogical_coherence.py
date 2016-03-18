@@ -39,12 +39,20 @@ class ReadingRelationship(object):
         # X and Y is PRIOR?' Local stemma are not allowed loops, so we can
         # always answer that question.
 
+        def check(reading, desired_parent):
+            bits = desired_parent.split('&')  # len 1 or more
+            for bit in bits:
+                if reading == bit:
+                    # We matched one required parent reading
+                    return True
+            return False
+
         r2_ancestor = self.get_parent_reading(other_reading)
-        if self.reading == r2_ancestor:
+        if check(self.reading, r2_ancestor):
             return PRIOR
 
         r1_ancestor = self.get_parent_reading(self.reading)
-        if other_reading == r1_ancestor:
+        if check(other_reading, r1_ancestor):
             return POSTERIOR
 
         if UNCL == r1_ancestor or UNCL == r2_ancestor:
@@ -317,6 +325,11 @@ class GenealogicalCoherence(Coherence):
         # Now the parent reading
         partial_explanations = []
         bits = parent_reading.split('&')
+        if len(bits) == 1:
+            next_gen = my_gen + 1
+        else:
+            next_gen = my_gen
+
         for partial_parent in bits:
             if partial_parent in self._parent_search:
                 # Already been here - must be looping...
@@ -345,7 +358,7 @@ class GenealogicalCoherence(Coherence):
                 partial_parent,
                 reading_obj.get_parent_reading(partial_parent),
                 max_rank,
-                my_gen + 1)
+                next_gen)
 
             partial_explanations.append(expl)
 
