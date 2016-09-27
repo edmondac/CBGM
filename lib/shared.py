@@ -18,11 +18,15 @@ UNCL = "UNCL"  # Unclear
 LAC = "LAC"  # Lacuna
 
 
+re_vref = re.compile("B([0-9]+)K([0-9]+)V([0-9]+)")
+
+
 def memoize(f):
     """
     Based on http://www.python-course.eu/python3_memoization.php
     """
     memo = {}
+
     def helper(x):
         if x not in memo:
             memo[x] = f(x)
@@ -43,8 +47,11 @@ def sort_mss(ms_list):
             return 10000 + int(re.search('([0-9]+)', x).group(1))
         elif x == 'A':
             return 1
+        elif x[0] in '0123456789':
+            return 30000 + int(re.search('([0-9]+)', x).group(1))
         else:
-            raise ValueError("What? {}".format(x))
+            print("Unsure how to order {} - assuming 1".format(x))
+            return 1
 
     return sorted(ms_list, key=lambda x: witintify(x))
 
@@ -68,7 +75,15 @@ def numify(vu):
         b = float("{}.{}".format(*bits))
     else:
         b = int(b)
-    a = int(a)
+
+    if re_vref.match(a):
+        # This is a full ref
+        bits = [int(x) for x in re_vref.match(a).groups()]
+        a = 100000 * bits[0] + 1000 * bits[1] + bits[2]
+    else:
+        # Assume it's a simple verse number
+        a = int(a)
+
     return [a, b]
 
 
