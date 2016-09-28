@@ -117,9 +117,10 @@ def populate(data, all_mss, db_file, force=False):
                 if not reading.lacuna:
                     reading.calc_mss_support(all_mss)
 
-                assert not reading.ms_support & all_wits_found, (
-                    reading.ms_support & all_wits_found,
-                    verse, vu)
+                if reading.ms_support & all_wits_found:
+                    print("HELP - I've already seen these witnesses for {}/{}: {}".format(
+                        verse, vu,
+                        reading.ms_support & all_wits_found))
 
                 all_wits_found = all_wits_found | reading.ms_support
 
