@@ -125,15 +125,24 @@ def textual_flow(db_file, variant_unit, connectivity, perfect_only=False, suffix
 
 class TextualFlow(mpisupport.MpiParent):
     def __init__(self, db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpi=False):
+        self.mpi = mpi
         super().__init__()
         self.db_file = db_file
         self.variant_unit = variant_unit
         self.connectivity = connectivity
         self.perfect_only = perfect_only
         self.suffix = suffix
-        self.mpi = mpi
         self.parent_map = {}
         self.textual_flow()
+
+    def mpi_run(self):
+        """
+        Simple wrapper to handle mpi on or off.
+        """
+        if self.mpi:
+            return super().mpi_run()
+        else:
+            pass
 
     def textual_flow(self):
         """
