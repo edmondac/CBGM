@@ -2,6 +2,7 @@
 
 import subprocess
 import sqlite3
+import logging
 import networkx
 import string
 import os
@@ -24,6 +25,8 @@ COLOURS = ("#FF8A8A", "#FF86E3", "#FF86C2", "#FE8BF0", "#EA8DFE", "#DD88FD", "#A
 
 COLOURMAP = {x: COLOURS[(i * 10) % len(COLOURS)]
              for (i, x) in enumerate(string.ascii_lowercase)}
+
+logger = logging.getLogger(__name__)
 
 
 def darken(col, by=75):
@@ -50,9 +53,13 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
 
     This can take a long time...
     """
-    print("Calculating genealogical coherence for {} at {}".format(w1, variant_unit))
+    logger.info("Getting best parent(s) for {}".format(w1))
+
+    logger.debug("Calculating genealogical coherence for {} at {}".format(w1, variant_unit))
     coh = GenealogicalCoherence(db_file, w1, variant_unit, pretty_p=False)
     coh._generate()
+
+    logger.debug("Searching parent combinations")
     # we might need multiple parents if a reading requires it
     best_parents_by_rank = []
     best_rank = None
@@ -60,10 +67,16 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     best_gen = None
     parents = []
     max_acceptable_gen = 2  # only allow my reading or my parent's
-    for combination in coh.parent_combinations(w1_reading, w1_parent, connectivity):
+    combinations = coh.parent_combinations(w1_reading, w1_parent, connectivity)
+    total = len(combinations)
+    for i, combination in enumerate(combinations):
+        if i and not int(total / 10.0) % i:
+            # Report every 10%
+            logger.debug("Done {} of {} ({:.2f}%)".format(i, total, (i/total) * 100.0))
+
         if not combination:
             # Couldn't find anything to explain it
-            print("Couldn't find any parent combination for {}".format(w1_reading))
+            logger.info("Couldn't find any parent combination for {}".format(w1_reading))
             continue
 
         rank = max(x[1] for x in combination)
@@ -84,6 +97,8 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
             best_parents_by_rank = combination
             best_rank = rank
 
+    logger.debug("Analysing results")
+
     if best_gen == 1:
         # We can do this with direct parents - use them
         parents = best_parents_by_gen
@@ -95,7 +110,7 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
         # Top level in an overlapping unit with an omission in the initial text
         parents = [('OL_PARENT', -1, 1)]
 
-    print(" > Best parents: {}".format(parents))
+    logger.info("Returning best parents: {}".format(parents))
 
     return parents
 
@@ -153,10 +168,10 @@ class TextualFlow(mpisupport.MpiParent):
         ancestors for a witness...
         """
 
-        print("Creating textual flow diagram for {}".format(self.variant_unit))
-        print("Setting connectivity to {}".format(self.connectivity))
+        logger.info("Creating textual flow diagram for {}".format(self.variant_unit))
+        logger.info("Setting connectivity to {}".format(self.connectivity))
         if self.perfect_only:
-            print("Insisting on perfect coherence...")
+            logger.info("Insisting on perfect coherence...")
         G = networkx.DiGraph()
 
         sql = """SELECT witness, label, parent
@@ -176,10 +191,10 @@ class TextualFlow(mpisupport.MpiParent):
 
         # 1. Calculate the best parent for each witness
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
-            print("Calculating parents {}/{}".format(i, len(data)))
             if self.mpi:
                 self.mpi_queue.put((w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file))
             else:
+                logger.debug("Calculating parents {}/{}".format(i, len(data)))
                 parents = get_parents(w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file)
                 self.parent_map[w1] = parents
 
@@ -187,7 +202,7 @@ class TextualFlow(mpisupport.MpiParent):
             self.mpi_wait()
             # Now self.parent_map should be complete
 
-        print("Parent map is: {}".format(self.parent_map))
+        logger.debug("Parent map is: {}".format(self.parent_map))
 
         # 2. Draw the diagram
         rank_mapping = {}
@@ -216,7 +231,7 @@ class TextualFlow(mpisupport.MpiParent):
                 elif self.perfect_only:
                     raise ForestError("Nodes with no parents - forest detected")
 
-                print("WARNING - {} has no parents".format(w1))
+                logger.warning("{} has no parents".format(w1))
                 continue
 
             for i, p in enumerate(parents):
@@ -225,7 +240,7 @@ class TextualFlow(mpisupport.MpiParent):
         # Relable nodes to include the rank
         networkx.relabel_nodes(G, rank_mapping, copy=False)
 
-        print("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
+        logger.info("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                                  G.number_of_edges()))
         output_file = "textual_flow_{}_c{}{}.svg".format(
             self.variant_unit.replace('/', '_'), self.connectivity, self.suffix)
@@ -233,7 +248,7 @@ class TextualFlow(mpisupport.MpiParent):
             networkx.write_dot(G, dotfile.name)
             subprocess.check_call(['dot', '-Tsvg', dotfile.name], stdout=open(output_file, 'w'))
 
-        print("Written to {}".format(output_file))
+        logger.info("Written to {}".format(output_file))
 
         return output_file
 

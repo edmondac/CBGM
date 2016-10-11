@@ -2,17 +2,19 @@
 set -e
 # MPI running for my local network
 
-echo "Don't forget that the remote hosts need the same python files... (e.g. scp -r ...)"
+#echo "Don't forget that the remote hosts need the same python files... (e.g. scp -r ...)"
 
 echo "Synchronising files with server..."
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 (cd $(dirname ${DIR}) && scp -r $(basename ${DIR}) server:$(dirname ${DIR})) > /dev/null
 
+echo "Don't forget that the remote hosts need your input files... (e.g. scp my_database.db ...). They can be in the remote user's home directory."
+
 cat > /tmp/.mpihostfile << EOF
 localhost slots=2
-mpislave slots=3
+server slots=4
 EOF
 
 echo "Running mpiexec..."
-/usr/bin/mpiexec -hostfile /tmp/.mpihostfile -np 5 /home/ed/virtualenv/cbgm/bin/python $@
+/usr/bin/mpiexec -hostfile /tmp/.mpihostfile -np 6 /home/ed/virtualenv/cbgm/bin/python $@
