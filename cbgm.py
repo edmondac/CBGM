@@ -3,6 +3,7 @@
 
 import sqlite3
 import sys
+import logging
 from lib.local_stemma import local_stemma
 from lib.shared import sort_mss, sorted_vus
 from lib.textual_flow import textual_flow
@@ -15,13 +16,15 @@ import populate_db
 DEFAULT_DB_FILE = '/tmp/_default_cbgm_db.db'
 
 
+logger = logging.getLogger(__name__)
+
+
 def status(cursor):
     """
     Show useful status info about variant units
     """
     vus = sorted_vus(cursor)
-    print("All variant units ({}): ".format(len(vus)) + ', '.join(vus))
-    print()
+    logger.debug("All variant units ({}): ".format(len(vus)) + ', '.join(vus))
 
     n_uncl = 0
     for vu in vus:
@@ -29,10 +32,10 @@ def status(cursor):
         cursor.execute(sql)
         uncls = int(cursor.fetchone()[0])
         if uncls:
-            print("{} is unresolved ({} unclear parents)".format(vu, uncls))
+            logger.info("{} is unresolved ({} unclear parents)".format(vu, uncls))
             n_uncl += 1
 
-    print("\nThere are {} unresolved variant units".format(n_uncl))
+    logger.info("\nThere are {} unresolved variant units".format(n_uncl))
 
 
 if __name__ == "__main__":
@@ -83,11 +86,25 @@ if __name__ == "__main__":
                         help="Insist on perfect coherence in a textual flow diagram")
     parser.add_argument('-n', '--no-strip-spaces', default=False, action="store_true",
                         help="Don't strip spaces from the output (stripped is better for importing into a spreadsheet)")
+    parser.add_argument('--verbose', action='count')
 
     args = parser.parse_args()
 
+    h1 = logging.StreamHandler(sys.stderr)
+    rootLogger = logging.getLogger()
+    rootLogger.addHandler(h1)
+    formatter = logging.Formatter('[%(asctime)s] [%(process)s] [%(filename)s:%(lineno)s] [%(levelname)s] %(message)s')
+    h1.setFormatter(formatter)
+
+    if args.verbose:
+        rootLogger.setLevel(logging.DEBUG)
+        logger.debug("Verbose mode")
+    else:
+        rootLogger.setLevel(logging.INFO)
+        logger.debug("Run with --verbose for debug mode")
+
     if args.file and args.db_file:
-        print("Please only specify one of -d and -f")
+        logger.info("Please only specify one of -d and -f")
         sys.exit(2)
 
     if args.file:
@@ -96,10 +113,10 @@ if __name__ == "__main__":
     elif args.db_file:
         db_file = args.db_file
     else:
-        print("Please specify one of -d or -f")
+        logger.info("Please specify one of -d or -f")
         sys.exit(3)
 
-    print("Using database: {}".format(db_file))
+    logger.info("Using database: {}".format(db_file))
 
     action = [x for x in [args.pre_genealogical_coherence,
                           args.genealogical_coherence,
@@ -122,7 +139,7 @@ if __name__ == "__main__":
         if args.textual_flow or args.local_stemma:
             assert args.variant_unit, "Must specify a variant unit (can be all)"
     except AssertionError as e:
-        print("ERROR: ", e)
+        logger.info("ERROR: ", e)
         parser.print_help()
         sys.exit(1)
 
@@ -131,7 +148,7 @@ if __name__ == "__main__":
 
     all_mss = sort_mss([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM attestation')])
     if args.witness and args.witness != 'all' and args.witness not in all_mss:
-        print("Can't find witness: {}".format(args.witness))
+        logger.info("Can't find witness: {}".format(args.witness))
         sys.exit(4)
     if args.witness == 'all':
         do_mss = all_mss
@@ -140,10 +157,10 @@ if __name__ == "__main__":
 
     if args.optimal_substemma:
         if not args.file:
-            print("A data file is required to create the global stemma ('-f')")
+            logger.info("A data file is required to create the global stemma ('-f')")
             sys.exit(1)
         if not do_mss:
-            print("A witness (can be 'all') must be specified ('-w')")
+            logger.info("A witness (can be 'all') must be specified ('-w')")
             sys.exit(1)
         for wit in do_mss:
             optimal_substemma(args.file, wit, suffix=args.suffix)
@@ -151,14 +168,14 @@ if __name__ == "__main__":
 
     if args.global_stemma:
         if not args.file:
-            print("A data file is required to create the global stemma ('-f')")
+            logger.info("A data file is required to create the global stemma ('-f')")
             sys.exit(1)
         global_stemma(args.file, suffix=args.suffix)
         sys.exit(0)
 
     all_vus = sorted_vus(cursor)
     if args.variant_unit and args.variant_unit != 'all' and args.variant_unit not in all_vus:
-        print("Can't find variant unit: {}".format(args.variant_unit))
+        logger.info("Can't find variant unit: {}".format(args.variant_unit))
         sys.exit(5)
     if args.variant_unit == 'all':
         do_vus = all_vus
@@ -170,7 +187,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     if args.combinations_of_ancestors and not args.witness:
-        print("Must specify -w")
+        logger.info("Must specify -w")
         sys.exit(1)
 
     # Now loop over all requested witnesses
@@ -202,4 +219,4 @@ if __name__ == "__main__":
             if not args.no_strip_spaces:
                 output = output.replace(' ', '')
 
-            print(output)
+            logger.info(output)
