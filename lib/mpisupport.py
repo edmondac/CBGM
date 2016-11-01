@@ -23,6 +23,7 @@ class MpiParent(object):
         self.mpicomm = None
         self.mpi_queue = queue.Queue()
         self.mpi_child_threads = []
+        self.mpi_child_status = {}
         self.mpi_run()
 
     def mpi_wait(self):
@@ -42,24 +43,32 @@ class MpiParent(object):
         Manage communications with the specified MPI child
         """
         logger.info("Child manager {} starting".format(child))
+
+        def stat(child, status):
+            self.mpi_child_status[child] = status
+            logger.debug("Child {}: {}".format(child, status))
         while True:
             # wait for something to do
-            logger.debug("Child {} waiting for queue".format(child))
+            stat(child, "waiting for queue")
             args = self.mpi_queue.get()
-            logger.debug("Child {} got task from queue".format(child))
+            stat(child, "working on task")
 
             # send it to the remote child
             self.mpicomm.send(args, dest=child)
 
             # get the results back
             ret = self.mpicomm.recv(source=child)
-            logger.debug("Child {} sent results back".format(child))
+            stat(child, "sent results back")
 
             # process the result
             self.mpi_handle_result(args, ret)
 
             self.mpi_queue.task_done()
-            logger.debug("Child {} task done".format(child))
+            stat(child, "task done")
+
+            all_stats = '\n\t'.join(['{}: {}'.format(k, self.mpi_child_status[k])
+                                     for k in sorted(self.mpi_child_status.keys())])
+            logger.debug("Status:\n\t{}".format(all_stats))
 
     def mpi_handle_result(self, args, ret):
         """
@@ -78,7 +87,7 @@ class MpiParent(object):
         assert rank == 0
         # parent
         logger.info("MPI-enabled version with {} processors available"
-              .format(self.mpicomm.size))
+                    .format(self.mpicomm.size))
         assert self.mpicomm.size > 1, "Please run this under MPI with more than one processor"
         for child in range(1, self.mpicomm.size):
             t = threading.Thread(target=self.mpi_manage_child,
