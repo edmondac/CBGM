@@ -5,6 +5,7 @@ OpenMPI support wrapper
 import threading
 import queue
 import logging
+import time
 
 logger = logging.getLogger()
 
@@ -51,12 +52,17 @@ class MpiParent(object):
             # wait for something to do
             stat(child, "waiting for queue")
             args = self.mpi_queue.get()
-            stat(child, "working on task")
 
             # send it to the remote child
+            stat(child, "sending data to child")
             self.mpicomm.send(args, dest=child)
+            stat(child, "waiting for results")
 
             # get the results back
+            while not self.mpicomm.Iprobe(source=child):
+                print ('rank {} not ready to talk...'.format(child))
+                time.sleep(1)
+
             ret = self.mpicomm.recv(source=child)
             stat(child, "sent results back")
 
@@ -103,20 +109,26 @@ def mpi_child(fn):
     context - reading its arguments from mpicomm.recv(source=0).
     """
     rank = MPI.COMM_WORLD.Get_rank()
-    logger.debug("Child {} starting".format(rank))
+    logger.debug("Child {} (remote) starting".format(rank))
     while True:
         # child - wait to be given a data structure
-        args = MPI.COMM_WORLD.recv(source=0)
+        try:
+            args = MPI.COMM_WORLD.recv(source=0)
+        except Exception:
+            logger.warning("MPI communication error - will listen again", exc_info=True)
+            continue
+
         if args is None:
-            logger.info("Child {} exiting - no args received".format(rank))
+            logger.info("Child {} (remote) exiting - no args received".format(rank))
             break
 
-        logger.debug("Child {} received data".format(rank))
+        logger.debug("Child {} (remote) received data".format(rank))
         ret = fn(*args)
         if ret is None:
             # Nothing was generated
             MPI.COMM_WORLD.send(None, dest=0)
-            logger.info("Child {} aborted job".format(rank))
+            logger.info("Child {} (remote) aborted job".format(rank))
         else:
+            logger.debug("Child {} (remote) sending results back".format(rank))
             MPI.COMM_WORLD.send(ret, dest=0)
-            logger.debug("Child {} completed job".format(rank))
+            logger.debug("Child {} (remote) completed job".format(rank))
