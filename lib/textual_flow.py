@@ -70,9 +70,10 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     combinations = coh.parent_combinations(w1_reading, w1_parent, connectivity)
     total = len(combinations)
     for i, combination in enumerate(combinations):
-        if i and not int(total / 10.0) % i:
-            # Report every 10%
-            logger.debug("Done {} of {} ({:.2f}%)".format(i, total, (i/total) * 100.0))
+        count = i + 1
+        if (count and not int(total / 10.0) % count) or count == total:
+            # Report every 10% and at the end
+            logger.debug("Done {} of {} ({:.2f}%)".format(count, total, (count/total) * 100.0))
 
         if not combination:
             # Couldn't find anything to explain it
