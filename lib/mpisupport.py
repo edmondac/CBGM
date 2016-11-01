@@ -60,7 +60,6 @@ class MpiParent(object):
 
             # get the results back
             while not self.mpicomm.Iprobe(source=child):
-                print ('rank {} not ready to talk...'.format(child))
                 time.sleep(1)
 
             ret = self.mpicomm.recv(source=child)
@@ -112,11 +111,9 @@ def mpi_child(fn):
     logger.debug("Child {} (remote) starting".format(rank))
     while True:
         # child - wait to be given a data structure
-        try:
-            args = MPI.COMM_WORLD.recv(source=0)
-        except Exception:
-            logger.warning("MPI communication error - will listen again", exc_info=True)
-            continue
+        while not MPI.COMM_WORLD.Iprobe(source=0):
+            time.sleep(1)
+        args = MPI.COMM_WORLD.recv(source=0)
 
         if args is None:
             logger.info("Child {} (remote) exiting - no args received".format(rank))
