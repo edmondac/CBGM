@@ -164,10 +164,18 @@ class TextualFlow(mpisupport.MpiParent):
         """
         Create a textual flow diagram for the specified variant unit.
 
+        This will do nothing if the svg file already exists.
+
         Because I put the whole textual flow in one diagram (unlike Munster who
         show a textual flow diagram for a single reading) there can be multiple
         ancestors for a witness...
         """
+        output_file = "textual_flow_{}_c{}{}.svg".format(
+            self.variant_unit.replace('/', '_'), self.connectivity, self.suffix)
+        if os.path.exists(output_file):
+            logger.info("Textual flow diagram for {} already exists ({}) - skipping"
+                        .format(self.variant_unit, output_file))
+            return
 
         logger.info("Creating textual flow diagram for {}".format(self.variant_unit))
         logger.info("Setting connectivity to {}".format(self.connectivity))
@@ -243,8 +251,6 @@ class TextualFlow(mpisupport.MpiParent):
 
         logger.info("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                                  G.number_of_edges()))
-        output_file = "textual_flow_{}_c{}{}.svg".format(
-            self.variant_unit.replace('/', '_'), self.connectivity, self.suffix)
         with NamedTemporaryFile() as dotfile:
             networkx.write_dot(G, dotfile.name)
             subprocess.check_call(['dot', '-Tsvg', dotfile.name], stdout=open(output_file, 'w'))
