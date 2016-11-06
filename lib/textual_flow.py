@@ -67,7 +67,13 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     best_gen = None
     parents = []
     max_acceptable_gen = 2  # only allow my reading or my parent's
-    combinations = coh.parent_combinations(w1_reading, w1_parent, connectivity)
+    try:
+        combinations = coh.parent_combinations(w1_reading, w1_parent, connectivity)
+    except Exception:
+        logger.exception("Couldn't get parent combinations for {}, {}, {}"
+                         .format(w1_reading, w1_parent_w1_connectivity))
+        return None
+
     total = len(combinations)
     for i, combination in enumerate(combinations):
         count = i + 1
@@ -217,6 +223,10 @@ class TextualFlow(mpisupport.MpiParent):
         rank_mapping = {}
         for w1, w1_reading, w1_parent in data:
             parents = self.parent_map[w1]
+            if parents is None:
+                # Couldn't calculate them
+                parents = []
+
             if len(parents) > 1:
                 # Multiple parents - caused by a reading with multiple parents in
                 # a local stemma.

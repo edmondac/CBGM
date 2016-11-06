@@ -7,7 +7,9 @@ set -e
 echo "Synchronising files with server..."
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-(cd $(dirname ${DIR}) && scp -r $(basename ${DIR}) server:$(dirname ${DIR})) > /dev/null
+DN=$(dirname "${DIR}")
+BN=$(basename "${DIR}")
+(cd "${DN}" && scp -r "${BN}" server:"${DN}") > /dev/null
 
 echo "Don't forget that the remote hosts need your input files... (e.g. scp my_database.db ...). They can be in the remote user's home directory."
 

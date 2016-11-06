@@ -46,8 +46,14 @@ class MpiParent(object):
         logger.info("Child manager {} starting".format(child))
 
         def stat(child, status):
-            self.mpi_child_status[child] = status
+            self.mpi_child_status[child] = "[{}]: {}".format(time.ctime(), status)
             logger.debug("Child {}: {}".format(child, status))
+
+        def show_stats():
+            all_stats = '\n\t'.join(['{}: {}'.format(k, self.mpi_child_status[k])
+                                     for k in sorted(self.mpi_child_status.keys())])
+            logger.debug("Status:\n\t{}".format(all_stats))
+
         while True:
             # wait for something to do
             stat(child, "waiting for queue")
@@ -56,10 +62,11 @@ class MpiParent(object):
             # send it to the remote child
             stat(child, "sending data to child")
             self.mpicomm.send(args, dest=child)
-            stat(child, "waiting for results")
+            stat(child, "waiting for results ({})".format(args))
 
             # get the results back
             while not self.mpicomm.Iprobe(source=child):
+                # FIXME - after too long we should abort this child job...
                 time.sleep(1)
 
             ret = self.mpicomm.recv(source=child)
@@ -71,9 +78,7 @@ class MpiParent(object):
             self.mpi_queue.task_done()
             stat(child, "task done")
 
-            all_stats = '\n\t'.join(['{}: {}'.format(k, self.mpi_child_status[k])
-                                     for k in sorted(self.mpi_child_status.keys())])
-            logger.debug("Status:\n\t{}".format(all_stats))
+            show_stats()
 
     def mpi_handle_result(self, args, ret):
         """
@@ -113,7 +118,12 @@ def mpi_child(fn):
         # child - wait to be given a data structure
         while not MPI.COMM_WORLD.Iprobe(source=0):
             time.sleep(1)
-        args = MPI.COMM_WORLD.recv(source=0)
+
+        try:
+            args = MPI.COMM_WORLD.recv(source=0)
+        except EOFError:
+            logger.exception("Error receiving instructions - carrying on")
+            continue
 
         if args is None:
             logger.info("Child {} (remote) exiting - no args received".format(rank))
