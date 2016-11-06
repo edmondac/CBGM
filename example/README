@@ -64,7 +64,7 @@ b   ηλθον   01
 
 
 ### Textual flow diagram ###
-ed@roo:~/PhD/CBGM_ace/example$ ../cbgm.py -f /tmp/test.db -t -v 21/2
+ed@roo:~/PhD/CBGM_ace/example$ ../cbgm.py -f /tmp/test.db -T -v 21/2
 Using database: /tmp/test.db
 Creating textual flow diagram for 21/2
 Setting connectivity to 499
