@@ -29,15 +29,40 @@ class MpiParent(object):
 
     def mpi_wait(self):
         """
-        Wait for all work to be done, then tell things to stop
+        Wait for all work to be done, then tell things to stop.
+
+        Make sure you've put things in the queue before calling this... or
+        it will all just exit and move on.
         """
-        # When the queue is done, we can continue. The child threads
-        # have daemon=True and will just exit.
+        # When the queue is done, we can continue.
+        logger.debug("MPI: Waiting for the queue to be empty")
         self.mpi_queue.join()
 
-        for child in range(1, self.mpicomm.size):
-            # Tell the remote child processes to exit
-            self.mpicomm.send(None, dest=child)
+        logger.debug("MPI: Telling children to exit")
+        for t in self.mpi_child_threads:
+            self.mpi_queue.put(None)
+
+        # Clean up the threads, in case we run out
+        logger.debug("MPI: Waiting for threads to exit")
+        running_threads = [t for t in self.mpi_child_threads]
+        while running_threads:
+            t = running_threads.pop(0)
+            t.join(0.1)
+            if t.is_alive():
+                running_threads.append(t)
+            else:
+                logger.debug("Thread {} joined - waiting for {} more"
+                             .format(t, len(running_threads)))
+
+        logger.debug("MPI: Work done")
+        # We need to let threads, remote MPI processes etc. all clean up
+        # properly - and a second seems to be ample time for this.
+        time.sleep(1)
+
+    def show_stats(self):
+        all_stats = '\n\t'.join(['{}: {}'.format(k, self.mpi_child_status[k])
+                                 for k in sorted(self.mpi_child_status.keys())])
+        logger.debug("Status:\n\t{}".format(all_stats))
 
     def mpi_manage_child(self, child):
         """
@@ -49,11 +74,6 @@ class MpiParent(object):
             self.mpi_child_status[child] = "[{}]: {}".format(time.ctime(), status)
             logger.debug("Child {}: {}".format(child, status))
 
-        def show_stats():
-            all_stats = '\n\t'.join(['{}: {}'.format(k, self.mpi_child_status[k])
-                                     for k in sorted(self.mpi_child_status.keys())])
-            logger.debug("Status:\n\t{}".format(all_stats))
-
         while True:
             # wait for something to do
             stat(child, "waiting for queue")
@@ -62,6 +82,11 @@ class MpiParent(object):
             # send it to the remote child
             stat(child, "sending data to child")
             self.mpicomm.send(args, dest=child)
+            if args == None:
+                # That's the call to quit
+                stat(child, "quitting")
+                return
+
             stat(child, "waiting for results ({})".format(args))
 
             # get the results back

@@ -71,7 +71,7 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
         combinations = coh.parent_combinations(w1_reading, w1_parent, connectivity)
     except Exception:
         logger.exception("Couldn't get parent combinations for {}, {}, {}"
-                         .format(w1_reading, w1_parent_w1_connectivity))
+                         .format(w1_reading, w1_parent, w1_connectivity))
         return None
 
     total = len(combinations)
@@ -136,13 +136,14 @@ def textual_flow(db_file, variant_unit, connectivity, perfect_only=False, suffix
 
     if mpi_mode:
         if mpi_parent:
-            return TextualFlow(db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpi=True)
+            return TextualFlow(db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpi=True).output_file
         else:
             # MPI child
             mpisupport.mpi_child(get_parents)
+            return "MPI child"
 
     else:
-        return TextualFlow(db_file, variant_unit, connectivity, perfect_only=False, suffix='')
+        return TextualFlow(db_file, variant_unit, connectivity, perfect_only=False, suffix='').output_file
 
 
 class TextualFlow(mpisupport.MpiParent):
@@ -155,7 +156,7 @@ class TextualFlow(mpisupport.MpiParent):
         self.perfect_only = perfect_only
         self.suffix = suffix
         self.parent_map = {}
-        self.textual_flow()
+        self.output_file = self.textual_flow()
 
     def mpi_run(self):
         """
@@ -181,6 +182,8 @@ class TextualFlow(mpisupport.MpiParent):
         if os.path.exists(output_file):
             logger.info("Textual flow diagram for {} already exists ({}) - skipping"
                         .format(self.variant_unit, output_file))
+            if self.mpi:
+                self.mpi_wait()
             return
 
         logger.info("Creating textual flow diagram for {}".format(self.variant_unit))
