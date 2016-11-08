@@ -202,7 +202,9 @@ if __name__ == "__main__":
             continue
 
         # Loop over all requested variant units
-        for vu in do_vus:
+        for i, vu in enumerate(do_vus):
+            logger.debug("Running for variant unit {} ({} of {})"
+                         .format(vu, i + 1, len(do_vus)))
             output = ''
             if coh_fn:
                 # Call our coherence function
@@ -219,4 +221,4 @@ if __name__ == "__main__":
             if not args.no_strip_spaces:
                 output = output.replace(' ', '')
 
-            logger.info(output)
+            logger.info("Output was:\n{}" .format(output))
