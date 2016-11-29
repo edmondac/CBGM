@@ -193,9 +193,8 @@ class TextualFlow(mpisupport.MpiParent):
         G = networkx.DiGraph()
 
         sql = """SELECT witness, label, parent
-                 FROM attestation, reading
-                 WHERE attestation.reading_id = reading.id
-                 AND reading.variant_unit = \"{}\"
+                 FROM cbgm
+                 WHERE variant_unit = \"{}\"
                  """.format(self.variant_unit)
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()

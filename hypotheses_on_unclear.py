@@ -42,7 +42,8 @@ def single_hypothesis(stemmata, unique_ref, all_mss, force,
 class Hypotheses(mpisupport.MpiParent):
     def __init__(self, data, all_mss, vu, force=False,
                  perfect_only=True, connectivity=499, mpi=False):
-        super().__init__()
+        if mpi:
+            super().__init__()
         self.data = data
         self.all_mss = all_mss
         self.vu = vu
@@ -102,11 +103,11 @@ class Hypotheses(mpisupport.MpiParent):
                                     ', '.join(desc)))
             else:
                 try:
-                    svg = self.single_hypothesis(my_stemmata, unique,
-                                                 self.all_mss, self.force,
-                                                 self.vu, self.connectivity,
-                                                 self.perfect_only,
-                                                 self.working_dir)
+                    svg = single_hypothesis(my_stemmata, unique,
+                                            self.all_mss, self.force,
+                                            self.vu, self.connectivity,
+                                            self.perfect_only,
+                                            self.working_dir)
                 except Exception as e:
                     raise
                     print("ERROR doing {}, {}".format(ch, e))
@@ -132,7 +133,7 @@ class Hypotheses(mpisupport.MpiParent):
                          .format(desc, svg))
         html += "</html>"
 
-        out_f = 'index.html'
+        out_f = os.path.join(self.working_dir, 'index.html')
         with open(out_f, 'w') as fh:
             fh.write(html)
 

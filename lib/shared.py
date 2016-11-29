@@ -92,7 +92,7 @@ def sorted_vus(cursor, sql=None):
     Return a full list of variant units, properly sorted.
     """
     if sql is None:
-        sql = 'SELECT DISTINCT variant_unit FROM reading'
+        sql = 'SELECT DISTINCT variant_unit FROM cbgm'
 
     return sorted([x[0] for x in cursor.execute(sql)],
                   key=lambda s: numify(s))

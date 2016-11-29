@@ -28,8 +28,8 @@ def status(cursor):
 
     n_uncl = 0
     for vu in vus:
-        sql = 'SELECT COUNT(parent) FROM reading WHERE variant_unit = "{}" AND parent = "UNCL"'.format(vu)
-        cursor.execute(sql)
+        sql = 'SELECT COUNT(DISTINCT(label)) FROM cbgm WHERE variant_unit = ? AND parent = "UNCL"'
+        cursor.execute(sql, (vu, ))
         uncls = int(cursor.fetchone()[0])
         if uncls:
             logger.info("{} is unresolved ({} unclear parents)".format(vu, uncls))
@@ -72,7 +72,7 @@ if __name__ == "__main__":
                         help='Write a csv file for -A rather than printing the output')
     parser.add_argument('--only-complete', default=False, action="store_true",
                         help="Don't allow incomplete combinations of ancestors")
-    parser.add_argument('--debug', default=False, action="store_true",
+    parser.add_argument('--extracols', default=False, action="store_true",
                         help='Show more columns in combinations of ancestors')
     parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,
                         help='Maximum allowed connectivity in a textual flow diagram')
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
 
-    all_mss = sort_mss([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM attestation')])
+    all_mss = sort_mss([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM cbgm')])
     if args.witness and args.witness != 'all' and args.witness not in all_mss:
         logger.info("Can't find witness: {}".format(args.witness))
         sys.exit(4)
@@ -198,7 +198,7 @@ if __name__ == "__main__":
             combinations_of_ancestors(db_file, witness, args.max_comb_len,
                                       csv_file=args.csv,
                                       allow_incomplete=not args.only_complete,
-                                      debug=args.debug, suffix=args.suffix)
+                                      debug=args.extracols, suffix=args.suffix)
             continue
 
         # Loop over all requested variant units
@@ -208,7 +208,7 @@ if __name__ == "__main__":
             output = ''
             if coh_fn:
                 # Call our coherence function
-                output += coh_fn(db_file, witness, vu, debug=args.debug)
+                output += coh_fn(db_file, witness, vu, debug=args.extracols)
                 output += '\n\n\n'
 
             elif args.local_stemma:

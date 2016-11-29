@@ -84,9 +84,12 @@ def parse_input_file(filename):
     return mod.struct, mod.all_mss
 
 
-SCHEMA = [
-    "CREATE TABLE reading (id PRIMARY KEY, variant_unit, label, text, parent);",
-    "CREATE TABLE attestation (reading_id, witness, FOREIGN KEY(reading_id) REFERENCES reading(id));"]
+# Old normalized schema (fast inserts and updates, slow selects):
+# SCHEMA = [
+    # "CREATE TABLE reading (id PRIMARY KEY, variant_unit, label, text, parent);",
+    # "CREATE TABLE attestation (reading_id, witness, FOREIGN KEY(reading_id) REFERENCES reading(id));"]
+# New de-normalized schema (slow inserts and updates, fast selects):
+SCHEMA = "CREATE TABLE cbgm (witness, variant_unit, label, text, parent);"
 
 
 def populate(data, all_mss, db_file, force=False):
@@ -103,11 +106,8 @@ def populate(data, all_mss, db_file, force=False):
 
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
+    c.execute(SCHEMA)
 
-    for s in SCHEMA:
-        c.execute(s)
-
-    reading_id = 0
     vu_count = 0
     for verse in data:
         for vu in data[verse]:
@@ -128,22 +128,16 @@ def populate(data, all_mss, db_file, force=False):
                     # Ignore these as the witness can't support any reading
                     continue
 
-                reading_id += 1
-                sql = ("""INSERT INTO reading
-                              (id, variant_unit, label, text, parent)
-                          VALUES ({}, \"{}/{}\", \"{}\", \"{}\", \"{}\")"""
-                       .format(reading_id,
-                               verse,
-                               vu,
-                               reading.label,
-                               reading.greek,
-                               reading.parent))
-
-                c.execute(sql)
                 for ms in reading.ms_support:
-                    sql = """INSERT INTO attestation
-                              (reading_id, witness)
-                             VALUES ({}, \"{}\")""".format(reading_id, ms)
+                    sql = ("""INSERT INTO cbgm
+                                  (witness, variant_unit, label, text, parent)
+                              VALUES (\"{}\", \"{}/{}\", \"{}\", \"{}\", \"{}\")"""
+                           .format(ms,
+                                   verse,
+                                   vu,
+                                   reading.label,
+                                   reading.greek,
+                                   reading.parent))
                     c.execute(sql)
 
             if all_mss - all_wits_found:
