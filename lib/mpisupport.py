@@ -103,7 +103,7 @@ class MpiParent(object):
             self.mpi_queue.task_done()
             stat(child, "task done")
 
-            show_stats()
+            self.show_stats()
 
     def mpi_handle_result(self, args, ret):
         """

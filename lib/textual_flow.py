@@ -71,7 +71,7 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
         combinations = coh.parent_combinations(w1_reading, w1_parent, connectivity)
     except Exception:
         logger.exception("Couldn't get parent combinations for {}, {}, {}"
-                         .format(w1_reading, w1_parent, w1_connectivity))
+                         .format(w1_reading, w1_parent, connectivity))
         return None
 
     total = len(combinations)
