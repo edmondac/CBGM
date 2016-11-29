@@ -3,7 +3,6 @@
 
 import re
 import sqlite3
-from collections import defaultdict
 from lib.shared import INIT, OL_PARENT
 
 
@@ -16,7 +15,7 @@ def main(db_file):
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
 
-    sql = "SELECT DISTINCT variant_unit FROM reading"
+    sql = "SELECT DISTINCT variant_unit FROM cbgm"
     cursor.execute(sql)
     variant_units = [x[0] for x in cursor.fetchall()]
 
@@ -26,9 +25,6 @@ def main(db_file):
 
     # sort by the two integer parts of the vu
     variant_units.sort(key=lambda s: list(map(intify, s.split('/'))))
-
-    #"CREATE TABLE reading (id PRIMARY KEY, variant_unit, label, text, parent);",
-    #"CREATE TABLE attestation (reading_id, witness, FOREIGN KEY(reading_id) REFERENCES reading(id));"]
 
     def witintify(x):
         # return an int representing this witness
@@ -42,8 +38,9 @@ def main(db_file):
             raise ValueError("What? {}".format(x))
 
     for unit in variant_units:
-        sql = "SELECT id, label, text, parent FROM reading WHERE variant_unit = ?"
+        sql = "SELECT DISTINCT label, text, parent FROM cbgm WHERE variant_unit = ?"
         cursor.execute(sql, (unit, ))
+
         def sorter(x):
             if x['parent'] == INIT:
                 # This will show up first...
@@ -54,52 +51,21 @@ def main(db_file):
             else:
                 return x['label']
 
-        readings = sorted([{'id': x[0],
-                            'label': x[1],
-                            'text': x[2],
-                            'parent': x[3]} for x in cursor.fetchall()],
+        readings = sorted([{'label': x[0],
+                            'text': x[1],
+                            'parent': x[2]} for x in cursor.fetchall()],
                           key=sorter)
         print()
         print(unit)
         for reading in readings:
-            sql = "SELECT witness FROM attestation WHERE reading_id=?"
-            cursor.execute(sql, (reading['id'], ))
+            sql = "SELECT witness FROM cbgm WHERE label=? and variant_unit=?"
+            cursor.execute(sql, (reading['label'], unit))
             attestations = sorted([x[0] for x in cursor.fetchall()],
                                   key=lambda a: witintify(a))
             print("{} {} {}".format(reading['label'],
                                     reading['text'],
                                     ', '.join(attestations)))
 
-
-
-    #~ ms_readings = defaultdict(dict)
-
-    #~ sql = """SELECT label, witness, variant_unit
-             #~ FROM attestation, reading
-             #~ WHERE attestation.reading_id = reading.id
-             #~ """
-    #~ for label, witness, variant_unit in cursor.execute(sql):
-        #~ ms_readings[witness][variant_unit] = label
-
-    #~ ms_stripes = defaultdict(list)
-    #~ for wit in ms_readings:
-        #~ stripe = []
-        #~ for vu in variant_units:
-            #~ stripe.append(ms_readings[wit].get(vu, '?'))
-
-        #~ ms_stripes[''.join(stripe)].append(wit)
-
-
-
-    #~ r_ms_stripes = {}
-    #~ for stripe, wits in list(ms_stripes.items()):
-        #~ st_wits = ', '.join(sorted(wits, key=lambda x: witintify(x)))
-        #~ r_ms_stripes[st_wits] = stripe
-
-    #~ keys = sorted(list(r_ms_stripes.keys()), key=lambda x: witintify(x))
-
-    #~ for key in keys:
-        #~ print('{} {}'.format(key, r_ms_stripes[key]))
 
 if __name__ == "__main__":
     import argparse

@@ -38,12 +38,12 @@ def local_stemma(db_file, variant_unit, suffix=''):
     G = networkx.DiGraph()
 
     sql = """SELECT label, parent
-             FROM reading
-             WHERE variant_unit = \"{}\"
-             """.format(variant_unit)
+             FROM cbgm
+             WHERE variant_unit = ?
+             """
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
-    data = list(cursor.execute(sql))
+    data = list(cursor.execute(sql, (variant_unit, )))
     labels = [x[0] for x in data]
 
     G.add_nodes_from(labels)
@@ -75,19 +75,18 @@ def local_stemma(db_file, variant_unit, suffix=''):
 
     print("Written diagram to {}".format(output_file))
 
-    all_mss = set([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM attestation WHERE witness != "A"')])
+    all_mss = set([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM cbgm WHERE witness != "A"')])
 
     sql = """SELECT label, text, GROUP_CONCAT(witness)
-             FROM reading, attestation
-             WHERE variant_unit = \"{}\"
-             AND reading.id = attestation.reading_id
+             FROM cbgm
+             WHERE variant_unit = ?
              GROUP BY label
              ORDER BY label ASC
-             """.format(variant_unit)
+             """
 
     table = ["label\ttext\twitnesses"]
     extant = set()
-    for label, text, witnesses in cursor.execute(sql):
+    for label, text, witnesses in cursor.execute(sql, (variant_unit, )):
         # Ignore 'A' for local stemmata
         wits = [x for x in witnesses.split(',') if x != 'A']
         extant = extant | set(wits)

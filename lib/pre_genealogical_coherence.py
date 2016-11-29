@@ -1,7 +1,10 @@
 # encoding: utf-8
 
 import sqlite3
-from .shared import pretty_p
+import logging
+from collections import defaultdict
+from .shared import pretty_p, memoize
+logger = logging.getLogger(__name__)
 
 
 class Coherence(object):
@@ -9,7 +12,15 @@ class Coherence(object):
     Class representing pre-genealogical coherence that can be extended
     to give more info.
     """
-    def __init__(self, db_file, w1, variant_unit=None, *, pretty_p=True, debug=False):
+    def __init__(self, db_file, w1, variant_unit=None, *, pretty_p=True, debug=False, cache=True):
+        """
+        @param db_file: database file
+        @param w1: witness 1 name
+        @param variant_unit: variant unit ref
+        @param pretty_p: print it pretty or not
+        @param debug: show more columns for debugging
+        @param cache: cache the results in the database
+        """
         self.conn = sqlite3.connect(db_file)
         self.cursor = self.conn.cursor()
         self.w1 = w1
@@ -17,18 +28,21 @@ class Coherence(object):
         self.columns = ['W2', 'NR', 'PERC1', 'EQ', 'PASS']
         self.pretty_p = pretty_p  # normal P or gothic one...
         self.debug = debug
+        self.cache = cache
+
         self.variant_unit = variant_unit
         if variant_unit:
             self.columns.extend(['READING', 'TEXT'])
 
         # Special formatters for the data (if required)
         self.formatters = {'PERC1': '{:.3f}'}
-        self.all_mss = [x[0] for x in self.cursor.execute('SELECT DISTINCT witness FROM attestation')]
+        self.all_mss = [x[0] for x in self.cursor.execute('SELECT DISTINCT witness FROM cbgm')]
 
     def _generate(self):
         """
         Generate the data
         """
+        logger.debug("Generating pre-genealogical coherence data")
         if not self.rows:
             for w2 in self.all_mss:
                 if self.w1 == w2:
@@ -36,6 +50,7 @@ class Coherence(object):
                 self.add_row(w2)
 
             self.sort()
+        logger.debug("Generated pre-genealogical coherence data")
 
     def add_row(self, w2):
         """
@@ -99,36 +114,46 @@ class Coherence(object):
         """
         Number of passages in which both witnesses agree
         """
-        sql = """SELECT variant_unit AS vu, label as w1_label
-                 FROM reading, attestation
-                 WHERE reading.id = attestation.reading_id
-                 AND attestation.witness = '{}'
-                 AND EXISTS
-                    (SELECT id FROM reading, attestation
-                     WHERE reading.id = attestation.reading_id
-                     AND variant_unit = vu
-                     AND label = w1_label
-                     AND attestation.witness = '{}');
+        sql = """SELECT COUNT(cbgm1.variant_unit)
+                 FROM cbgm AS cbgm1, cbgm AS cbgm2
+                 WHERE cbgm1.witness = '{}'
+                 AND cbgm2.witness = '{}'
+                 AND cbgm1.variant_unit = cbgm2.variant_unit
+                 AND cbgm1.label = cbgm2.label;
               """.format(self.w1, w2)
-        row['EQ'] = len(list(self.cursor.execute(sql)))
+        row['EQ'] = list(self.cursor.execute(sql))[0][0]
         return True
 
     def add_PASS(self, w2, row):
         """
         Number of passages in which both witnesses are extant
         """
-        sql = """SELECT variant_unit AS vu
-                 FROM reading, attestation
-                 WHERE reading.id = attestation.reading_id
-                 AND attestation.witness = '{}'
-                 AND EXISTS
-                    (SELECT id FROM reading, attestation
-                     WHERE reading.id = attestation.reading_id
-                     AND variant_unit = vu
-                     AND attestation.witness = '{}');
-              """.format(self.w1, w2)
-        row['PASS'] = len(list(self.cursor.execute(sql)))
+        sql = """SELECT COUNT(cbgm1.variant_unit)
+                 FROM cbgm AS cbgm1, cbgm AS cbgm2
+                 WHERE cbgm1.witness = ?
+                 AND cbgm2.witness = ?
+                 AND cbgm1.variant_unit = cbgm2.variant_unit;
+              """
+        row['PASS'] = list(self.cursor.execute(sql, (self.w1, w2)))[0][0]
         return True
+
+    @memoize
+    def all_attestations(self):
+        """
+        All attestations - getting this piecemeal is slow, so we'll cache it
+        """
+        ret = defaultdict(defaultdict)
+        for row in self.cursor.execute("""SELECT witness, variant_unit, label FROM cbgm"""):
+            witness, vu, label = row
+            ret[witness][vu] = label
+
+        return ret
+
+    def get_attestation(self, witness, vu):
+        """
+        A cache to find out what a witness reads in a variant unit
+        """
+        return self.all_attestations()[witness].get(vu)
 
     def add_READING(self, w2, row):
         """
@@ -136,12 +161,7 @@ class Coherence(object):
         unit.
         """
         assert self.variant_unit
-        sql = """SELECT label FROM attestation, reading
-                 WHERE witness = '{}'
-                 AND reading.id = reading_id
-                 AND variant_unit = '{}';""".format(w2, self.variant_unit)
-        val = list(self.cursor.execute(sql))
-        row['READING'] = val[0][0] if val else None
+        row['READING'] = self.get_attestation(w2, self.variant_unit)
         return True
 
     def add_TEXT(self, w2, row):
@@ -149,11 +169,10 @@ class Coherence(object):
         Reading text attested to by this witness in this variant unit.
         """
         assert self.variant_unit
-        sql = """SELECT text FROM attestation, reading
-                 WHERE witness = '{}'
-                 AND reading.id = reading_id
-                 AND variant_unit = '{}';""".format(w2, self.variant_unit)
-        val = list(self.cursor.execute(sql))
+        sql = """SELECT text FROM cbgm
+                 WHERE witness = ?
+                 AND variant_unit = ?;"""
+        val = list(self.cursor.execute(sql, (w2, self.variant_unit)))
         row['TEXT'] = val[0][0] if val else None
         return True
 

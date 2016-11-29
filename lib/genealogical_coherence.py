@@ -3,9 +3,11 @@
 from collections import defaultdict
 from itertools import product, chain
 from toposort import toposort
+import logging
 
-from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, OL_PARENT, UNCL, LAC, memoize
+from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, OL_PARENT, UNCL, LAC
 from .pre_genealogical_coherence import Coherence
+logger = logging.getLogger(__name__)
 
 
 class TooManyAborts(Exception):
@@ -64,10 +66,10 @@ class ReadingRelationship(object):
         """
         Get the parent reading for this reading
         """
-        sql = """SELECT parent FROM reading
-                 WHERE variant_unit = \"{}\"
-                 AND label = \"{}\"""".format(self.variant_unit, reading)
-        self.cursor.execute(sql)
+        sql = """SELECT parent FROM cbgm
+                 WHERE variant_unit = ?
+                 AND label = ?"""
+        self.cursor.execute(sql, (self.variant_unit, reading))
         return self.cursor.fetchone()[0]
 
 
@@ -97,16 +99,17 @@ class GenealogicalCoherence(Coherence):
         if self._already_generated:
             return
 
+        logger.debug("Generating genealogical coherence data")
         # Check for bad data
         data = defaultdict(set)
-        sql = """SELECT label, parent FROM reading
-                 WHERE variant_unit = \"{}\"
-                 """.format(self.variant_unit)
-        self.cursor.execute(sql)
+        sql = """SELECT label, parent FROM cbgm
+                 WHERE variant_unit = ?
+                 """
+        self.cursor.execute(sql, (self.variant_unit, ))
         for row in self.cursor:
             data[row[0]].add(row[1])
         try:
-            topo = list(toposort(data))
+            list(toposort(data))
         except ValueError:
             # There's a cycle in our data...
             raise CyclicDependency
@@ -129,26 +132,7 @@ class GenealogicalCoherence(Coherence):
         self.sort()
 
         self._already_generated = True
-
-    @memoize
-    def all_attestations(self):
-        """
-        All attestations - getting this piecemeal is slow, so we'll cache it
-        """
-        ret = defaultdict(defaultdict)
-        for row in self.cursor.execute("""SELECT witness, variant_unit, label
-                                          FROM attestation, reading
-                                          WHERE attestation.reading_id = reading.id"""):
-            witness, vu, label = row
-            ret[witness][vu] = label
-
-        return ret
-
-    def get_attestation(self, witness, vu):
-        """
-        A cache to find out what a witness reads in a variant unit
-        """
-        return self.all_attestations()[witness].get(vu)
+        logger.debug("Generated genealogical coherence data")
 
     def _calculate_reading_relationships(self):
         """
@@ -162,10 +146,8 @@ class GenealogicalCoherence(Coherence):
             EQUAL (they're the same reading)
         """
         # Find every variant unit in which we're extant
-        sql = """SELECT variant_unit, label FROM attestation, reading
-                 WHERE witness = \"{}\"
-                 AND attestation.reading_id = reading.id""".format(self.w1)
-        for vu, label in list(self.cursor.execute(sql)):
+        sql = "SELECT variant_unit, label FROM cbgm WHERE witness = ?"
+        for vu, label in list(self.cursor.execute(sql, (self.w1, ))):
             reading_obj = ReadingRelationship(vu, label, self.cursor)
             for w2 in self.all_mss:
                 if w2 == self.w1:

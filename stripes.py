@@ -15,7 +15,7 @@ def main(db_file):
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
 
-    sql = "SELECT DISTINCT variant_unit FROM reading"
+    sql = "SELECT DISTINCT variant_unit FROM cbgm"
     cursor.execute(sql)
     variant_units = [x[0] for x in cursor.fetchall()]
 
@@ -28,10 +28,7 @@ def main(db_file):
 
     ms_readings = defaultdict(dict)
 
-    sql = """SELECT label, witness, variant_unit
-             FROM attestation, reading
-             WHERE attestation.reading_id = reading.id
-             """
+    sql = """SELECT label, witness, variant_unit FROM cbgm"""
     for label, witness, variant_unit in cursor.execute(sql):
         ms_readings[witness][variant_unit] = label
 

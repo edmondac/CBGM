@@ -20,10 +20,10 @@ def has_unclear(vu, cursor):
     """
     Check if the given variant unit has any UNCL relationships
     """
-    sql = """SELECT parent FROM reading
-             WHERE variant_unit = \"{}\"
-             AND parent = \"{}\"""".format(vu, UNCL)
-    cursor.execute(sql)
+    sql = """SELECT parent FROM cbgm
+             WHERE variant_unit = ?
+             AND parent = ?"""
+    cursor.execute(sql, (vu, UNCL))
     return bool(cursor.fetchall())
 
 

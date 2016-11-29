@@ -22,12 +22,10 @@ def is_parent_reading_unclear(witness, vu, cursor):
     """
     # Not yet explained.... could be UNCL parent
     sql = """SELECT label, parent
-             FROM attestation, reading
-             WHERE attestation.reading_id = reading.id
-             AND reading.variant_unit = \"{}\"
-             AND witness = \"{}\"
-             """.format(vu, witness)
-    data = list(cursor.execute(sql))
+             FROM cbgm
+             WHERE variant_unit = ?
+             AND witness = ?"""
+    data = list(cursor.execute(sql, (vu, witness)))
     print("Witness {} has reading '{}' at {} with parent {}".format(
         witness, data[0][0], vu, data[0][1]))
     return data[0][1] == UNCL
@@ -113,9 +111,8 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
     # combinatios that we would ever actually consider as an optimal substemma.
 
     sql = """SELECT variant_unit, label, parent
-             FROM reading, attestation
-             WHERE reading.id = attestation.reading_id
-             AND attestation.witness = '{}';
+             FROM cbgm
+             WHERE witness = '{}';
           """.format(w1)
     my_vus = sorted([x for x in coh.cursor.execute(sql)],
                     key=lambda s: numify(s[0]))
