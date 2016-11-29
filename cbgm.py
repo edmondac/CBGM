@@ -145,8 +145,11 @@ if __name__ == "__main__":
 
     conn = sqlite3.connect(db_file)
     cursor = conn.cursor()
-    cursor.execute("VACUUM;")
-    cursor.execute("ANALYZE;")
+    try:
+        cursor.execute("VACUUM;")
+        cursor.execute("ANALYZE;")
+    except Exception:
+        logger.warning("Couldn't VACUUM and ANALYZE - maybe a locked database under MPI. Assuming all is fine...")
 
     all_mss = sort_mss([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM cbgm')])
     if args.witness and args.witness != 'all' and args.witness not in all_mss:
