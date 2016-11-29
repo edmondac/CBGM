@@ -89,7 +89,12 @@ def parse_input_file(filename):
     # "CREATE TABLE reading (id PRIMARY KEY, variant_unit, label, text, parent);",
     # "CREATE TABLE attestation (reading_id, witness, FOREIGN KEY(reading_id) REFERENCES reading(id));"]
 # New de-normalized schema (slow inserts and updates, fast selects):
-SCHEMA = "CREATE TABLE cbgm (witness, variant_unit, label, text, parent);"
+SCHEMA = ["CREATE TABLE cbgm (witness, variant_unit, label, text, parent);",
+          "CREATE INDEX varidx ON cbgm (variant_unit);",
+          "CREATE INDEX witidx ON cbgm (witness);",
+          "CREATE INDEX labidx ON cbgm (label);",
+          "CREATE INDEX paridx ON cbgm (parent);",
+          "VACUUM;", "ANALYZE;"]
 
 
 def populate(data, all_mss, db_file, force=False):
@@ -106,7 +111,8 @@ def populate(data, all_mss, db_file, force=False):
 
     conn = sqlite3.connect(db_file)
     c = conn.cursor()
-    c.execute(SCHEMA)
+    for s in SCHEMA:
+        c.execute(s)
 
     vu_count = 0
     for verse in data:
