@@ -79,7 +79,7 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
         count = i + 1
         if (count and not int(total / 10.0) % count) or count == total:
             # Report every 10% and at the end
-            logger.debug("Done {} of {} ({:.2f}%)".format(count, total, (count/total) * 100.0))
+            logger.debug("Done {} of {} ({:.2f}%)".format(count, total, (count / total) * 100.0))
 
         if not combination:
             # Couldn't find anything to explain it
@@ -148,6 +148,15 @@ def textual_flow(db_file, variant_unit, connectivity, perfect_only=False, suffix
 
 class TextualFlow(mpisupport.MpiParent):
     def __init__(self, db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpi=False):
+        # Fast abort if it already exists
+        self.output_file = "textual_flow_{}_c{}{}.svg".format(
+            variant_unit.replace('/', '_'), connectivity, suffix)
+        if os.path.exists(self.output_file):
+            logger.info("Textual flow diagram for {} already exists ({}) - skipping"
+                        .format(variant_unit, self.output_file))
+            return
+
+        # Get on and make it
         self.mpi = mpi
         super().__init__()
         self.db_file = db_file
@@ -156,7 +165,7 @@ class TextualFlow(mpisupport.MpiParent):
         self.perfect_only = perfect_only
         self.suffix = suffix
         self.parent_map = {}
-        self.output_file = self.textual_flow()
+        self.textual_flow()
 
     def mpi_run(self):
         """
@@ -171,21 +180,10 @@ class TextualFlow(mpisupport.MpiParent):
         """
         Create a textual flow diagram for the specified variant unit.
 
-        This will do nothing if the svg file already exists.
-
         Because I put the whole textual flow in one diagram (unlike Munster who
         show a textual flow diagram for a single reading) there can be multiple
         ancestors for a witness...
         """
-        output_file = "textual_flow_{}_c{}{}.svg".format(
-            self.variant_unit.replace('/', '_'), self.connectivity, self.suffix)
-        if os.path.exists(output_file):
-            logger.info("Textual flow diagram for {} already exists ({}) - skipping"
-                        .format(self.variant_unit, output_file))
-            if self.mpi:
-                self.mpi_wait()
-            return
-
         logger.info("Creating textual flow diagram for {}".format(self.variant_unit))
         logger.info("Setting connectivity to {}".format(self.connectivity))
         if self.perfect_only:
@@ -262,14 +260,12 @@ class TextualFlow(mpisupport.MpiParent):
         networkx.relabel_nodes(G, rank_mapping, copy=False)
 
         logger.info("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
-                                                                 G.number_of_edges()))
+                                                                       G.number_of_edges()))
         with NamedTemporaryFile() as dotfile:
             networkx.write_dot(G, dotfile.name)
-            subprocess.check_call(['dot', '-Tsvg', dotfile.name], stdout=open(output_file, 'w'))
+            subprocess.check_call(['dot', '-Tsvg', dotfile.name], stdout=open(self.output_file, 'w'))
 
-        logger.info("Written to {}".format(output_file))
-
-        return output_file
+        logger.info("Written to {}".format(self.output_file))
 
     def mpi_handle_result(self, args, ret):
         """

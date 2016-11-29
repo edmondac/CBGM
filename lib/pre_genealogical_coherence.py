@@ -17,7 +17,7 @@ class Coherence(object):
         @param db_file: database file
         @param w1: witness 1 name
         @param variant_unit: variant unit ref
-        @param pretty_p: print it pretty or not
+        @param pretty_p: normal P or the gothic (pretty) one
         @param debug: show more columns for debugging
         @param cache: cache the results in the database
         """
