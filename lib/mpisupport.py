@@ -20,14 +20,13 @@ def is_parent():
 
 
 class MpiParent(object):
-    def __init__(self):
-        self.mpicomm = None
-        self.mpi_queue = queue.Queue()
-        self.mpi_child_threads = []
-        self.mpi_child_status = {}
-        self.mpi_run()
+    mpicomm = None
+    mpi_queue = queue.Queue()
+    mpi_child_threads = []
+    mpi_child_status = {}
 
-    def mpi_wait(self):
+    @classmethod
+    def mpi_wait(cls, *, stop=True):
         """
         Wait for all work to be done, then tell things to stop.
 
@@ -36,15 +35,19 @@ class MpiParent(object):
         """
         # When the queue is done, we can continue.
         logger.debug("MPI: Waiting for the queue to be empty")
-        self.mpi_queue.join()
+        cls.mpi_queue.join()
+
+        if not stop:
+            # Nothing more to do for now
+            return
 
         logger.debug("MPI: Telling children to exit")
-        for t in self.mpi_child_threads:
-            self.mpi_queue.put(None)
+        for t in cls.mpi_child_threads:
+            cls.mpi_queue.put(None)
 
         # Clean up the threads, in case we run out
         logger.debug("MPI: Waiting for threads to exit")
-        running_threads = [t for t in self.mpi_child_threads]
+        running_threads = [t for t in cls.mpi_child_threads]
         while running_threads:
             t = running_threads.pop(0)
             t.join(0.1)
@@ -54,35 +57,40 @@ class MpiParent(object):
                 logger.debug("Thread {} joined - waiting for {} more"
                              .format(t, len(running_threads)))
 
+        # Set the list as empty, so it'll be re-made if more work is required.
+        cls.mpi_child_threads = []
+
         logger.debug("MPI: Work done")
         # We need to let threads, remote MPI processes etc. all clean up
         # properly - and a second seems to be ample time for this.
         time.sleep(1)
 
-    def show_stats(self):
-        all_stats = '\n\t'.join(['{}: {}'.format(k, self.mpi_child_status[k])
-                                 for k in sorted(self.mpi_child_status.keys())])
+    @classmethod
+    def show_stats(cls):
+        all_stats = '\n\t'.join(['{}: {}'.format(k, cls.mpi_child_status[k])
+                                 for k in sorted(cls.mpi_child_status.keys())])
         logger.debug("Status:\n\t{}".format(all_stats))
 
-    def mpi_manage_child(self, child):
+    @classmethod
+    def mpi_manage_child(cls, child):
         """
         Manage communications with the specified MPI child
         """
         logger.info("Child manager {} starting".format(child))
 
         def stat(child, status):
-            self.mpi_child_status[child] = "[{}]: {}".format(time.ctime(), status)
+            cls.mpi_child_status[child] = "[{}]: {}".format(time.ctime(), status)
             logger.debug("Child {}: {}".format(child, status))
 
         while True:
             # wait for something to do
             stat(child, "waiting for queue")
-            args = self.mpi_queue.get()
+            args = cls.mpi_queue.get()
 
             # send it to the remote child
             stat(child, "sending data to child")
-            self.mpicomm.send(args, dest=child)
-            if args == None:
+            cls.mpicomm.send(args, dest=child)
+            if args is None:
                 # That's the call to quit
                 stat(child, "quitting")
                 return
@@ -90,20 +98,20 @@ class MpiParent(object):
             stat(child, "waiting for results ({})".format(args))
 
             # get the results back
-            while not self.mpicomm.Iprobe(source=child):
+            while not cls.mpicomm.Iprobe(source=child):
                 # FIXME - after too long we should abort this child job...
                 time.sleep(1)
 
-            ret = self.mpicomm.recv(source=child)
+            ret = cls.mpicomm.recv(source=child)
             stat(child, "sent results back")
 
             # process the result
-            self.mpi_handle_result(args, ret)
+            cls.mpi_handle_result(args, ret)
 
-            self.mpi_queue.task_done()
+            cls.mpi_queue.task_done()
             stat(child, "task done")
 
-            self.show_stats()
+            cls.show_stats()
 
     def mpi_handle_result(self, args, ret):
         """
@@ -113,23 +121,28 @@ class MpiParent(object):
         """
         raise NotImplemented
 
-    def mpi_run(self):
+    @classmethod
+    def mpi_run(cls):
         """
         Top-level MPI parent method.
         """
-        self.mpicomm = MPI.COMM_WORLD
-        rank = self.mpicomm.Get_rank()
+        cls.mpicomm = MPI.COMM_WORLD
+        rank = cls.mpicomm.Get_rank()
         assert rank == 0
         # parent
+        if cls.mpi_child_threads:
+            logger.debug("We've already got child processes - so just using them")
+            return
+
         logger.info("MPI-enabled version with {} processors available"
-                    .format(self.mpicomm.size))
-        assert self.mpicomm.size > 1, "Please run this under MPI with more than one processor"
-        for child in range(1, self.mpicomm.size):
-            t = threading.Thread(target=self.mpi_manage_child,
+                    .format(cls.mpicomm.size))
+        assert cls.mpicomm.size > 1, "Please run this under MPI with more than one processor"
+        for child in range(1, cls.mpicomm.size):
+            t = threading.Thread(target=cls.mpi_manage_child,
                                  args=(child, ),
                                  daemon=True)
             t.start()
-            self.mpi_child_threads.append(t)
+            cls.mpi_child_threads.append(t)
 
 
 def mpi_child(fn):
