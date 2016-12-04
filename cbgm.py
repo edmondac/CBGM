@@ -195,35 +195,40 @@ if __name__ == "__main__":
         logger.info("Must specify -w")
         sys.exit(1)
 
-    # Now loop over all requested witnesses
-    for witness in do_mss:
-        if args.combinations_of_ancestors:
-            # combinations_of_ancestors(db_file, witness, args.max_comb_len,
-            #                          args.csv, debug=True)
-            combinations_of_ancestors(db_file, witness, args.max_comb_len,
-                                      csv_file=args.csv,
-                                      allow_incomplete=not args.only_complete,
-                                      debug=args.extracols, suffix=args.suffix)
-            continue
+    if args.textual_flow:
+        textual_flow(db_file, do_vus, args.connectivity, args.perfect,
+                     suffix=args.suffix)
 
-        # Loop over all requested variant units
-        for i, vu in enumerate(do_vus):
-            logger.debug("Running for variant unit {} ({} of {})"
-                         .format(vu, i + 1, len(do_vus)))
-            output = ''
-            if coh_fn:
-                # Call our coherence function
-                output += coh_fn(db_file, witness, vu, debug=args.extracols)
-                output += '\n\n\n'
+    elif args.local_stemma:
+        output = local_stemma(db_file, do_vus, suffix=args.suffix)
+        if not args.no_strip_spaces:
+            output = output.replace(' ', '')
 
-            elif args.local_stemma:
-                output += local_stemma(db_file, vu, suffix=args.suffix)
+        logger.info("Output was:\n{}" .format(output))
 
-            elif args.textual_flow:
-                textual_flow(db_file, vu, args.connectivity, args.perfect,
-                             suffix=args.suffix)
+    else:
+        # Now loop over all requested witnesses
+        for witness in do_mss:
+            if args.combinations_of_ancestors:
+                # combinations_of_ancestors(db_file, witness, args.max_comb_len,
+                #                          args.csv, debug=True)
+                combinations_of_ancestors(db_file, witness, args.max_comb_len,
+                                          csv_file=args.csv,
+                                          allow_incomplete=not args.only_complete,
+                                          debug=args.extracols, suffix=args.suffix)
+                continue
 
-            if not args.no_strip_spaces:
-                output = output.replace(' ', '')
+            # Loop over all requested variant units
+            for i, vu in enumerate(do_vus):
+                logger.debug("Running for variant unit {} ({} of {})"
+                             .format(vu, i + 1, len(do_vus)))
+                output = ''
+                if coh_fn:
+                    # Call our coherence function
+                    output += coh_fn(db_file, witness, vu, debug=args.extracols)
+                    output += '\n\n\n'
 
-            logger.info("Output was:\n{}" .format(output))
+                if not args.no_strip_spaces:
+                    output = output.replace(' ', '')
+
+                logger.info("Output was:\n{}" .format(output))

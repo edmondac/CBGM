@@ -122,9 +122,9 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     return parents
 
 
-def textual_flow(db_file, variant_unit, connectivity, perfect_only=False, suffix=''):
+def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffix=''):
     """
-    Create a textual flow diagram for the specified variant unit. This will
+    Create a textual flow diagram for the specified variant units. This will
     work out if we're using MPI and act accordingly...
     """
     if 'OMPI_COMM_WORLD_SIZE' in os.environ:
@@ -136,14 +136,23 @@ def textual_flow(db_file, variant_unit, connectivity, perfect_only=False, suffix
 
     if mpi_mode:
         if mpi_parent:
-            return TextualFlow(db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpi=True).output_file
+            for i, vu in enumerate(variant_units):
+                logger.debug("Running for variant unit {} ({} of {})"
+                             .format(vu, i + 1, len(variant_units)))
+                tf = TextualFlow(db_file, vu, connectivity, perfect_only=False,
+                                 suffix='', mpi=True).output_file
+
+            return tf.mpi_wait(stop=True)
         else:
             # MPI child
             mpisupport.mpi_child(get_parents)
             return "MPI child"
 
     else:
-        return TextualFlow(db_file, variant_unit, connectivity, perfect_only=False, suffix='').output_file
+        for i, vu in enumerate(variant_units):
+            logger.debug("Running for variant unit {} ({} of {})"
+                         .format(vu, i + 1, len(variant_units)))
+            TextualFlow(db_file, vu, connectivity, perfect_only=False, suffix='').output_file
 
 
 class TextualFlow(mpisupport.MpiParent):
@@ -158,7 +167,8 @@ class TextualFlow(mpisupport.MpiParent):
 
         # Get on and make it
         self.mpi = mpi
-        super().__init__()
+        if self.mpi:
+            super().mpi_run()
         self.db_file = db_file
         self.variant_unit = variant_unit
         self.connectivity = connectivity
@@ -214,7 +224,7 @@ class TextualFlow(mpisupport.MpiParent):
                 self.parent_map[w1] = parents
 
         if self.mpi:
-            self.mpi_wait()
+            self.mpi_wait(stop=False)
             # Now self.parent_map should be complete
 
         logger.debug("Parent map is: {}".format(self.parent_map))

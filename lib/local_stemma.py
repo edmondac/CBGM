@@ -3,9 +3,11 @@
 import networkx
 import sqlite3
 import subprocess
+import logging
 import re
 from tempfile import NamedTemporaryFile
 from .shared import INIT, OL_PARENT, UNCL, sort_mss
+logger = logging.getLogger(__name__)
 
 
 def _post_process_dot(dotfile):
@@ -29,7 +31,20 @@ def _post_process_dot(dotfile):
         w.write(''.join(output))
 
 
-def local_stemma(db_file, variant_unit, suffix=''):
+def local_stemma(db_file, variant_units, suffix=''):
+    """
+    Create a local stemma for the specified variant units (list).
+    """
+    ret = ""
+    for i, vu in enumerate(variant_units):
+        logger.debug("Running for variant unit {} ({} of {})"
+                     .format(vu, i + 1, len(variant_units)))
+        ret += _one_local_stemma(db_file, vu, suffix)
+
+    return ret
+
+
+def _one_local_stemma(db_file, variant_unit, suffix=''):
     """
     Create a local stemma for the specified variant unit.
     """

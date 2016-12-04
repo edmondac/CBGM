@@ -29,7 +29,7 @@ def has_unclear(vu, cursor):
 
 class CheckConsistency(MpiParent):
     def __init__(self, inputfile, connectivity):
-        super().__init__()
+        super().mpi_run()
         self.results = {}
         self.connectivity = connectivity
 
