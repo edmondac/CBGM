@@ -43,7 +43,7 @@ class Hypotheses(mpisupport.MpiParent):
     def __init__(self, data, all_mss, vu, force=False,
                  perfect_only=True, connectivity=499, mpi=False):
         if mpi:
-            super().mpi_run()
+            super().__init__()
         self.data = data
         self.all_mss = all_mss
         self.vu = vu
