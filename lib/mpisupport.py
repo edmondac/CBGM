@@ -6,6 +6,7 @@ import threading
 import queue
 import logging
 import time
+import resource
 
 logger = logging.getLogger()
 
@@ -24,6 +25,16 @@ class MpiParent(object):
     mpi_queue = queue.Queue()
     mpi_child_threads = []
     mpi_child_status = {}
+    mpi_child_meminfo = {}
+
+    # WARNING - this operates as a singleton class - always using the
+    # latest instance created.
+    latest_instance = None
+
+    def __init__(self):
+        logger.debug("Initialising MpiParent")
+        self.__class__.latest_instance = self
+        self.mpi_run()
 
     @classmethod
     def mpi_wait(cls, *, stop=True):
@@ -34,7 +45,9 @@ class MpiParent(object):
         it will all just exit and move on.
         """
         # When the queue is done, we can continue.
-        logger.debug("MPI: Waiting for the queue to be empty")
+        logger.debug("MPI: Waiting for work to finish")
+        # This waits for an empty queue AND task_done to have been called
+        # for each item.
         cls.mpi_queue.join()
 
         if not stop:
@@ -67,7 +80,8 @@ class MpiParent(object):
 
     @classmethod
     def show_stats(cls):
-        all_stats = '\n\t'.join(['{}: {}'.format(k, cls.mpi_child_status[k])
+        all_stats = '\n\t'.join(['{} ({}): {}'.format(k, cls.mpi_child_meminfo.get(k, "-"),
+                                                      cls.mpi_child_status[k])
                                  for k in sorted(cls.mpi_child_status.keys())])
         logger.debug("Status:\n\t{}".format(all_stats))
 
@@ -78,8 +92,10 @@ class MpiParent(object):
         """
         logger.info("Child manager {} starting".format(child))
 
-        def stat(child, status):
+        def stat(child, status, meminfo=None):
             cls.mpi_child_status[child] = "[{}]: {}".format(time.ctime(), status)
+            if meminfo:
+                cls.mpi_child_meminfo[child] = meminfo
             logger.debug("Child {}: {}".format(child, status))
 
         while True:
@@ -102,16 +118,15 @@ class MpiParent(object):
                 # FIXME - after too long we should abort this child job...
                 time.sleep(1)
 
-            ret = cls.mpicomm.recv(source=child)
-            stat(child, "sent results back")
+            ret, meminfo = cls.mpicomm.recv(source=child)
+            stat(child, "sent results back", meminfo)
 
-            # process the result
-            cls.mpi_handle_result(args, ret)
+            # process the result by handing it to the latest_instance's
+            # mpi_handle_result method.
+            cls.latest_instance.mpi_handle_result(args, ret)
 
             cls.mpi_queue.task_done()
             stat(child, "task done")
-
-            cls.show_stats()
 
     def mpi_handle_result(self, args, ret):
         """
@@ -144,6 +159,16 @@ class MpiParent(object):
             t.start()
             cls.mpi_child_threads.append(t)
 
+        t = threading.Thread(target=cls.stats_thread,
+                             daemon=True)
+        t.start()
+
+    @classmethod
+    def stats_thread(cls):
+        while True:
+            cls.show_stats()
+            time.sleep(60)
+
 
 def mpi_child(fn):
     """
@@ -169,11 +194,17 @@ def mpi_child(fn):
 
         logger.debug("Child {} (remote) received data".format(rank))
         ret = fn(*args)
+
+        mem_raw = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        mem_size = resource.getpagesize()
+        mem_bytes = mem_raw * mem_size
+        meminfo = "{:.2f} MB".format(mem_bytes / 1024 ** 2)
+
         if ret is None:
             # Nothing was generated
-            MPI.COMM_WORLD.send(None, dest=0)
+            MPI.COMM_WORLD.send((None, meminfo), dest=0)
             logger.info("Child {} (remote) aborted job".format(rank))
         else:
             logger.debug("Child {} (remote) sending results back".format(rank))
-            MPI.COMM_WORLD.send(ret, dest=0)
+            MPI.COMM_WORLD.send((ret, meminfo), dest=0)
             logger.debug("Child {} (remote) completed job".format(rank))
