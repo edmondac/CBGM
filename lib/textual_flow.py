@@ -10,7 +10,6 @@ from tempfile import NamedTemporaryFile
 from .shared import OL_PARENT
 from .genealogical_coherence import GenealogicalCoherence
 from lib import mpisupport
-import time
 
 # Colours from http://www.hitmill.com/html/pastels.html
 COLOURS = ("#FF8A8A", "#FF86E3", "#FF86C2", "#FE8BF0", "#EA8DFE", "#DD88FD", "#AD8BFE",
@@ -234,7 +233,6 @@ class TextualFlow(mpisupport.MpiParent):
 
         # Now self.parent_map should be complete
         logger.debug("Parent map is: {}".format(self.parent_map))
-        logger.debug("SELF: {}" .format(self))
 
         # 2. Draw the diagram
         rank_mapping = {}
@@ -292,5 +290,3 @@ class TextualFlow(mpisupport.MpiParent):
         """
         w1 = args[0]
         self.parent_map[w1] = ret
-        logger.debug("Partial parent map: {}".format(self.parent_map))
-        logger.debug("SELF: {}" .format(self))

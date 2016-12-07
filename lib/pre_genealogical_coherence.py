@@ -12,14 +12,13 @@ class Coherence(object):
     Class representing pre-genealogical coherence that can be extended
     to give more info.
     """
-    def __init__(self, db_file, w1, variant_unit=None, *, pretty_p=True, debug=False, cache=True):
+    def __init__(self, db_file, w1, variant_unit=None, *, pretty_p=True, debug=False):
         """
         @param db_file: database file
         @param w1: witness 1 name
         @param variant_unit: variant unit ref
         @param pretty_p: normal P or the gothic (pretty) one
         @param debug: show more columns for debugging
-        @param cache: cache the results in the database
         """
         self.conn = sqlite3.connect(db_file)
         self.cursor = self.conn.cursor()
@@ -28,7 +27,7 @@ class Coherence(object):
         self.columns = ['W2', 'NR', 'PERC1', 'EQ', 'PASS']
         self.pretty_p = pretty_p  # normal P or gothic one...
         self.debug = debug
-        self.cache = cache
+        self._all_attestations = None
 
         self.variant_unit = variant_unit
         if variant_unit:
@@ -137,15 +136,19 @@ class Coherence(object):
         row['PASS'] = list(self.cursor.execute(sql, (self.w1, w2)))[0][0]
         return True
 
-    @memoize
     def all_attestations(self):
         """
         All attestations - getting this piecemeal is slow, so we'll cache it
         """
+        if self._all_attestations:
+            return self._all_attestations
+
         ret = defaultdict(defaultdict)
         for row in self.cursor.execute("""SELECT witness, variant_unit, label FROM cbgm"""):
             witness, vu, label = row
             ret[witness][vu] = label
+
+        self._all_attestations = ret
 
         return ret
 

@@ -24,6 +24,8 @@ re_vref = re.compile("B([0-9]+)K([0-9]+)V([0-9]+)")
 def memoize(f):
     """
     Based on http://www.python-course.eu/python3_memoization.php
+
+    WARNING - this can cause effective memory leaks in long running processes
     """
     memo = {}
 

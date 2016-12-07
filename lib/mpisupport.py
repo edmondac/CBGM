@@ -7,6 +7,8 @@ import queue
 import logging
 import time
 import resource
+from pympler.tracker import SummaryTracker
+
 
 logger = logging.getLogger()
 
@@ -177,6 +179,7 @@ def mpi_child(fn):
     """
     rank = MPI.COMM_WORLD.Get_rank()
     logger.debug("Child {} (remote) starting".format(rank))
+    tracker = SummaryTracker()
     while True:
         # child - wait to be given a data structure
         while not MPI.COMM_WORLD.Iprobe(source=0):
@@ -208,3 +211,6 @@ def mpi_child(fn):
             logger.debug("Child {} (remote) sending results back".format(rank))
             MPI.COMM_WORLD.send((ret, meminfo), dest=0)
             logger.debug("Child {} (remote) completed job".format(rank))
+
+        # Show leaking objects... uncomment this to track them...
+        # tracker.print_diff()
