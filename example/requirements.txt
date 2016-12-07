@@ -31,6 +31,7 @@ pyflakes==1.0.0
 pygraphviz==1.3.1
 pylab==0.1.3
 pymongo==3.2
+Pympler==0.4.3
 pyparsing==2.1.0
 python-dateutil==2.4.2
 python-nexus==1.34
