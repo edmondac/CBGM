@@ -139,10 +139,10 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
             for i, vu in enumerate(variant_units):
                 logger.debug("Running for variant unit {} ({} of {})"
                              .format(vu, i + 1, len(variant_units)))
-                tf = TextualFlow(db_file, vu, connectivity, perfect_only=False,
-                                 suffix='', mpi=True).output_file
+                TextualFlow(db_file, vu, connectivity, perfect_only=False,
+                            suffix='', mpi=True).output_file
 
-            return tf.mpi_wait(stop=True)
+            return TextualFlow.mpi_wait(stop=True)
         else:
             # MPI child
             mpisupport.mpi_child(get_parents)
