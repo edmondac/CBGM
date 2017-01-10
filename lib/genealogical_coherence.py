@@ -42,7 +42,7 @@ class ReadingRelationship(object):
         # always answer that question.
 
         def check(reading, desired_parent):
-            bits = desired_parent.split('&')  # len 1 or more
+            bits = [x.strip() for x in desired_parent.split('&')]  # len 1 or more
             for bit in bits:
                 if reading == bit:
                     # We matched one required parent reading
@@ -306,7 +306,7 @@ class GenealogicalCoherence(Coherence):
 
         # Now the parent reading
         partial_explanations = []
-        bits = parent_reading.split('&')
+        bits = [x.strip() for x in parent_reading.split('&')]
         if len(bits) == 1:
             next_gen = my_gen + 1
         else:

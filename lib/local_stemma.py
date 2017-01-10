@@ -76,7 +76,7 @@ def _one_local_stemma(db_file, variant_unit, suffix=''):
         elif parent:
             for p in parent.split('&'):
                 # multiple parents are separated by '&'
-                G.add_edge(p, label)
+                G.add_edge(p.strip(), label)
         else:
             print("WANRNING - {} has no parents".format(label))
             continue
