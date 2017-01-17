@@ -49,7 +49,7 @@ class MpiParent(object):
         if cls.mpicomm is None:
             # We haven't launched any MPI workers - we need to launch the local
             # management threads, so that the remote MPI processes will quit.
-            self.mpi_run()
+            cls.mpi_run()
 
         # When the queue is done, we can continue.
         logger.debug("MPI: Waiting for work to finish")
