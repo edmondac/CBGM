@@ -179,7 +179,8 @@ class TextualFlow(mpisupport.MpiParent):
         self.parent_map = {}
         self.textual_flow()
 
-    def mpi_run(self):
+    @classmethod
+    def mpi_run(cls):
         """
         Simple wrapper to handle mpi on or off.
         """
