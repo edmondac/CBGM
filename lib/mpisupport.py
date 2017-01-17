@@ -46,6 +46,10 @@ class MpiParent(object):
         Make sure you've put things in the queue before calling this... or
         it will all just exit and move on.
         """
+        if cls.mpicomm is None:
+            # We haven't launched any MPI workers - so nothing to do
+            return
+
         # When the queue is done, we can continue.
         logger.debug("MPI: Waiting for work to finish")
         # This waits for an empty queue AND task_done to have been called
