@@ -49,7 +49,7 @@ class MpiParent(object):
         if cls.mpicomm is None:
             # We haven't launched any MPI workers - we need to launch the local
             # management threads, so that the remote MPI processes will quit.
-            cls.mpi_run()
+            cls._mpi_init()
 
         # When the queue is done, we can continue.
         logger.debug("MPI: Waiting for work to finish")
@@ -147,6 +147,13 @@ class MpiParent(object):
     def mpi_run(cls):
         """
         Top-level MPI parent method.
+        """
+        return cls._mpi_init()
+
+    @classmethod
+    def _mpi_init(cls):
+        """
+        Start up the MPI management threads etc.
         """
         cls.mpicomm = MPI.COMM_WORLD
         rank = cls.mpicomm.Get_rank()
