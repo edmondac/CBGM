@@ -4,6 +4,7 @@
 import sqlite3
 import sys
 import logging
+import time
 from lib.local_stemma import local_stemma
 from lib.shared import sort_mss, sorted_vus
 from lib.textual_flow import textual_flow
@@ -151,7 +152,24 @@ if __name__ == "__main__":
     except Exception:
         logger.warning("Couldn't VACUUM and ANALYZE - maybe a locked database under MPI. Assuming all is fine...")
 
-    all_mss = sort_mss([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM cbgm')])
+    while True:
+        try:
+            all_mss = sort_mss([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM cbgm')])
+        except Exception as e:
+            logger.warning("Couldn't get all_mss (%s) - will retry" % e)
+            time.sleep(1)
+        else:
+            break
+
+    while True:
+        try:
+            all_vus = sorted_vus(cursor)
+        except Exception as e:
+            logger.warning("Couldn't get all_vus (%s) - will retry" % e)
+            time.sleep(1)
+        else:
+            break
+
     if args.witness and args.witness != 'all' and args.witness not in all_mss:
         logger.info("Can't find witness: {}".format(args.witness))
         sys.exit(4)
@@ -178,7 +196,6 @@ if __name__ == "__main__":
         global_stemma(args.file, suffix=args.suffix)
         sys.exit(0)
 
-    all_vus = sorted_vus(cursor)
     if args.variant_unit and args.variant_unit != 'all' and args.variant_unit not in all_vus:
         logger.info("Can't find variant unit: {}".format(args.variant_unit))
         sys.exit(5)
