@@ -1,6 +1,7 @@
 # encoding: utf-8
 
 import re
+import string
 
 # Constants representing reading relationships (used internally)
 PRIOR = "PRIOR"
@@ -42,18 +43,29 @@ def sort_mss(ms_list):
     in order.
     """
     def witintify(x):
-        # return an inte representing this witness
+        # return a sortable tuple representing this witness
+        num_match = re.search('([0-9]+)', x)
+        if num_match:
+            num = int(num_match.group(1))
+            rem = x.replace(num_match.group(1), '')
+        else:
+            num = 0
+            rem = x
+
         if x.startswith('0'):
-            return 20000 + int(re.search('([0-9]+)', x).group(1))
+            offset = 20000
         elif x.startswith('P'):
-            return 10000 + int(re.search('([0-9]+)', x).group(1))
+            offset = 10000
         elif x == 'A':
-            return 1
-        elif x[0] in '0123456789':
-            return 30000 + int(re.search('([0-9]+)', x).group(1))
+            num = 1
+            offset = 0
+        elif x[0] in string.digits:
+            offset = 30000
         else:
             print("Unsure how to order {} - assuming 1".format(x))
-            return 1
+            offset = 0
+
+        return (offset + num, rem)
 
     return sorted(ms_list, key=lambda x: witintify(x))
 

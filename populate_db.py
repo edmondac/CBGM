@@ -6,7 +6,7 @@
 import sqlite3
 import os
 import importlib
-from lib.shared import INIT, LAC
+from .lib.shared import INIT, LAC
 
 
 class AllBut(object):

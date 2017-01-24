@@ -5,14 +5,14 @@ import sqlite3
 import sys
 import logging
 import time
-from lib.local_stemma import local_stemma
-from lib.shared import sort_mss, sorted_vus
-from lib.textual_flow import textual_flow
-from lib.combinations_of_ancestors import combinations_of_ancestors
-from lib.genealogical_coherence import gen_coherence
-from lib.pre_genealogical_coherence import pre_gen_coherence
-from lib.global_stemma import global_stemma, optimal_substemma
-import populate_db
+from .lib.local_stemma import local_stemma
+from .lib.shared import sort_mss, sorted_vus
+from .lib.textual_flow import textual_flow
+from .lib.combinations_of_ancestors import combinations_of_ancestors
+from .lib.genealogical_coherence import gen_coherence
+from .lib.pre_genealogical_coherence import pre_gen_coherence
+from .lib.global_stemma import global_stemma, optimal_substemma
+from . import populate_db
 
 DEFAULT_DB_FILE = '/tmp/_default_cbgm_db.db'
 
@@ -23,6 +23,9 @@ logger = logging.getLogger(__name__)
 def status(cursor):
     """
     Show useful status info about variant units
+
+    Also returns status in a machine-readable way:
+        (number of vus, number unresolved)
     """
     vus = sorted_vus(cursor)
     logger.debug("All variant units ({}): ".format(len(vus)) + ', '.join(vus))
@@ -37,6 +40,8 @@ def status(cursor):
             n_uncl += 1
 
     logger.info("\nThere are {} unresolved variant units".format(n_uncl))
+
+    return (len(vus), n_uncl)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import sys
 import networkx
 from tempfile import NamedTemporaryFile
 import subprocess
-import populate_db
+from .. import populate_db
 
 DEFAULT_DB_FILE = '/tmp/glob_stem.db'
 
