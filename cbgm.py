@@ -39,7 +39,7 @@ def status(cursor):
             logger.info("{} is unresolved ({} unclear parents)".format(vu, uncls))
             n_uncl += 1
 
-    logger.info("\nThere are {} unresolved variant units".format(n_uncl))
+    logger.info("There are {} unresolved variant units".format(n_uncl))
 
     return (len(vus), n_uncl)
 
