@@ -80,8 +80,8 @@ if __name__ == "__main__":
                         help="Don't allow incomplete combinations of ancestors")
     parser.add_argument('--extracols', default=False, action="store_true",
                         help='Show more columns in combinations of ancestors')
-    parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,
-                        help='Maximum allowed connectivity in a textual flow diagram')
+    parser.add_argument('-c', '--connectivity', default="499", metavar='N', type=str,
+                        help='Maximum allowed connectivity in a textual flow diagram (use comma separated list to perform multiple calculations)')
     parser.add_argument('-s', '--suffix', default='',
                         help='Filename suffix for generated files (before the extension)')
     parser.add_argument('-w', '--witness', default=None,
@@ -218,8 +218,11 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if args.textual_flow:
-        textual_flow(db_file, do_vus, args.connectivity, args.perfect,
-                     suffix=args.suffix)
+        conn = [int(x) for x in args.connectivity.split(',')]
+        if len(conn) == 1:
+            logger.info("Have you considered calculating multiple connectivity "
+                        "values at once? Use a comma separated list.")
+        textual_flow(db_file, do_vus, conn, args.perfect, suffix=args.suffix)
 
     elif args.local_stemma:
         output = local_stemma(db_file, do_vus, suffix=args.suffix)

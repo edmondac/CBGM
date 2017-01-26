@@ -51,6 +51,8 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     """
     Calculate the best parents for this witness at this variant unit
 
+    Return a map of connectivity value to parent map.
+
     This can take a long time...
     """
     logger.info("Getting best parent(s) for {}".format(w1))
@@ -67,59 +69,63 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     best_gen = None
     parents = []
     max_acceptable_gen = 2  # only allow my reading or my parent's
-    try:
-        combinations = coh.parent_combinations(w1_reading, w1_parent, connectivity)
-    except Exception:
-        logger.exception("Couldn't get parent combinations for {}, {}, {}"
-                         .format(w1_reading, w1_parent, connectivity))
-        return None
+    parent_maps = {}
+    for conn_value in connectivity:
+        logger.info("Calculating for conn={}".format(conn_value))
+        try:
+            combinations = coh.parent_combinations(w1_reading, w1_parent, conn_value)
+        except Exception:
+            logger.exception("Couldn't get parent combinations for {}, {}, {}"
+                             .format(w1_reading, w1_parent, conn_value))
+            return None
 
-    total = len(combinations)
-    for i, combination in enumerate(combinations):
-        count = i + 1
-        if (count and not int(total / 10.0) % count) or count == total:
-            # Report every 10% and at the end
-            logger.debug("Done {} of {} ({:.2f}%)".format(count, total, (count / total) * 100.0))
+        total = len(combinations)
+        for i, combination in enumerate(combinations):
+            count = i + 1
+            if (count and not int(total / 10.0) % count) or count == total:
+                # Report every 10% and at the end
+                logger.debug("Done {} of {} ({:.2f}%)".format(count, total, (count / total) * 100.0))
 
-        if not combination:
-            # Couldn't find anything to explain it
-            logger.info("Couldn't find any parent combination for {}".format(w1_reading))
-            continue
+            if not combination:
+                # Couldn't find anything to explain it
+                logger.info("Couldn't find any parent combination for {}".format(w1_reading))
+                continue
 
-        rank = max(x[1] for x in combination)
-        gen = max(x[2] for x in combination)
-        if gen > max_acceptable_gen:
-            continue
+            rank = max(x[1] for x in combination)
+            gen = max(x[2] for x in combination)
+            if gen > max_acceptable_gen:
+                continue
 
-        if best_gen is None or gen < best_gen:
-            best_parents_by_gen = combination
-            best_gen = gen
-        elif gen == best_gen:
-            if rank < max(x[1] for x in best_parents_by_gen):
-                # This is a better option for this generation
+            if best_gen is None or gen < best_gen:
                 best_parents_by_gen = combination
                 best_gen = gen
+            elif gen == best_gen:
+                if rank < max(x[1] for x in best_parents_by_gen):
+                    # This is a better option for this generation
+                    best_parents_by_gen = combination
+                    best_gen = gen
 
-        if best_rank is None or rank < best_rank:
-            best_parents_by_rank = combination
-            best_rank = rank
+            if best_rank is None or rank < best_rank:
+                best_parents_by_rank = combination
+                best_rank = rank
 
-    logger.debug("Analysing results")
+        logger.debug("Analysing results")
 
-    if best_gen == 1:
-        # We can do this with direct parents - use them
-        parents = best_parents_by_gen
-    else:
-        # Got to use ancestors, so use the best by rank
-        parents = best_parents_by_rank
+        if best_gen == 1:
+            # We can do this with direct parents - use them
+            parents = best_parents_by_gen
+        else:
+            # Got to use ancestors, so use the best by rank
+            parents = best_parents_by_rank
 
-    if w1_parent == OL_PARENT and not parents:
-        # Top level in an overlapping unit with an omission in the initial text
-        parents = [('OL_PARENT', -1, 1)]
+        if w1_parent == OL_PARENT and not parents:
+            # Top level in an overlapping unit with an omission in the initial text
+            parents = [('OL_PARENT', -1, 1)]
 
-    logger.info("Returning best parents: {}".format(parents))
+        logger.info("Found best parents (conn={}): {}".format(conn_value, parents))
+        parent_maps[conn_value] = parents
 
-    return parents
+    return parent_maps
 
 
 def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffix=''):
@@ -139,8 +145,7 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
             for i, vu in enumerate(variant_units):
                 logger.debug("Running for variant unit {} ({} of {})"
                              .format(vu, i + 1, len(variant_units)))
-                TextualFlow(db_file, vu, connectivity, perfect_only=False,
-                            suffix='', mpi=True).output_file
+                TextualFlow(db_file, vu, connectivity, perfect_only=False, suffix='', mpi=True)
 
             return TextualFlow.mpi_wait(stop=True)
         else:
@@ -152,17 +157,29 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
         for i, vu in enumerate(variant_units):
             logger.debug("Running for variant unit {} ({} of {})"
                          .format(vu, i + 1, len(variant_units)))
-            TextualFlow(db_file, vu, connectivity, perfect_only=False, suffix='').output_file
+            TextualFlow(db_file, vu, connectivity, perfect_only=False, suffix='')
 
 
 class TextualFlow(mpisupport.MpiParent):
     def __init__(self, db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpi=False):
+        assert type(connectivity) == list, "Connectivity must be a list"
         # Fast abort if it already exists
-        self.output_file = "textual_flow_{}_c{}{}.svg".format(
-            variant_unit.replace('/', '_'), connectivity, suffix)
-        if os.path.exists(self.output_file):
-            logger.info("Textual flow diagram for {} already exists ({}) - skipping"
-                        .format(variant_unit, self.output_file))
+        self.output_files = {}
+        self.connectivity = []
+        for conn_value in connectivity:
+            output_file = "textual_flow_{}_c{}{}.svg".format(
+                variant_unit.replace('/', '_'), conn_value, suffix)
+
+            if os.path.exists(output_file):
+                logger.info("Textual flow diagram for {} already exists ({}) - skipping"
+                            .format(variant_unit, output_file))
+                continue
+
+            self.output_files[conn_value] = output_file
+            self.connectivity.append(conn_value)
+
+        if not self.output_files:
+            logger.info("Nothing to do - skipping variant unit {}".format(variant_unit))
             return
 
         # Get on and make it
@@ -172,11 +189,10 @@ class TextualFlow(mpisupport.MpiParent):
 
         self.db_file = db_file
         self.variant_unit = variant_unit
-        self.connectivity = connectivity
         self.perfect_only = perfect_only
         self.suffix = suffix
         logger.debug("Initialising {}".format(self))
-        self.parent_map = {}
+        self.parent_maps = {}
         self.textual_flow()
 
     def mpi_run(self):
@@ -200,7 +216,6 @@ class TextualFlow(mpisupport.MpiParent):
         logger.info("Setting connectivity to {}".format(self.connectivity))
         if self.perfect_only:
             logger.info("Insisting on perfect coherence...")
-        G = networkx.DiGraph()
 
         sql = """SELECT witness, label, parent
                  FROM cbgm
@@ -214,7 +229,6 @@ class TextualFlow(mpisupport.MpiParent):
                              'fillcolor': COLOURMAP.get(x[1][0], '#cccccc'),
                              'style': 'filled'})  # See http://www.graphviz.org/
                      for x in data]
-        G.add_nodes_from(witnesses)
 
         # 1. Calculate the best parent for each witness
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
@@ -222,8 +236,8 @@ class TextualFlow(mpisupport.MpiParent):
                 self.mpi_queue.put((w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file))
             else:
                 logger.debug("Calculating parents {}/{}".format(i, len(data)))
-                parents = get_parents(w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file)
-                self.parent_map[w1] = parents
+                parent_maps = get_parents(w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file)
+                self.parent_maps[w1] = parent_maps  # a parent map per connectivity setting
 
         if self.mpi:
             # Wait a little for stabilisation
@@ -231,13 +245,22 @@ class TextualFlow(mpisupport.MpiParent):
             self.mpi_wait(stop=False)
             logger.debug("Remote tasks complete")
 
-        # Now self.parent_map should be complete
-        logger.debug("Parent map is: {}".format(self.parent_map))
+        # Now self.parent_maps should be complete
+        logger.debug("Parent maps are: {}".format(self.parent_maps))
 
-        # 2. Draw the diagram
+        # 2. Draw the diagrams
+        for conn_value in self.connectivity:
+            self.draw_diagram(conn_value, data, witnesses)
+
+    def draw_diagram(self, conn_value, data, witnesses):
+        """
+        Draw the textual flow diagram for the specified connectivity value
+        """
+        G = networkx.DiGraph()
+        G.add_nodes_from(witnesses)
         rank_mapping = {}
         for w1, w1_reading, w1_parent in data:
-            parents = self.parent_map[w1]
+            parents = self.parent_maps[w1][conn_value]
             if parents is None:
                 # Couldn't calculate them
                 parents = []
@@ -276,11 +299,12 @@ class TextualFlow(mpisupport.MpiParent):
 
         logger.info("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                                        G.number_of_edges()))
+        output_file = self.output_files[conn_value]
         with NamedTemporaryFile() as dotfile:
             networkx.write_dot(G, dotfile.name)
-            subprocess.check_call(['dot', '-Tsvg', dotfile.name], stdout=open(self.output_file, 'w'))
+            subprocess.check_call(['dot', '-Tsvg', dotfile.name], stdout=open(output_file, 'w'))
 
-        logger.info("Written to {}".format(self.output_file))
+        logger.info("Written to {}".format(output_file))
 
     def mpi_handle_result(self, args, ret):
         """
@@ -289,4 +313,4 @@ class TextualFlow(mpisupport.MpiParent):
         @param ret: response from the child
         """
         w1 = args[0]
-        self.parent_map[w1] = ret
+        self.parent_maps[w1] = ret  # a parent map per connectivity setting
