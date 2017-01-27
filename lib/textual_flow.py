@@ -77,7 +77,8 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
         except Exception:
             logger.exception("Couldn't get parent combinations for {}, {}, {}"
                              .format(w1_reading, w1_parent, conn_value))
-            return None
+            parent_maps[conn_value] = None
+            continue
 
         total = len(combinations)
         for i, combination in enumerate(combinations):
@@ -260,6 +261,7 @@ class TextualFlow(mpisupport.MpiParent):
         G.add_nodes_from(witnesses)
         rank_mapping = {}
         for w1, w1_reading, w1_parent in data:
+
             parents = self.parent_maps[w1][conn_value]
             if parents is None:
                 # Couldn't calculate them

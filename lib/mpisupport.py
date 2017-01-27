@@ -112,6 +112,9 @@ class MpiParent(object):
 
             # send it to the remote child
             stat(child, "sending data to child")
+
+            # XXX - try replacing this with an isend call, and timing out
+            # if it hasn't suceeded after a medium timeout (e.g. 60s).
             cls.mpicomm.send(args, dest=child)
             if args is None:
                 # That's the call to quit
