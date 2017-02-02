@@ -7,7 +7,6 @@ import queue
 import logging
 import time
 import resource
-from pympler.tracker import SummaryTracker
 
 
 logger = logging.getLogger()
@@ -28,6 +27,8 @@ class MpiParent(object):
     mpi_child_threads = []
     mpi_child_status = {}
     mpi_child_meminfo = {}
+    mpi_child_timeout = 3600
+    mpi_child_ready_timeout = 30
 
     # WARNING - this operates as a singleton class - always using the
     # latest instance created.
@@ -106,6 +107,27 @@ class MpiParent(object):
             logger.debug("Child {}: {}".format(child, status))
 
         while True:
+            # Wait for the child to be ready
+            start = time.time()
+            abort = False
+            while not cls.mpicomm.Iprobe(source=child):
+                time.sleep(0.1)
+                if time.time() - start > cls.mpi_child_ready_timeout:
+                    logger.error("Child {} took too long to be ready. Aborting.".format(child))
+                    stat(child, "child not ready")
+                    abort = True
+                    break
+
+            if not abort:
+                ready = cls.mpicomm.recv(source=child)
+                if ready is not True:
+                    stat(child, "unexpected response ({}...)".format(str(ready[:30])))
+                    abort = True
+
+            if abort:
+                time.sleep(5)
+                continue
+
             # wait for something to do
             stat(child, "waiting for queue")
             args = cls.mpi_queue.get()
@@ -113,9 +135,8 @@ class MpiParent(object):
             # send it to the remote child
             stat(child, "sending data to child")
 
-            # XXX - try replacing this with an isend call, and timing out
-            # if it hasn't suceeded after a medium timeout (e.g. 60s).
             cls.mpicomm.send(args, dest=child)
+
             if args is None:
                 # That's the call to quit
                 stat(child, "quitting")
@@ -124,9 +145,17 @@ class MpiParent(object):
             stat(child, "waiting for results ({})".format(args))
 
             # get the results back
+            start = time.time()
             while not cls.mpicomm.Iprobe(source=child):
-                # FIXME - after too long we should abort this child job...
                 time.sleep(1)
+                if time.time() - start > cls.mpi_child_timeout:
+                    logger.error("Child {} took too long to return. Aborting.".format(child))
+                    stat(child, "timeout - task returned to the queue")
+                    # Put it back on the queue for someone else to do
+                    cls.mpi_queue.put(args)
+                    cls.mpi_queue.task_done()
+                    time.sleep(5)
+                    return
 
             ret, meminfo = cls.mpicomm.recv(source=child)
             stat(child, "sent results back", meminfo)
@@ -194,8 +223,14 @@ def mpi_child(fn):
     """
     rank = MPI.COMM_WORLD.Get_rank()
     logger.debug("Child {} (remote) starting".format(rank))
-    tracker = SummaryTracker()
     while True:
+        # A little sleep to let everything start...
+        time.sleep(3)
+
+        # Send ready
+        logger.debug("Child {} (remote) is ready".format(rank))
+        MPI.COMM_WORLD.send(True, dest=0)
+
         # child - wait to be given a data structure
         while not MPI.COMM_WORLD.Iprobe(source=0):
             time.sleep(1)
