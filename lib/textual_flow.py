@@ -162,14 +162,19 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
 
 
 class TextualFlow(mpisupport.MpiParent):
+    mpi_child_timeout = 3600 * 4  # 4 hours
+
     def __init__(self, db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpi=False):
         assert type(connectivity) == list, "Connectivity must be a list"
         # Fast abort if it already exists
         self.output_files = {}
         self.connectivity = []
         for conn_value in connectivity:
-            output_file = "textual_flow_{}_c{}{}.svg".format(
-                variant_unit.replace('/', '_'), conn_value, suffix)
+            dirname = "c{}".format(conn_value)
+            if not os.path.exists(dirname):
+                os.mkdir(dirname)
+            output_file = "{}/textual_flow_{}_c{}{}.svg".format(
+                dirname, variant_unit.replace('/', '_'), conn_value, suffix)
 
             if os.path.exists(output_file):
                 logger.info("Textual flow diagram for {} already exists ({}) - skipping"
