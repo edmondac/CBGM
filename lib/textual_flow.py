@@ -70,9 +70,14 @@ class MpiHandler(mpisupport.MpiParent):
         """
         Make a TextualFlow object, and get it to queue up all its MPI work.
         """
-        tf = TextualFlow(variant_unit=vu, **kwargs, mpihandler=self)
-        self.textual_flow_objects[vu] = tf
-        tf.calculate_textual_flow()
+        try:
+            tf = TextualFlow(variant_unit=vu, **kwargs, mpihandler=self)
+            self.textual_flow_objects[vu] = tf
+            tf.calculate_textual_flow()
+        except Exception:
+            logger.exception("Fatal error")
+            self.mpi_wait(stop=True)
+            raise
 
     def done(self, vu):
         """
