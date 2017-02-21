@@ -89,17 +89,16 @@ class GenealogicalCoherence(Coherence):
         # Dict of witness-reading relationships
         # {W2: {variant_unit: relationship, }, }
         self.reading_relationships = defaultdict(dict)
-        self._already_generated = False
         self._parent_search = set()
+        self._done_cycle_check = False
 
-    def _generate(self):
+    def _detect_cycles(self):
         """
-        Sub-classed method that hides rows that aren't potential ancestors
+        Search for cycles in our data
         """
-        if self._already_generated:
+        if self._done_cycle_check or self.variant_unit is None:
             return
 
-        logger.debug("Generating genealogical coherence data")
         # Check for bad data
         data = defaultdict(set)
         sql = """SELECT label, parent FROM cbgm
@@ -114,9 +113,24 @@ class GenealogicalCoherence(Coherence):
             # There's a cycle in our data...
             raise CyclicDependency
 
+        self._done_cycle_check = True
+
+    def generate(self):
+        """
+        Sub-classed method that hides rows that aren't potential ancestors
+        """
+        # We might not have had a variant unit when we generated, so we need
+        # to offer to detect cycles every time.
+        self._detect_cycles()
+
+        if self._already_generated:
+            return
+
+        logger.debug("Generating genealogical coherence data")
+
         self._calculate_reading_relationships()
         # print self.reading_relationships
-        super(GenealogicalCoherence, self)._generate()
+        super(GenealogicalCoherence, self).generate()
         new_rows = []
         for row in self.rows:
             if row['W1>W2'] > row['W1<W2']:
@@ -253,7 +267,7 @@ class GenealogicalCoherence(Coherence):
         """
         Return a list of potential ancestors
         """
-        self._generate()
+        self.generate()
         return [x['W2'] for x in self.rows
                 if x['_NR'] != 0]
 
@@ -280,7 +294,9 @@ class GenealogicalCoherence(Coherence):
              ...
              ]
         """
-        self._generate()
+        assert self.variant_unit, "You must set a variant unit before calling parent_combinations"
+
+        self.generate()
         if my_gen == 1:
             # top level
             self._parent_search = set()
@@ -368,6 +384,8 @@ def gen_coherence(db_file, w1, variant_unit=None, *, debug=False):
     If variant_unit is supplied, then two extra columns are output
     showing the reading supported by each witness.
     """
-    coh = GenealogicalCoherence(db_file, w1, variant_unit, debug=debug)
+    coh = GenealogicalCoherence(db_file, w1, debug=debug)
+    if variant_unit:
+        coh.set_variant_unit(variant_unit)
     return "{}\n{}".format("Potential ancestors for W1={}".format(w1),
                            coh.tab_delim_table())

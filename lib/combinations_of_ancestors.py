@@ -125,7 +125,8 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
     for idx, (vu, reading, parent) in enumerate(my_vus):
         if parent == 'UNCL':
             continue
-        vu_coh = GenealogicalCoherence(db_file, w1, vu, pretty_p=False)
+        vu_coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
+        vu_coh.set_variant_unit(vu)
         vu_combs = vu_coh.parent_combinations(reading, parent, connectivity)
         # Simplify that to just a list of tuples of witnesses
         wit_combs = [set(x[0] for x in a) for a in vu_combs]

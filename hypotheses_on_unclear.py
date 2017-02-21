@@ -5,13 +5,17 @@ import os
 import sys
 import tempfile
 import webbrowser
+import logging
+
 from copy import deepcopy
 from itertools import product
-from populate_db import populate, Reading, LacunaReading, parse_input_file
-from lib.shared import UNCL, INIT, LAC, OL_PARENT
-from lib.textual_flow import textual_flow
-from lib.genealogical_coherence import CyclicDependency
-from lib import mpisupport
+from .populate_db import populate, Reading, LacunaReading, parse_input_file
+from .lib.shared import UNCL, INIT, LAC, OL_PARENT
+from .lib.textual_flow import textual_flow
+from .lib.genealogical_coherence import CyclicDependency
+from .lib import mpisupport
+
+logger = logging.getLogger(__name__)
 
 
 def single_hypothesis(stemmata, unique_ref, all_mss, force,
@@ -28,12 +32,13 @@ def single_hypothesis(stemmata, unique_ref, all_mss, force,
 
     # 2. Make the textual flow diagram
     try:
-        svg = textual_flow(db, vu, connectivity, perfect_only)
+        of = textual_flow(db, [vu], [connectivity], perfect_only, force_serial=True)
+        svg = of[connectivity] + '.svg'
     except CyclicDependency:
         return None
 
     # Copy it into the main working dir
-    new_svg = '{}_{}'.format(unique_ref, svg)
+    new_svg = '{}_{}'.format(unique_ref, os.path.basename(svg))
     os.makedirs(working_dir, exist_ok=True)
     os.rename(svg, os.path.join(working_dir, new_svg))
     return new_svg
@@ -224,7 +229,23 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--single', default=False, action='store_true',
                         help='Use the single process version (MPI-enabled is default)')
 
+    parser.add_argument('--verbose', action='count')
+
     args = parser.parse_args()
+
+    h1 = logging.StreamHandler(sys.stderr)
+    rootLogger = logging.getLogger()
+    rootLogger.addHandler(h1)
+    formatter = logging.Formatter('[%(asctime)s] [%(process)s] [%(filename)s:%(lineno)s] [%(levelname)s] %(message)s')
+    h1.setFormatter(formatter)
+
+    if args.verbose:
+        rootLogger.setLevel(logging.DEBUG)
+        logger.debug("Verbose mode")
+    else:
+        rootLogger.setLevel(logging.INFO)
+        logger.debug("Run with --verbose for debug mode")
+
     is_parent = True
     if not args.single:
         if 'OMPI_COMM_WORLD_SIZE' not in os.environ:

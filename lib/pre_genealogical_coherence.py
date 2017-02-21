@@ -2,8 +2,10 @@
 
 import sqlite3
 import logging
+import os
+import json
 from collections import defaultdict
-from .shared import pretty_p, memoize
+from .shared import pretty_p
 logger = logging.getLogger(__name__)
 
 
@@ -12,7 +14,7 @@ class Coherence(object):
     Class representing pre-genealogical coherence that can be extended
     to give more info.
     """
-    def __init__(self, db_file, w1, variant_unit=None, *, pretty_p=True, debug=False):
+    def __init__(self, db_file, w1, *, pretty_p=True, debug=False):
         """
         @param db_file: database file
         @param w1: witness 1 name
@@ -28,19 +30,78 @@ class Coherence(object):
         self.pretty_p = pretty_p  # normal P or gothic one...
         self.debug = debug
         self._all_attestations = None
-
-        self.variant_unit = variant_unit
-        if variant_unit:
-            self.columns.extend(['READING', 'TEXT'])
+        self._already_generated = False
+        self.variant_unit = None
+        self._cache_key = os.path.join(os.getcwd(),
+                                       "{}Cache".format(self.__class__.__name__),
+                                       "{}.{}.{}.cache".format(db_file.replace('/', '_'),
+                                                               self.w1, self.pretty_p))
 
         # Special formatters for the data (if required)
         self.formatters = {'PERC1': '{:.3f}'}
         self.all_mss = [x[0] for x in self.cursor.execute('SELECT DISTINCT witness FROM cbgm')]
 
-    def _generate(self):
+    def set_variant_unit(self, variant_unit):
+        """
+        Specify a non-None variant unit to extend the data in this coherence object.
+
+        This adds extra data to existing rows, if they've been generated.
+        """
+        assert variant_unit is not None, variant_unit
+        self.variant_unit = variant_unit
+        self.columns.extend(['READING', 'TEXT'])
+        if self._already_generated:
+            # Add data to existing columns
+            for row in self.rows:
+                for col in ['READING', 'TEXT']:
+                    self.add_item(row['W2'], col, row)
+        else:
+            # Be lazy and let it happen on demand
+            pass
+
+    def check_cache(self):
+        """
+        Does a cache entry exist for this?
+        """
+        return os.path.exists(self._cache_key)
+
+    def store_cache(self):
+        """
+        Store all rows in a cache
+        """
+        assert self.variant_unit is None, "Cannot cache once variant_unit has been set"
+        try:
+            os.mkdir(os.path.dirname(self._cache_key))
+        except FileExistsError:
+            # Easier than checking and risking race conditions
+            pass
+
+        self.generate()
+
+        with open(self._cache_key, 'w') as f:
+            json.dump(self.rows, f)
+
+        logger.debug("Stored cache to {}".format(self._cache_key))
+
+    def load_cache(self):
+        """
+        Load all rows from a cache. This isn't called automatically - you
+        need to call it if you want it (see textual_flow.py for example).
+        """
+        assert self.variant_unit is None, "Cannot load from cache once variant_unit has been set"
+        with open(self._cache_key) as f:
+            self.rows = json.load(f)
+
+        self._already_generated = True
+        logger.debug("Loaded {} rows from cache ({})".format(len(self.rows), self._cache_key))
+
+    def generate(self):
         """
         Generate the data
         """
+        if self._already_generated:
+            return
+
         logger.debug("Generating pre-genealogical coherence data")
         if not self.rows:
             for w2 in self.all_mss:
@@ -163,7 +224,7 @@ class Coherence(object):
         Reading label (a, b, etc.) attested to by this witness in this variant
         unit.
         """
-        assert self.variant_unit
+        assert self.variant_unit, "Can't call add_READING if self.variant_unit is None"
         row['READING'] = self.get_attestation(w2, self.variant_unit)
         return True
 
@@ -171,7 +232,7 @@ class Coherence(object):
         """
         Reading text attested to by this witness in this variant unit.
         """
-        assert self.variant_unit
+        assert self.variant_unit, "Can't call add_TEXT if self.variant_unit is None"
         sql = """SELECT text FROM cbgm
                  WHERE witness = ?
                  AND variant_unit = ?;"""
@@ -214,7 +275,7 @@ class Coherence(object):
         """
         Returns a tab delimited table of the data
         """
-        self._generate()
+        self.generate()
 
         header = ' \t '.join([r'{: ^7}'.format(col) for col in self.columns])
         lines = []
@@ -237,6 +298,8 @@ def pre_gen_coherence(db_file, w1, variant_unit=None, *, debug=False):
     If variant_unit is supplied, then two extra columns are output
     showing the reading supported by each witness.
     """
-    coh = Coherence(db_file, w1, variant_unit, debug=debug)
+    coh = Coherence(db_file, w1, debug=debug)
+    if variant_unit:
+        coh.set_variant_unit(variant_unit)
     return "{}\n{}".format("Pre-genealogical coherence for W1={}".format(w1),
                            coh.tab_delim_table())

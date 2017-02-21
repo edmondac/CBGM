@@ -6,7 +6,6 @@ import logging
 import networkx
 import string
 import os
-from tempfile import NamedTemporaryFile
 from .shared import OL_PARENT
 from .genealogical_coherence import GenealogicalCoherence
 from . import mpisupport
@@ -47,6 +46,36 @@ class ForestError(Exception):
     pass
 
 
+def mpi_child_wrapper(*args):
+    """
+    Wraps MPI child calls and executes the appropriate function.
+    """
+    key = args[0]
+    if key == "GENCOH":
+        return generate_genealogical_coherence(*args[1:])
+    elif key == "PARENTS":
+        return get_parents(*args[1:])
+    else:
+        raise KeyError("Unknown MPI child key: {}".format(key))
+
+
+def generate_genealogical_coherence(w1, db_file):
+    """
+    Generate genealogical coherence (variant unit independent)
+    and store a cached copy.
+    """
+    coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
+    if coh.check_cache():
+        logger.debug("Found cached genealogical coherence for {}".format(w1))
+    else:
+        logger.info("Calculating genealogical coherence for {}".format(w1))
+        coh.generate()
+        coh.store_cache()
+
+    # A return of None is interpreted as abort, so just return True
+    return True
+
+
 def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     """
     Calculate the best parents for this witness at this variant unit
@@ -58,8 +87,10 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     logger.info("Getting best parent(s) for {}".format(w1))
 
     logger.debug("Calculating genealogical coherence for {} at {}".format(w1, variant_unit))
-    coh = GenealogicalCoherence(db_file, w1, variant_unit, pretty_p=False)
-    coh._generate()
+    coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
+    coh.load_cache()
+    coh.set_variant_unit(variant_unit)
+    coh.generate()
 
     logger.debug("Searching parent combinations")
     # we might need multiple parents if a reading requires it
@@ -71,7 +102,7 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     max_acceptable_gen = 2  # only allow my reading or my parent's
     parent_maps = {}
     for conn_value in connectivity:
-        logger.info("Calculating for conn={}".format(conn_value))
+        logger.debug("Calculating for conn={}".format(conn_value))
         try:
             combinations = coh.parent_combinations(w1_reading, w1_parent, conn_value)
         except Exception:
@@ -81,9 +112,10 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
             continue
 
         total = len(combinations)
+        report = int(total // 10)
         for i, combination in enumerate(combinations):
             count = i + 1
-            if (count and not int(total / 10.0) % count) or count == total:
+            if (report and not count % report) or count == total:
                 # Report every 10% and at the end
                 logger.debug("Done {} of {} ({:.2f}%)".format(count, total, (count / total) * 100.0))
 
@@ -129,18 +161,40 @@ def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
     return parent_maps
 
 
-def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffix=''):
+def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffix='', force_serial=False):
     """
     Create a textual flow diagram for the specified variant units. This will
     work out if we're using MPI and act accordingly...
+
+    If you specify a single variant unit, and don't use MPI... then the output
+    files dict will be returned. Otherwise None.
     """
-    if 'OMPI_COMM_WORLD_SIZE' in os.environ:
+    if 'OMPI_COMM_WORLD_SIZE' in os.environ and not force_serial:
         # We have been run with mpiexec
         mpi_parent = mpisupport.is_parent()
         mpi_mode = True
     else:
         mpi_mode = False
 
+    # First generate genealogical coherence cache
+    sql = "SELECT DISTINCT(witness) FROM cbgm"
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    witnesses = [x[0] for x in list(cursor.execute(sql))]
+    if mpi_mode:
+        gen = MpiGenealogicalCoherence()
+
+    for i, w1 in enumerate(witnesses):
+        if mpi_mode:
+            gen.mpi_queue.put(("GENCOH", w1, db_file))
+        else:
+            logger.debug("Generating genealogical coherence for W1={} ({}/{})".format(w1, i, len(witnesses)))
+            generate_genealogical_coherence(w1, db_file)
+
+    if mpi_mode:
+        gen.mpi_wait(stop=True)
+
+    # Now make textual flow diagrams
     if mpi_mode:
         if mpi_parent:
             for i, vu in enumerate(variant_units):
@@ -151,14 +205,33 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
             return TextualFlow.mpi_wait(stop=True)
         else:
             # MPI child
-            mpisupport.mpi_child(get_parents)
+            mpisupport.mpi_child(mpi_child_wrapper)
             return "MPI child"
 
     else:
         for i, vu in enumerate(variant_units):
             logger.debug("Running for variant unit {} ({} of {})"
                          .format(vu, i + 1, len(variant_units)))
-            TextualFlow(db_file, vu, connectivity, perfect_only=False, suffix='')
+            t = TextualFlow(db_file, vu, connectivity, perfect_only=False, suffix='')
+
+        if len(variant_units) == 1:
+            return t.output_files
+
+    return None
+
+
+class MpiGenealogicalCoherence(mpisupport.MpiParent):
+    mpi_child_timeout = 3600 * 4  # 4 hours
+
+    def mpi_handle_result(self, args, ret):
+        """
+        Handle an MPI result
+        @param args: original args sent to the child
+        @param ret: response from the child
+        """
+        # There's nothing to do for genealogical coherence, since the point
+        # is just to store it in a cache - and the child did that.
+        assert ret is True, ret
 
 
 class TextualFlow(mpisupport.MpiParent):
@@ -173,8 +246,10 @@ class TextualFlow(mpisupport.MpiParent):
             dirname = "c{}".format(conn_value)
             if not os.path.exists(dirname):
                 os.mkdir(dirname)
-            output_file = "{}/textual_flow_{}_c{}{}.svg".format(
-                dirname, variant_unit.replace('/', '_'), conn_value, suffix)
+            output_file = os.path.join(os.getcwd(), dirname,
+                                       "textual_flow_{}_c{}{}".format(
+                                            variant_unit.replace('/', '_'),
+                                            conn_value, suffix))
 
             if os.path.exists(output_file):
                 logger.info("Textual flow diagram for {} already exists ({}) - skipping"
@@ -239,7 +314,7 @@ class TextualFlow(mpisupport.MpiParent):
         # 1. Calculate the best parent for each witness
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
             if self.mpi:
-                self.mpi_queue.put((w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file))
+                self.mpi_queue.put(("PARENTS", w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file))
             else:
                 logger.debug("Calculating parents {}/{}".format(i, len(data)))
                 parent_maps = get_parents(w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file)
@@ -306,12 +381,12 @@ class TextualFlow(mpisupport.MpiParent):
 
         logger.info("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                                        G.number_of_edges()))
-        output_file = self.output_files[conn_value]
-        with NamedTemporaryFile() as dotfile:
-            networkx.write_dot(G, dotfile.name)
-            subprocess.check_call(['dot', '-Tsvg', dotfile.name], stdout=open(output_file, 'w'))
-
-        logger.info("Written to {}".format(output_file))
+        # Keep the dotfile so we can change the look and feel later if we want
+        dotfile = "{}.dot".format(self.output_files[conn_value])
+        svgfile = "{}.svg".format(self.output_files[conn_value])
+        networkx.write_dot(G, dotfile)
+        subprocess.check_call(['dot', '-Tsvg', dotfile], stdout=open(svgfile, 'w'))
+        logger.info("Written to {} and {}".format(dotfile, svgfile))
 
     def mpi_handle_result(self, args, ret):
         """
