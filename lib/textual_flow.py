@@ -83,7 +83,7 @@ class MpiHandler(mpisupport.MpiParent):
             assert ret[1] is True, ret
         elif key == "PARENTS":
             # WARNING: We assume the first argument to get_parents is variant_unit
-            tf = self.textual_flow_objects[args[0]]
+            tf = self.textual_flow_objects[args[1]]
             tf.mpi_result(args, ret)
         else:
             raise KeyError("Unknown MPI child key: {}".format(key))
