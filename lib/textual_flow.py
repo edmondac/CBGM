@@ -46,19 +46,6 @@ class ForestError(Exception):
     pass
 
 
-def mpi_child_wrapper(*args):
-    """
-    Wraps MPI child calls and executes the appropriate function.
-    """
-    key = args[0]
-    if key == "GENCOH":
-        return generate_genealogical_coherence(*args[1:])
-    elif key == "PARENTS":
-        return get_parents(*args[1:])
-    else:
-        raise KeyError("Unknown MPI child key: {}".format(key))
-
-
 def generate_genealogical_coherence(w1, db_file):
     """
     Generate genealogical coherence (variant unit independent)
@@ -182,11 +169,16 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
     cursor = conn.cursor()
     witnesses = [x[0] for x in list(cursor.execute(sql))]
     if mpi_mode:
-        gen = MpiGenealogicalCoherence()
+        if mpi_parent:
+            gen = MpiGenealogicalCoherence()
+        else:
+            # MPI child
+            mpisupport.mpi_child(generate_genealogical_coherence)
+            return "MPI child"
 
     for i, w1 in enumerate(witnesses):
         if mpi_mode:
-            gen.mpi_queue.put(("GENCOH", w1, db_file))
+            gen.mpi_queue.put((w1, db_file))
         else:
             logger.debug("Generating genealogical coherence for W1={} ({}/{})".format(w1, i, len(witnesses)))
             generate_genealogical_coherence(w1, db_file)
@@ -205,7 +197,7 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
             return TextualFlow.mpi_wait(stop=True)
         else:
             # MPI child
-            mpisupport.mpi_child(mpi_child_wrapper)
+            mpisupport.mpi_child(get_parents)
             return "MPI child"
 
     else:
@@ -314,7 +306,7 @@ class TextualFlow(mpisupport.MpiParent):
         # 1. Calculate the best parent for each witness
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
             if self.mpi:
-                self.mpi_queue.put(("PARENTS", w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file))
+                self.mpi_queue.put((w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file))
             else:
                 logger.debug("Calculating parents {}/{}".format(i, len(data)))
                 parent_maps = get_parents(w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file)
