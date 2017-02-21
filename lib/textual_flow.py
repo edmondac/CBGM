@@ -66,9 +66,10 @@ class MpiHandler(mpisupport.MpiParent):
         super().__init__()
         self.textual_flow_objects = {}
 
-    def textual_flow(self, vu, **kwargs):
+    def queue_textual_flow(self, vu, **kwargs):
         tf = TextualFlow(variant_unit=vu, **kwargs, mpihandler=self)
         self.textual_flow_objects[vu] = tf
+        tf.calculate_textual_flow()
         logger.warning(self.textual_flow_objects)
 
     def mpi_handle_result(self, args, ret):
@@ -244,8 +245,9 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
             for i, vu in enumerate(variant_units):
                 logger.debug("Running for variant unit {} ({} of {})"
                              .format(vu, i + 1, len(variant_units)))
-                mpihandler.textual_flow(vu, db_file=db_file, connectivity=connectivity,
-                                        perfect_only=False, suffix='')
+                mpihandler.queue_textual_flow(vu, db_file=db_file,
+                                              connectivity=connectivity,
+                                              perfect_only=False, suffix='')
 
             return mpihandler.mpi_wait(stop=True)
         else:
@@ -257,6 +259,7 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
             logger.debug("Running for variant unit {} ({} of {})"
                          .format(vu, i + 1, len(variant_units)))
             t = TextualFlow(db_file, vu, connectivity, perfect_only=False, suffix='')
+            t.calculate_textual_flow()
 
         if len(variant_units) == 1:
             return t.output_files
@@ -294,11 +297,9 @@ class TextualFlow(object):
         self.variant_unit = variant_unit
         self.perfect_only = perfect_only
         self.suffix = suffix
-        logger.debug("Initialising {}".format(self))
         self.parent_maps = {}
-        self.textual_flow()
 
-    def textual_flow(self):
+    def calculate_textual_flow(self):
         """
         Create a textual flow diagram for the specified variant unit.
 
