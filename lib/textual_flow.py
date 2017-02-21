@@ -52,11 +52,41 @@ def mpi_child_wrapper(*args):
     """
     key = args[0]
     if key == "GENCOH":
-        return generate_genealogical_coherence(*args[1:])
+        return (key, generate_genealogical_coherence(*args[1:]))
     elif key == "PARENTS":
-        return get_parents(*args[1:])
+        return (key, get_parents(*args[1:]))
     else:
         raise KeyError("Unknown MPI child key: {}".format(key))
+
+
+class MpiHandler(mpisupport.MpiParent):
+    mpi_child_timeout = 3600 * 4  # 4 hours
+
+    def __init__(self):
+        super().__init__()
+        self.textual_flow_objects = {}
+
+    def textual_flow(self, vu, **kwargs):
+        tf = TextualFlow(variant_unit=vu, **kwargs, mpi=True)
+        self.textual_flow_objects[vu] = tf
+
+    def mpi_handle_result(self, args, ret):
+        """
+        Handle an MPI result
+        @param args: original args sent to the child
+        @param ret: response from the child
+        """
+        key = ret[0]
+        if key == "GENCOH":
+            # There's nothing to do for genealogical coherence, since the point
+            # is just to store it in a cache - and the child did that.
+            assert ret[1] is True, ret
+        elif key == "PARENTS":
+            # WARNING: We assume the first argument to get_parents is variant_unit
+            tf = self.textual_flow_objects[args[0]]
+            tf.mpi_result(args, ret)
+        else:
+            raise KeyError("Unknown MPI child key: {}".format(key))
 
 
 def generate_genealogical_coherence(w1, db_file):
@@ -76,11 +106,17 @@ def generate_genealogical_coherence(w1, db_file):
     return True
 
 
-def get_parents(w1, w1_reading, w1_parent, variant_unit, connectivity, db_file):
+def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
     """
     Calculate the best parents for this witness at this variant unit
 
     Return a map of connectivity value to parent map.
+
+    WARNING: The first argument must be variant_unit, as this is a shared
+             secret with MpiHandler's mpi_handle_result method.
+
+    WARNING: The second argument must be w1, as this is a shared secret with
+             TextualFlow's mpi_result method.
 
     This can take a long time...
     """
@@ -183,7 +219,7 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
     witnesses = [x[0] for x in list(cursor.execute(sql))]
     if mpi_mode:
         if mpi_parent:
-            gen = MpiGenealogicalCoherence()
+            mpihandler = MpiHandler()
         else:
             # MPI child
             mpisupport.mpi_child(mpi_child_wrapper)
@@ -191,14 +227,14 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
 
     for i, w1 in enumerate(witnesses):
         if mpi_mode:
-            gen.mpi_queue.put(("GENCOH", w1, db_file))
+            mpihandler.mpi_queue.put(("GENCOH", w1, db_file))
         else:
             logger.debug("Generating genealogical coherence for W1={} ({}/{})".format(w1, i, len(witnesses)))
             generate_genealogical_coherence(w1, db_file)
 
     if mpi_mode:
         # Wait for the queue, but leave the remote children running
-        gen.mpi_wait(stop=False)
+        mpihandler.mpi_wait(stop=False)
 
     # Now make textual flow diagrams
     if mpi_mode:
@@ -206,9 +242,10 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
             for i, vu in enumerate(variant_units):
                 logger.debug("Running for variant unit {} ({} of {})"
                              .format(vu, i + 1, len(variant_units)))
-                TextualFlow(db_file, vu, connectivity, perfect_only=False, suffix='', mpi=True)
+                mpihandler.textual_flow(vu, db_file=db_file, connectivity=connectivity,
+                                        perfect_only=False, suffix='')
 
-            return TextualFlow.mpi_wait(stop=True)
+            return mpihandler.mpi_wait(stop=True)
         else:
             # MPI child - nothing to do as the children are already running
             pass
@@ -225,24 +262,8 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
     return None
 
 
-class MpiGenealogicalCoherence(mpisupport.MpiParent):
-    mpi_child_timeout = 3600 * 4  # 4 hours
-
-    def mpi_handle_result(self, args, ret):
-        """
-        Handle an MPI result
-        @param args: original args sent to the child
-        @param ret: response from the child
-        """
-        # There's nothing to do for genealogical coherence, since the point
-        # is just to store it in a cache - and the child did that.
-        assert ret is True, ret
-
-
-class TextualFlow(mpisupport.MpiParent):
-    mpi_child_timeout = 3600 * 4  # 4 hours
-
-    def __init__(self, db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpi=False):
+class TextualFlow(object):
+    def __init__(self, db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpihandler=None):
         assert type(connectivity) == list, "Connectivity must be a list"
         # Fast abort if it already exists
         self.output_files = {}
@@ -251,10 +272,8 @@ class TextualFlow(mpisupport.MpiParent):
             dirname = "c{}".format(conn_value)
             if not os.path.exists(dirname):
                 os.mkdir(dirname)
-            output_file = os.path.join(os.getcwd(), dirname,
-                                       "textual_flow_{}_c{}{}".format(
-                                            variant_unit.replace('/', '_'),
-                                            conn_value, suffix))
+            output_file = os.path.join(os.getcwd(), dirname, "textual_flow_{}_c{}{}".format(
+                variant_unit.replace('/', '_'), conn_value, suffix))
 
             if os.path.exists(output_file):
                 logger.info("Textual flow diagram for {} already exists ({}) - skipping"
@@ -268,11 +287,7 @@ class TextualFlow(mpisupport.MpiParent):
             logger.info("Nothing to do - skipping variant unit {}".format(variant_unit))
             return
 
-        # Get on and make it
-        self.mpi = mpi
-        if self.mpi:
-            super().__init__()
-
+        self.mpihandler = mpihandler
         self.db_file = db_file
         self.variant_unit = variant_unit
         self.perfect_only = perfect_only
@@ -280,15 +295,6 @@ class TextualFlow(mpisupport.MpiParent):
         logger.debug("Initialising {}".format(self))
         self.parent_maps = {}
         self.textual_flow()
-
-    def mpi_run(self):
-        """
-        Simple wrapper to handle mpi on or off.
-        """
-        if self.mpi:
-            return super().mpi_run()
-        else:
-            pass
 
     def textual_flow(self):
         """
@@ -318,17 +324,20 @@ class TextualFlow(mpisupport.MpiParent):
 
         # 1. Calculate the best parent for each witness
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
-            if self.mpi:
-                self.mpi_queue.put(("PARENTS", w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file))
+            if self.mpihandler:
+                self.mpihandler.mpi_queue.put(("PARENTS", self.variant_unit, w1,
+                                              w1_reading, w1_parent,
+                                              self.connectivity, self.db_file))
             else:
                 logger.debug("Calculating parents {}/{}".format(i, len(data)))
-                parent_maps = get_parents(w1, w1_reading, w1_parent, self.variant_unit, self.connectivity, self.db_file)
+                parent_maps = get_parents(self.variant_unit, w1, w1_reading, w1_parent,
+                                          self.connectivity, self.db_file)
                 self.parent_maps[w1] = parent_maps  # a parent map per connectivity setting
 
-        if self.mpi:
+        if self.mpihandler:
             # Wait a little for stabilisation
             logger.debug("Waiting for remote tasks")
-            self.mpi_wait(stop=False)
+            self.mpihandler.mpi_wait(stop=False)
             logger.debug("Remote tasks complete")
 
         # Now self.parent_maps should be complete
@@ -393,11 +402,12 @@ class TextualFlow(mpisupport.MpiParent):
         subprocess.check_call(['dot', '-Tsvg', dotfile], stdout=open(svgfile, 'w'))
         logger.info("Written to {} and {}".format(dotfile, svgfile))
 
-    def mpi_handle_result(self, args, ret):
+    def mpi_result(self, args, ret):
         """
         Handle an MPI result
-        @param args: original args sent to the child
+        @param args: original args sent to get_parents
         @param ret: response from the child
         """
-        w1 = args[0]
+        # WARNING: We assume the second argument to get_parents is W1
+        w1 = args[1]
         self.parent_maps[w1] = ret  # a parent map per connectivity setting
