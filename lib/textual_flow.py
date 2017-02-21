@@ -67,10 +67,19 @@ class MpiHandler(mpisupport.MpiParent):
         self.textual_flow_objects = {}
 
     def queue_textual_flow(self, vu, **kwargs):
+        """
+        Make a TextualFlow object, and get it to queue up all its MPI work.
+        """
         tf = TextualFlow(variant_unit=vu, **kwargs, mpihandler=self)
         self.textual_flow_objects[vu] = tf
         tf.calculate_textual_flow()
-        logger.warning(self.textual_flow_objects)
+
+    def done(self, vu):
+        """
+        Finished with this VU - so lose the reference and let python free
+        up some memory.
+        """
+        del self.textual_flow_objects[vu]
 
     def mpi_handle_result(self, args, ret):
         """
@@ -85,7 +94,6 @@ class MpiHandler(mpisupport.MpiParent):
             assert ret[1] is True, ret
         elif key == "PARENTS":
             # WARNING: We assume the first argument to get_parents is variant_unit
-            logger.info(self.textual_flow_objects)
             tf = self.textual_flow_objects[args[1]]
             tf.mpi_result(args, ret)
         else:
@@ -194,7 +202,7 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
             # Top level in an overlapping unit with an omission in the initial text
             parents = [('OL_PARENT', -1, 1)]
 
-        logger.info("Found best parents (conn={}): {}".format(conn_value, parents))
+        logger.info("Found best parents for {} (conn={}): {}".format(w1, conn_value, parents))
         parent_maps[conn_value] = parents
 
     return parent_maps
@@ -215,11 +223,6 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
     else:
         mpi_mode = False
 
-    # First generate genealogical coherence cache
-    sql = "SELECT DISTINCT(witness) FROM cbgm"
-    conn = sqlite3.connect(db_file)
-    cursor = conn.cursor()
-    witnesses = [x[0] for x in list(cursor.execute(sql))]
     if mpi_mode:
         if mpi_parent:
             mpihandler = MpiHandler()
@@ -228,6 +231,11 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
             mpisupport.mpi_child(mpi_child_wrapper)
             return "MPI child"
 
+    # First generate genealogical coherence cache
+    sql = "SELECT DISTINCT(witness) FROM cbgm"
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    witnesses = [x[0] for x in list(cursor.execute(sql))]
     for i, w1 in enumerate(witnesses):
         if mpi_mode:
             mpihandler.mpi_queue.put(("GENCOH", w1, db_file))
@@ -350,6 +358,9 @@ class TextualFlow(object):
         for conn_value in self.connectivity:
             self.draw_diagram(conn_value, data, witnesses)
 
+        if self.mpihandler:
+            self.mpihandler.done(self.variant_unit)
+
     def draw_diagram(self, conn_value, data, witnesses):
         """
         Draw the textual flow diagram for the specified connectivity value
@@ -358,7 +369,6 @@ class TextualFlow(object):
         G.add_nodes_from(witnesses)
         rank_mapping = {}
         for w1, w1_reading, w1_parent in data:
-
             parents = self.parent_maps[w1][conn_value]
             if parents is None:
                 # Couldn't calculate them
