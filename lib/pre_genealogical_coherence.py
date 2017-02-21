@@ -87,6 +87,9 @@ class Coherence(object):
         """
         Load all rows from a cache. This isn't called automatically - you
         need to call it if you want it (see textual_flow.py for example).
+
+        You must use check_cache before calling this, as a missing cache entry
+        is an error.
         """
         assert self.variant_unit is None, "Cannot load from cache once variant_unit has been set"
         with open(self._cache_key) as f:
