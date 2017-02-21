@@ -67,7 +67,7 @@ class MpiHandler(mpisupport.MpiParent):
         self.textual_flow_objects = {}
 
     def textual_flow(self, vu, **kwargs):
-        tf = TextualFlow(variant_unit=vu, **kwargs, mpi=True)
+        tf = TextualFlow(variant_unit=vu, **kwargs, mpihandler=self)
         self.textual_flow_objects[vu] = tf
 
     def mpi_handle_result(self, args, ret):
