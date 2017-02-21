@@ -69,6 +69,7 @@ class MpiHandler(mpisupport.MpiParent):
     def textual_flow(self, vu, **kwargs):
         tf = TextualFlow(variant_unit=vu, **kwargs, mpihandler=self)
         self.textual_flow_objects[vu] = tf
+        logger.warning(self.textual_flow_objects)
 
     def mpi_handle_result(self, args, ret):
         """
@@ -83,6 +84,7 @@ class MpiHandler(mpisupport.MpiParent):
             assert ret[1] is True, ret
         elif key == "PARENTS":
             # WARNING: We assume the first argument to get_parents is variant_unit
+            logger.info(self.textual_flow_objects)
             tf = self.textual_flow_objects[args[1]]
             tf.mpi_result(args, ret)
         else:
@@ -96,7 +98,7 @@ def generate_genealogical_coherence(w1, db_file):
     """
     coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
     if coh.check_cache():
-        logger.debug("Found cached genealogical coherence for {}".format(w1))
+        logger.info("Found cached genealogical coherence for {}".format(w1))
     else:
         logger.info("Calculating genealogical coherence for {}".format(w1))
         coh.generate()
