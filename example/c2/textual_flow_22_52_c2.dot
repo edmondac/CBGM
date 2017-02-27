@@ -1,0 +1,38 @@
+strict digraph G {
+"07/-1 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"038 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"021/-1 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"045/-1 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"05 (c)" [fillcolor="#72FE95", color="#27b34a", style=filled];
+"034 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"036 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"017 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"011/-1 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+OL_PARENT;
+"047 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"037 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"031/-1 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"0211/2 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"028/-1 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"0141/-1 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"013 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"01/2 (b)" [fillcolor="#CEA8F4", color="#835da9", style=filled];
+"030 (a)" [fillcolor="#FF8A8A", color="#b43f3f", style=filled];
+"07/-1 (a)" -> "0211/2 (a)";
+"07/-1 (a)" -> "037 (a)";
+"07/-1 (a)" -> "030 (a)";
+"07/-1 (a)" -> "034 (a)";
+"021/-1 (a)" -> "036 (a)";
+"021/-1 (a)" -> "047 (a)";
+"045/-1 (a)" -> "038 (a)";
+OL_PARENT -> "07/-1 (a)";
+OL_PARENT -> "011/-1 (a)";
+OL_PARENT -> "031/-1 (a)";
+OL_PARENT -> "021/-1 (a)";
+OL_PARENT -> "045/-1 (a)";
+OL_PARENT -> "028/-1 (a)";
+OL_PARENT -> "0141/-1 (a)";
+"031/-1 (a)" -> "013 (a)";
+"031/-1 (a)" -> "017 (a)";
+"031/-1 (a)" -> "01/2 (b)";
+}
