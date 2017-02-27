@@ -2,6 +2,9 @@
 
 import re
 import string
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Constants representing reading relationships (used internally)
 PRIOR = "PRIOR"
@@ -59,10 +62,12 @@ def sort_mss(ms_list):
         elif x == 'A':
             num = 1
             offset = 0
+        elif x.startswith('L'):
+            offset = 40000
         elif x[0] in string.digits:
             offset = 30000
         else:
-            print("Unsure how to order {} - assuming 1".format(x))
+            logger.debug("Unsure how to order {} - assuming 1".format(x))
             offset = 0
 
         return (offset + num, rem)
