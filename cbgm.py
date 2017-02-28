@@ -159,10 +159,11 @@ if __name__ == "__main__":
     except:
         mpirank = 0
 
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+
     if mpirank == 0:
         # MPI parent or simple serial run
-        conn = sqlite3.connect(db_file)
-        cursor = conn.cursor()
         cursor.execute("VACUUM;")
         cursor.execute("ANALYZE;")
 
