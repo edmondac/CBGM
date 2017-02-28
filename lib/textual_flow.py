@@ -7,7 +7,7 @@ import networkx
 import string
 import os
 from .shared import OL_PARENT
-from .genealogical_coherence import GenealogicalCoherence
+from .genealogical_coherence import GenealogicalCoherence, ParentCombination
 from . import mpisupport
 
 # Colours from http://www.hitmill.com/html/pastels.html
@@ -176,8 +176,8 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
                 logger.info("Couldn't find any parent combination for {}".format(w1_reading))
                 continue
 
-            rank = max(x[1] for x in combination)
-            gen = max(x[2] for x in combination)
+            rank = max(x.rank for x in combination)
+            gen = max(x.gen for x in combination)
             if gen > max_acceptable_gen:
                 continue
 
@@ -185,7 +185,7 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
                 best_parents_by_gen = combination
                 best_gen = gen
             elif gen == best_gen:
-                if rank < max(x[1] for x in best_parents_by_gen):
+                if rank < max(x.rank for x in best_parents_by_gen):
                     # This is a better option for this generation
                     best_parents_by_gen = combination
                     best_gen = gen
@@ -205,7 +205,7 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
 
         if w1_parent == OL_PARENT and not parents:
             # Top level in an overlapping unit with an omission in the initial text
-            parents = [('OL_PARENT', -1, 1)]
+            parents = [ParentCombination('OL_PARENT', -1, 100.0, 1)]
 
         logger.info("Found best parents for {} (conn={}): {}".format(w1, conn_value, parents))
         parent_maps[conn_value] = parents
@@ -213,13 +213,17 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
     return parent_maps
 
 
-def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffix='', force_serial=False):
+def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
+                 ranks_on_edges=True, include_perc_in_label=True, suffix='',
+                 force_serial=False):
     """
     Create a textual flow diagram for the specified variant units. This will
     work out if we're using MPI and act accordingly...
 
     If you specify a single variant unit, and don't use MPI... then the output
     files dict will be returned. Otherwise None.
+
+    See TextualFlow class for a description of the arguments here.
     """
     if 'OMPI_COMM_WORLD_SIZE' in os.environ and not force_serial:
         # We have been run with mpiexec
@@ -258,9 +262,10 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
             for i, vu in enumerate(variant_units):
                 logger.debug("Running for variant unit {} ({} of {})"
                              .format(vu, i + 1, len(variant_units)))
-                mpihandler.queue_textual_flow(vu, db_file=db_file,
-                                              connectivity=connectivity,
-                                              perfect_only=False, suffix='')
+                mpihandler.queue_textual_flow(
+                    vu, db_file=db_file, connectivity=connectivity,
+                    perfect_only=perfect_only, ranks_on_edges=ranks_on_edges,
+                    include_perc_in_label=include_perc_in_label, suffix=suffix)
 
             return mpihandler.mpi_wait(stop=True)
         else:
@@ -271,7 +276,8 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
         for i, vu in enumerate(variant_units):
             logger.debug("Running for variant unit {} ({} of {})"
                          .format(vu, i + 1, len(variant_units)))
-            t = TextualFlow(db_file, vu, connectivity, perfect_only=False, suffix='')
+            t = TextualFlow(db_file, vu, connectivity, perfect_only,
+                            ranks_on_edges, include_perc_in_label, suffix)
             t.calculate_textual_flow()
 
         if len(variant_units) == 1:
@@ -281,7 +287,18 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False, suffi
 
 
 class TextualFlow(object):
-    def __init__(self, db_file, variant_unit, connectivity, perfect_only=False, suffix='', mpihandler=None):
+    def __init__(self, db_file, variant_unit, connectivity, perfect_only=False,
+                 ranks_on_edges=True, include_perc_in_label=True, suffix='', mpihandler=None):
+        """
+        @param db_file: sqlite database
+        @param variant_unit: draw the textual flow of this variant unit
+        @param connectivity: maximum allowable rank of parents
+        @param perfect_only: raise an exception if coherence is not perfect (I.e. this is a forest)
+        @param ranks_on_edges: label the ranks on the edges rather than in the nodes
+        @param include_perc_in_label: show the coherence percentage of a parent in the label (edges only)
+        @param suffix: suffix to use in filename (before the extension)
+        @param mpihandler: optional MpiHandler instance
+        """
         assert type(connectivity) == list, "Connectivity must be a list"
         # Fast abort if it already exists
         self.output_files = {}
@@ -309,6 +326,8 @@ class TextualFlow(object):
         self.db_file = db_file
         self.variant_unit = variant_unit
         self.perfect_only = perfect_only
+        self.ranks_on_edges = ranks_on_edges
+        self.include_perc_in_label = include_perc_in_label
         self.suffix = suffix
         self.parent_maps = {}
 
@@ -332,11 +351,6 @@ class TextualFlow(object):
         conn = sqlite3.connect(self.db_file)
         cursor = conn.cursor()
         data = list(cursor.execute(sql))
-        # get the colour for the first char of the label (e.g. for b1 just get b)
-        witnesses = [(x[0], {'color': darken(COLOURMAP.get(x[1][0], '#cccccc')),
-                             'fillcolor': COLOURMAP.get(x[1][0], '#cccccc'),
-                             'style': 'filled'})  # See http://www.graphviz.org/
-                     for x in data]
 
         # 1. Calculate the best parent for each witness
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
@@ -361,40 +375,50 @@ class TextualFlow(object):
 
         # 2. Draw the diagrams
         for conn_value in self.connectivity:
-            self.draw_diagram(conn_value, data, witnesses)
+            self.draw_diagram(conn_value, data)
 
         if self.mpihandler:
             self.mpihandler.done(self.variant_unit)
 
-    def draw_diagram(self, conn_value, data, witnesses):
+    def draw_diagram(self, conn_value, data):
         """
         Draw the textual flow diagram for the specified connectivity value
         """
+        # get the colour for the first char of the label (e.g. for b1 just get b)
+        witnesses = [(x[0], {'color': darken(COLOURMAP.get(x[1][0], '#cccccc')),
+                             'fillcolor': COLOURMAP.get(x[1][0], '#cccccc'),
+                             'style': 'filled'})  # See http://www.graphviz.org/
+                     for x in data]
+
         G = networkx.DiGraph()
         G.add_nodes_from(witnesses)
-        rank_mapping = {}
-        for w1, w1_reading, w1_parent in data:
+        node_label_map = {}
+        for i, (w1, w1_reading, w1_parent) in enumerate(data):
             parents = self.parent_maps[w1][conn_value]
             if parents is None:
                 # Couldn't calculate them
                 parents = []
 
-            if len(parents) > 1:
-                # Multiple parents - caused by a reading with multiple parents in
-                # a local stemma.
-                rank_mapping[w1] = "{}/[{}] ({})".format(
-                    w1, ', '.join("{}.{}".format(x[0], x[1]) for x in parents), w1_reading)
-            elif len(parents) == 1:
-                # Just one parent
-                if parents[0][1] == 1:
-                    rank_mapping[w1] = "{} ({})".format(w1, w1_reading)
+            if not self.ranks_on_edges:
+                # Old-style diagram with ranks in nodes
+                if len(parents) > 1:
+                    # Multiple parents - caused by a reading with multiple parents in
+                    # a local stemma.
+                    node_label_map[w1] = "{}/[{}] ({})".format(
+                        w1, ', '.join("{}.{}".format(x.parent, x.rank) for x in parents), w1_reading)
+                elif len(parents) == 1:
+                    # Just one parent
+                    if parents[0].rank == 1:
+                        node_label_map[w1] = "{} ({})".format(w1, w1_reading)
+                    else:
+                        node_label_map[w1] = "{}/{} ({})".format(w1, parents[0].rank, w1_reading)
                 else:
-                    rank_mapping[w1] = "{}/{} ({})".format(w1, parents[0][1], w1_reading)
+                    # no parents
+                    node_label_map[w1] = "{} ({})".format(w1, w1_reading)
             else:
-                # no parents
-                rank_mapping[w1] = "{} ({})".format(w1, w1_reading)
+                node_label_map[w1] = "{} ({})".format(w1, w1_reading)
 
-            if all(x[0] is None for x in parents):
+            if all(x.parent is None for x in parents):
                 if w1 == 'A':
                     # That's ok...
                     continue
@@ -405,11 +429,18 @@ class TextualFlow(object):
                 logger.warning("{} has no parents".format(w1))
                 continue
 
-            for i, p in enumerate(parents):
-                G.add_edge(p[0], w1)
+            for p in parents:
+                if self.ranks_on_edges:
+                    if self.include_perc_in_label:
+                        label = "{} ({:.1f})".format(p.rank, p.perc)
+                    else:
+                        label = p.rank
+                    G.add_edge(p.parent, w1, label=label, color=witnesses[i][1]['color'])
+                else:
+                    G.add_edge(p.parent, w1, color=witnesses[i][1]['color'])
 
         # Relable nodes to include the rank
-        networkx.relabel_nodes(G, rank_mapping, copy=False)
+        networkx.relabel_nodes(G, node_label_map, copy=False)
 
         logger.info("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                                        G.number_of_edges()))

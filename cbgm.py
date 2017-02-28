@@ -80,6 +80,10 @@ if __name__ == "__main__":
                         help="Don't allow incomplete combinations of ancestors")
     parser.add_argument('--extracols', default=False, action="store_true",
                         help='Show more columns in combinations of ancestors')
+    parser.add_argument('--tf-rank-in-node', default=False, action="store_true",
+                        help='Show the rank in the node (old method) rather than on the edge')
+    parser.add_argument('--tf-simple-label', default=False, action="store_true",
+                        help='Show only the rank in the edge label, rather than also the percentage')
     parser.add_argument('-c', '--connectivity', default="499", metavar='N', type=str,
                         help='Maximum allowed connectivity in a textual flow diagram (use comma separated list to perform multiple calculations)')
     parser.add_argument('-s', '--suffix', default='',
@@ -222,7 +226,8 @@ if __name__ == "__main__":
         if len(conn) == 1:
             logger.info("Have you considered calculating multiple connectivity "
                         "values at once? Use a comma separated list.")
-        textual_flow(db_file, do_vus, conn, args.perfect, suffix=args.suffix)
+        textual_flow(db_file, do_vus, conn, args.perfect, not args.tf_rank_in_node,
+                     not args.tf_simple_label, args.suffix)
 
     elif args.local_stemma:
         output = local_stemma(db_file, do_vus, suffix=args.suffix)

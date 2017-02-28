@@ -129,7 +129,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
         vu_coh.set_variant_unit(vu)
         vu_combs = vu_coh.parent_combinations(reading, parent, connectivity)
         # Simplify that to just a list of tuples of witnesses
-        wit_combs = [set(x[0] for x in a) for a in vu_combs]
+        wit_combs = [set(x.parent for x in a) for a in vu_combs]
         vu_map[vu] = (vu_combs, wit_combs)
     print("Done")
 
@@ -174,7 +174,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
             for i, c in enumerate(wit_combs):
                 if c <= comb_s:
                     # This one is catered for
-                    gen = max(x[2] for x in vu_combs[i])
+                    gen = max(x.gen for x in vu_combs[i])
                     if best_gen is None or gen < best_gen:
                         best_gen = gen
 

@@ -1,6 +1,6 @@
 # encoding: utf-8
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from itertools import product, chain
 from toposort import toposort
 import logging
@@ -8,6 +8,18 @@ import logging
 from .shared import PRIOR, POSTERIOR, NOREL, EQUAL, INIT, OL_PARENT, UNCL, LAC
 from .pre_genealogical_coherence import Coherence
 logger = logging.getLogger(__name__)
+
+
+class ParentCombination(object):
+    def __init__(self, parent, rank, perc, gen):
+        self.parent = parent
+        self.rank = rank
+        self.perc = perc
+        self.gen = gen
+
+    def __repr__(self):
+        return "<Parent Combination: parent={}, rank={}, perc={}, gen={}>".format(
+            self.parent, self.rank, self.perc, self.gen)
 
 
 class TooManyAborts(Exception):
@@ -314,7 +326,7 @@ class GenealogicalCoherence(Coherence):
                 continue
             elif row['READING'] == reading:
                 # This matches our reading and is within the connectivity threshold - take it
-                ret.append([(row['W2'], row['_NR'], my_gen)])
+                ret.append([ParentCombination(row['W2'], row['_NR'], row['PERC1'], my_gen)])
 
         if parent_reading in (INIT, OL_PARENT, UNCL):
             # No parents - nothing further to do
