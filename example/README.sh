@@ -7,6 +7,9 @@ set -x
 
 # Various of these commands can also use MPI - just do "mpirun -n 4 [cmd]"
 
+### Clear up previous cache ###
+test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
+
 ### Populate database ###
 ../populate_db example_input.py --force /tmp/test.db
 #~ Will populate /tmp/test.db

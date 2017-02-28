@@ -9,13 +9,13 @@
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 98)">
 <title>G</title>
 <polygon fill="white" stroke="none" points="-4,4 -4,-98 33,-98 33,4 -4,4"/>
-<!-- b -->
-<g id="node1" class="node"><title>b</title>
-<text text-anchor="middle" x="14.5" y="-11.4" font-family="Times,serif" font-size="12.00">b</text>
-</g>
 <!-- a -->
-<g id="node2" class="node"><title>a</title>
+<g id="node1" class="node"><title>a</title>
 <text text-anchor="middle" x="14.5" y="-76.4" font-family="Times,serif" font-size="12.00">a</text>
+</g>
+<!-- b -->
+<g id="node2" class="node"><title>b</title>
+<text text-anchor="middle" x="14.5" y="-11.4" font-family="Times,serif" font-size="12.00">b</text>
 </g>
 <!-- a&#45;&gt;b -->
 <g id="edge1" class="edge"><title>a&#45;&gt;b</title>

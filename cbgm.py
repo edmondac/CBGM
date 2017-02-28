@@ -153,28 +153,43 @@ if __name__ == "__main__":
         parser.print_help()
         sys.exit(1)
 
-    conn = sqlite3.connect(db_file)
-    cursor = conn.cursor()
     try:
+        from mpi4py import MPI
+        mpirank = MPI.COMM_WORLD.Get_rank()
+    except:
+        mpirank = 0
+
+    if mpirank == 0:
+        # MPI parent or simple serial run
+        conn = sqlite3.connect(db_file)
+        cursor = conn.cursor()
         cursor.execute("VACUUM;")
         cursor.execute("ANALYZE;")
-    except Exception:
-        logger.warning("Couldn't VACUUM and ANALYZE - maybe a locked database under MPI. Assuming all is fine...")
 
+    tries = 0
     while True:
+        tries += 1
         try:
             all_mss = sort_mss([x[0] for x in cursor.execute('SELECT DISTINCT witness FROM cbgm')])
         except Exception as e:
-            logger.warning("Couldn't get all_mss (%s) - will retry" % e)
+            logger.warning("Couldn't get all_mss (%s)" % e)
+            if tries > 10:
+                raise
+            logger.warning("Retrying...")
             time.sleep(1)
         else:
             break
 
+    tries = 0
     while True:
+        tries += 1
         try:
             all_vus = sorted_vus(cursor)
         except Exception as e:
-            logger.warning("Couldn't get all_vus (%s) - will retry" % e)
+            logger.warning("Couldn't get all_vus (%s)" % e)
+            if tries > 10:
+                raise
+            logger.warning("Retrying...")
             time.sleep(1)
         else:
             break
