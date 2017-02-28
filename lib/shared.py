@@ -87,8 +87,16 @@ def pretty_p(x):
 def numify(vu):
     """
     Turn a variant unit into a pair of integers that can be sorted
+
+    A variant unit will be something like:
+        * Simple case: B04K01V04/5-7
+        * Composite case: B04K01V50/2-36,B04K01V51/2-22,B04K01V52/2-6
     """
-    a, b = vu.split('/')
+    a, b = vu.split('/', 1)
+
+    # For composite variant units, we'll lose everything after the comma
+    b = b.split(',')[0]
+
     if '-' in b:
         bits = [int(x) for x in b.split('-')]
         b = float("{}.{}".format(*bits))
