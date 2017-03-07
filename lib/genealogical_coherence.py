@@ -290,7 +290,7 @@ class GenealogicalCoherence(Coherence):
         If the parent_reading is of length 3 (e.g. c&d&e) then the combinations
         will be length 3 or less.
 
-        Returns a list of lists, e.g.:
+        Returns a list of lists or ParentCombination objects, e.g.:
             [
              # 05 explains this reading by itself
              [('05' = witness, 4 = rank, 1 = generation)],
