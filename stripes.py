@@ -4,7 +4,41 @@
 import re
 import sqlite3
 from collections import defaultdict
+from CBGM.lib.shared import witintify
 
+
+def intify(x):
+    # Return a tuple of integers for a given vu ident
+    return tuple([int(x) for x in re.findall('([0-9]+)', x)])
+
+
+class LabelMapper(object):
+    # Default pool to use to replace labels that are too long (e.g. i2)
+    # Note, we exclude ο and ι as they're too similar to latin.
+    default_pool = 'αβγδεζηθκλμνξπρστυφχψω'
+
+    def __init__(self, pool=None):
+        self.mapping = defaultdict(dict)
+        self.pool_next = defaultdict(int)
+        self.pool = pool if pool is not None else self.default_pool
+
+    def get_single_char(self, variant_unit, label):
+        assert label not in self.pool  # these need to be a different set
+
+        if label in self.mapping[variant_unit]:
+            # Already done this one
+            return self.mapping[variant_unit][label]
+
+        if len(label) == 1:
+            self.mapping[variant_unit][label] = label
+        else:
+            # We need a new one
+            pool_label = self.pool[self.pool_next[variant_unit]]
+            self.pool_next[variant_unit] += 1
+            self.mapping[variant_unit][label] = pool_label
+            print("Mapping {} to {} (in {}) as it was too long...".format(label, pool_label, variant_unit))
+
+        return self.mapping[variant_unit][label]
 
 def main(db_file):
     """
@@ -19,18 +53,15 @@ def main(db_file):
     cursor.execute(sql)
     variant_units = [x[0] for x in cursor.fetchall()]
 
-    def intify(x):
-        # Return a list of integers for a given vu ident
-        return int(re.search('^([0-9]+).*', x).group(1))
-
     # sort by the two integer parts of the vu
     variant_units.sort(key=lambda s: list(map(intify, s.split('/'))))
 
     ms_readings = defaultdict(dict)
-
+    lm = LabelMapper()
     sql = """SELECT label, witness, variant_unit FROM cbgm"""
     for label, witness, variant_unit in cursor.execute(sql):
-        ms_readings[witness][variant_unit] = label
+        singlechar = lm.get_single_char(variant_unit, label)
+        ms_readings[witness][variant_unit] = singlechar
 
     ms_stripes = defaultdict(list)
     for wit in ms_readings:
@@ -39,17 +70,6 @@ def main(db_file):
             stripe.append(ms_readings[wit].get(vu, '?'))
 
         ms_stripes[''.join(stripe)].append(wit)
-
-    def witintify(x):
-        # return an int representing this witness
-        if x.startswith('0'):
-            return 20000 + int(re.search('([0-9]+)', x).group(1))
-        elif x.startswith('P'):
-            return 10000 + int(re.search('([0-9]+)', x).group(1))
-        elif x == 'A':
-            return 1
-        else:
-            raise ValueError("What? {}".format(x))
 
     r_ms_stripes = {}
     for stripe, wits in list(ms_stripes.items()):

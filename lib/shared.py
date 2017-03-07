@@ -40,38 +40,39 @@ def memoize(f):
     return helper
 
 
+def witintify(x):
+    # return a sortable tuple representing this witness
+    num_match = re.search('([0-9]+)', x)
+    if num_match:
+        num = int(num_match.group(1))
+        rem = x.replace(num_match.group(1), '')
+    else:
+        num = 0
+        rem = x
+
+    if x.startswith('0'):
+        offset = 20000
+    elif x.startswith('P'):
+        offset = 10000
+    elif x == 'A':
+        num = 1
+        offset = 0
+    elif x.startswith('L'):
+        offset = 40000
+    elif x[0] in string.digits:
+        offset = 30000
+    else:
+        logger.debug("Unsure how to order {} - assuming 1".format(x))
+        offset = 0
+
+    return (offset + num, rem)
+
+
 def sort_mss(ms_list):
     """
     Return a sorted list of manuscripts - A first, then Papyri, then majuscules
     in order.
     """
-    def witintify(x):
-        # return a sortable tuple representing this witness
-        num_match = re.search('([0-9]+)', x)
-        if num_match:
-            num = int(num_match.group(1))
-            rem = x.replace(num_match.group(1), '')
-        else:
-            num = 0
-            rem = x
-
-        if x.startswith('0'):
-            offset = 20000
-        elif x.startswith('P'):
-            offset = 10000
-        elif x == 'A':
-            num = 1
-            offset = 0
-        elif x.startswith('L'):
-            offset = 40000
-        elif x[0] in string.digits:
-            offset = 30000
-        else:
-            logger.debug("Unsure how to order {} - assuming 1".format(x))
-            offset = 0
-
-        return (offset + num, rem)
-
     return sorted(ms_list, key=lambda x: witintify(x))
 
 
