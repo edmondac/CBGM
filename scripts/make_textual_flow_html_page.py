@@ -33,32 +33,52 @@ JQUERY = "jquery-3.1.1.min.js"
 HTML_TEMPLATE = """<html>
     <head>
         <title>$title</title>
+        <meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
         <script src="$jquery"></script>
         <style>
+            body {
+                font-size: 10pt;
+                font-family: arial, sans-serif;
+            }
             div#listing {
                 min-width: 10%;
+                max-width: 20%;
                 border-right: 1px dashed grey;
                 height: 100%;
                 overflow: auto;
                 }
             div#images {
-                min-width: 70%;
+                display: none;
+                min-width: 80%;
+                max-width: 89%;
                 float: right;
                 margin-left: 10px;
                 height: 100%;
                 overflow: auto;
                 }
-            div#image {
-                display: none;
-            }
-            div.showhideimage {
-                display: none;
+            img.image {
+                border: 1px solid grey;
+                width: 98%;
             }
             a {
                 text-decoration: underline;
                 color: blue;
             }
         </style>
+        <script>
+            var conn_values = $conn_values;
+            function showvariant(book, chapter, verse, word) {
+                for (i = 0; i < conn_values.length; ++i) {
+                    var cv = conn_values[i];
+                    var tf = cv + '/textual_flow_B' + book + 'K' + chapter + 'V' + verse + '_' + word + '_' + cv + '.svg';
+                    $$("img#" + cv).attr('src', tf);
+                    $$("a#" + cv).attr('href', tf);
+                    $$("h3#" + cv).text(tf);
+                    console.log(tf);
+                }
+                $$("#images").show();
+            }
+        </script>
     </head>
 
     <body>
@@ -104,11 +124,9 @@ def make_page(folder, overwrite):
     image_structure = ""
     for f in conn_folders:
         image_structure += '''
-            <div class="showhideimage">
-                <h3><a onclick="showhide(\'c{}\')">+/- c{}</a></h3>
-                <div id="c{}" style="image"></div>
-            </div>
-        '''.format(f, f, f)
+            <h3 id="c{}"></h3>
+            <a id="c{}" target="_blank"><img id="c{}" class="image"/></a>
+        '''.format(f, f, f, f)
 
     svg_files = [x for x in os.listdir(os.path.join(abs_folder, 'c{}'.format(conn_folders[0])))
                  if os.path.splitext(x)[1] == '.svg']
@@ -128,19 +146,26 @@ def make_page(folder, overwrite):
     parsed_svg_files.sort()
 
     listing = []
+    prev_verse = None
     for b, k, v, ws, we in parsed_svg_files:
         w = str(ws)
         if we:
             w += '-{}'.format(we)
-        listing.append('''<a onclick="showref({B:02d}, {K:02d}, {V:02d}, {S}, {E})">
+        vref = (b, k, v)
+        if prev_verse != vref:
+            listing.append("<h3>B{B:02d}K{K:02d}V{V:02d}</h3>".format(B=b, K=k, V=v))
+            prev_verse = vref
+
+        listing.append('''<a onclick="showvariant('{B:02d}', '{K:02d}', '{V:02d}', '{W}')">
                             B{B:02d}K{K:02d}V{V:02d}/{W}
                           </a><br/>'''
-                       .format(B=b, K=k, V=v, S=ws, E=we, W=w))
+                       .format(B=b, K=k, V=v, W=w))
 
     data = {
         'title': os.path.basename(abs_folder),
         'jquery': JQUERY,
         'listing': '\n'.join(listing),
+        'conn_values': ['c{}'.format(x) for x in conn_folders],
         'images': image_structure,
     }
 
