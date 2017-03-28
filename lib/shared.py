@@ -62,7 +62,6 @@ def witintify(x):
     elif x[0] in string.digits:
         offset = 30000
     else:
-        logger.debug("Unsure how to order {} - assuming 1".format(x))
         offset = 0
 
     return (offset + num, rem)
