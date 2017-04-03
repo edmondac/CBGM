@@ -3,7 +3,7 @@
 import subprocess
 import sqlite3
 import logging
-import networkx
+import pygraphviz
 import string
 import os
 from .shared import OL_PARENT
@@ -215,7 +215,7 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
 
 def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
                  ranks_on_edges=True, include_perc_in_label=True, suffix='',
-                 force_serial=False):
+                 box_readings=False, force_serial=False):
     """
     Create a textual flow diagram for the specified variant units. This will
     work out if we're using MPI and act accordingly...
@@ -265,7 +265,8 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
                 mpihandler.queue_textual_flow(
                     vu, db_file=db_file, connectivity=connectivity,
                     perfect_only=perfect_only, ranks_on_edges=ranks_on_edges,
-                    include_perc_in_label=include_perc_in_label, suffix=suffix)
+                    include_perc_in_label=include_perc_in_label, suffix=suffix,
+                    box_readings=box_readings)
 
             return mpihandler.mpi_wait(stop=True)
         else:
@@ -277,7 +278,8 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
             logger.debug("Running for variant unit {} ({} of {})"
                          .format(vu, i + 1, len(variant_units)))
             t = TextualFlow(db_file, vu, connectivity, perfect_only,
-                            ranks_on_edges, include_perc_in_label, suffix)
+                            ranks_on_edges, include_perc_in_label, suffix,
+                            box_readings)
             t.calculate_textual_flow()
 
         if len(variant_units) == 1:
@@ -288,7 +290,8 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
 
 class TextualFlow(object):
     def __init__(self, db_file, variant_unit, connectivity, perfect_only=False,
-                 ranks_on_edges=True, include_perc_in_label=True, suffix='', mpihandler=None):
+                 ranks_on_edges=True, include_perc_in_label=True, suffix='',
+                 box_readings=False, mpihandler=None):
         """
         @param db_file: sqlite database
         @param variant_unit: draw the textual flow of this variant unit
@@ -297,6 +300,7 @@ class TextualFlow(object):
         @param ranks_on_edges: label the ranks on the edges rather than in the nodes
         @param include_perc_in_label: show the coherence percentage of a parent in the label (edges only)
         @param suffix: suffix to use in filename (before the extension)
+        @param box_readings: Draw a diagram for each reading in a box
         @param mpihandler: optional MpiHandler instance
         """
         assert type(connectivity) == list, "Connectivity must be a list"
@@ -329,11 +333,12 @@ class TextualFlow(object):
         self.ranks_on_edges = ranks_on_edges
         self.include_perc_in_label = include_perc_in_label
         self.suffix = suffix
+        self.box_readings = box_readings
         self.parent_maps = {}
 
     def calculate_textual_flow(self):
         """
-        Create a textual flow diagram for the specified variant unit.
+        Create textual flow diagram(s) for the specified variant unit.
 
         Because I put the whole textual flow in one diagram (unlike Munster who
         show a textual flow diagram for a single reading) there can be multiple
@@ -375,25 +380,62 @@ class TextualFlow(object):
 
         # 2. Draw the diagrams
         for conn_value in self.connectivity:
-            self.draw_diagram(conn_value, data)
+            if self.box_readings:
+                self._draw_box_diagrams(conn_value, data)
+            else:
+                self._draw_diagram(conn_value, data)
 
         if self.mpihandler:
             self.mpihandler.done(self.variant_unit)
 
-    def draw_diagram(self, conn_value, data):
+    def _draw_box_diagrams(self, conn_value, data):
+        """
+        Make a diagram for each reading, showing those witnesses attesting the reading in a box, and their direct
+        ancestors (attesting a different reading) outside the box.
+        """
+        readings = set(x[1] for x in data)
+
+        for reading in readings:
+            want_witnesses = set()
+            for w1, w1_reading, w1_parent in data:
+                if w1_reading != reading:
+                    continue
+
+                # This witness has our reading
+                want_witnesses.add(w1)
+
+                # We need to include the direct parents of this too
+                parents = self.parent_maps[w1][conn_value]
+                if parents is not None:
+                    want_witnesses |= set(x.parent for x in parents)
+
+            logger.info("Drawing diagram for reading %s", reading)
+            self._draw_diagram(conn_value, [x for x in data if x[0] in want_witnesses], reading)
+
+
+    def _draw_diagram(self, conn_value, data, group_reading=None):
         """
         Draw the textual flow diagram for the specified connectivity value
+
+        Draw a box around witnesses attesting group_reading, if not None.
         """
+
         # get the colour for the first char of the label (e.g. for b1 just get b)
         witnesses = [(x[0], {'color': darken(COLOURMAP.get(x[1][0], '#cccccc')),
                              'fillcolor': COLOURMAP.get(x[1][0], '#cccccc'),
                              'style': 'filled'})  # See http://www.graphviz.org/
                      for x in data]
+        witness_names = [x[0] for x in witnesses]
 
-        G = networkx.DiGraph()
-        G.add_nodes_from(witnesses)
+        G = pygraphviz.AGraph(strict=True, directed=True)
+
+        # Calculate edges and subgraph_members
         node_label_map = {}
+        subgraph_members = set()
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
+            if w1_reading == group_reading:
+                subgraph_members.add(w1)
+
             parents = self.parent_maps[w1][conn_value]
             if parents is None:
                 # Couldn't calculate them
@@ -402,8 +444,7 @@ class TextualFlow(object):
             if not self.ranks_on_edges:
                 # Old-style diagram with ranks in nodes
                 if len(parents) > 1:
-                    # Multiple parents - caused by a reading with multiple parents in
-                    # a local stemma.
+                    # Multiple parents - caused by a reading with multiple parents in a local stemma.
                     node_label_map[w1] = "{}/[{}] ({})".format(
                         w1, ', '.join("{}.{}".format(x.parent, x.rank) for x in parents), w1_reading)
                 elif len(parents) == 1:
@@ -430,6 +471,10 @@ class TextualFlow(object):
                 continue
 
             for p in parents:
+                if p.parent not in witness_names:
+                    logger.debug("Ignoring %s as it's not in my dataset", p)
+                    continue
+
                 if self.ranks_on_edges:
                     if self.include_perc_in_label:
                         label = "{} ({:.1f})".format(p.rank, p.perc)
@@ -439,16 +484,28 @@ class TextualFlow(object):
                 else:
                     G.add_edge(p.parent, w1, color=witnesses[i][1]['color'])
 
-        # Relable nodes to include the rank
-        networkx.relabel_nodes(G, node_label_map, copy=False)
+        # Add the nodes
+        for wit, args in witnesses:
+            args['label'] = node_label_map[wit]
+            G.add_node(wit, **args)
+
+        # Add subgroup if needed
+        if group_reading and subgraph_members:
+            G.subgraph(subgraph_members, name="cluster_reading")
 
         logger.info("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                                        G.number_of_edges()))
         # Keep the dotfile so we can change the look and feel later if we want
-        dotfile = "{}.dot".format(self.output_files[conn_value])
-        svgfile = "{}.svg".format(self.output_files[conn_value])
-        networkx.write_dot(G, dotfile)
-        subprocess.check_call(['dot', '-Tsvg', dotfile], stdout=open(svgfile, 'w'))
+        if group_reading:
+            dotfile = "{}_{}.dot".format(self.output_files[conn_value], group_reading)
+            svgfile = "{}_{}.svg".format(self.output_files[conn_value], group_reading)
+        else:
+            dotfile = "{}.dot".format(self.output_files[conn_value])
+            svgfile = "{}.svg".format(self.output_files[conn_value])
+
+        G.write(dotfile)
+        G.draw(svgfile, prog="dot")
+        # subprocess.check_call(['dot', '-Tsvg', dotfile], stdout=open(svgfile, 'w'))
         logger.info("Written to {} and {}".format(dotfile, svgfile))
 
     def mpi_result(self, args, ret):

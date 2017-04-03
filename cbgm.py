@@ -33,7 +33,7 @@ def status(cursor):
     n_uncl = 0
     for vu in vus:
         sql = 'SELECT COUNT(DISTINCT(label)) FROM cbgm WHERE variant_unit = ? AND parent = "UNCL"'
-        cursor.execute(sql, (vu, ))
+        cursor.execute(sql, (vu,))
         uncls = int(cursor.fetchone()[0])
         if uncls:
             logger.info("{} is unresolved ({} unclear parents)".format(vu, uncls))
@@ -84,6 +84,9 @@ if __name__ == "__main__":
                         help='Show the rank in the node (old method) rather than on the edge')
     parser.add_argument('--tf-simple-label', default=False, action="store_true",
                         help='Show only the rank in the edge label, rather than also the percentage')
+    parser.add_argument('--tf-box-readings', default=False, action="store_true",
+                        help='Draw a digram for each reading, showing the specified reading in a box, '
+                             'with only direct ancestors from other readings')
     parser.add_argument('-c', '--connectivity', default="499", metavar='N', type=str,
                         help='Maximum allowed connectivity in a textual flow diagram (use comma separated list to perform multiple calculations)')
     parser.add_argument('-s', '--suffix', default='',
@@ -149,14 +152,14 @@ if __name__ == "__main__":
         if args.textual_flow or args.local_stemma:
             assert args.variant_unit, "Must specify a variant unit (can be all)"
     except AssertionError as e:
-        logger.info("ERROR: ", e)
+        logger.info("ERROR: %s", e)
         parser.print_help()
         sys.exit(1)
 
     try:
         from mpi4py import MPI
         mpirank = MPI.COMM_WORLD.Get_rank()
-    except:
+    except Exception:
         mpirank = 0
 
     conn = sqlite3.connect(db_file)
@@ -243,7 +246,7 @@ if __name__ == "__main__":
             logger.info("Have you considered calculating multiple connectivity "
                         "values at once? Use a comma separated list.")
         textual_flow(db_file, do_vus, conn, args.perfect, not args.tf_rank_in_node,
-                     not args.tf_simple_label, args.suffix)
+                     not args.tf_simple_label, args.suffix, args.tf_box_readings)
 
     elif args.local_stemma:
         output = local_stemma(db_file, do_vus, suffix=args.suffix)
