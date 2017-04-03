@@ -67,10 +67,15 @@ HTML_TEMPLATE = """<html>
         </style>
         <script>
             var conn_values = $conn_values;
-            function showvariant(book, chapter, verse, word) {
+            function showvariant(book, chapter, verse, word, suffix) {
                 for (i = 0; i < conn_values.length; ++i) {
                     var cv = conn_values[i];
-                    var tf = cv + '/textual_flow_B' + book + 'K' + chapter + 'V' + verse + '_' + word + '_' + cv + '.svg';
+                    if (suffix) {
+                        suff_bit = '_' + suffix;
+                    } else {
+                        suff_bit = '';
+                    }
+                    var tf = cv + '/textual_flow_B' + book + 'K' + chapter + 'V' + verse + '_' + word + '_' + cv + suff_bit + '.svg';
                     $$("img#" + cv).attr('src', tf);
                     $$("a#" + cv).attr('href', tf);
                     $$("h3#" + cv).text(tf);
@@ -109,45 +114,53 @@ def make_page(folder, overwrite):
         sys.exit(1)
 
     conn_folders = []
-    conn_regex = re.compile("c([0-9]+)")
+    conn_regex = re.compile("c([0-9]+(perc)?)")
     for f in os.listdir(abs_folder):
         match = conn_regex.match(f)
         if match:
-            conn_folders.append(int(match.group(1)))
+            conn_folders.append(match.group(1))
 
     if not conn_folders:
         print("This doesn't look like textual flow data - expecting at least one cXXX folder")
         sys.exit(2)
 
-    conn_folders.sort()
+    def sortme(x):
+        if x.endswith('perc'):
+            return 10000 - int(x[:-4])
+        else:
+            return int(x)
+
+    conn_folders.sort(key=sortme)
 
     image_structure = ""
     for f in conn_folders:
+        sanitised_f = f.replace('%', 'perc')
         image_structure += '''
             <h3 id="c{}"></h3>
             <a id="c{}" target="_blank"><img id="c{}" class="image"/></a>
-        '''.format(f, f, f, f)
+        '''.format(sanitised_f, sanitised_f, sanitised_f, sanitised_f)
 
     svg_files = [x for x in os.listdir(os.path.join(abs_folder, 'c{}'.format(conn_folders[0])))
                  if os.path.splitext(x)[1] == '.svg']
     print("Found {} SVG files in c{}".format(len(svg_files), conn_folders[0]))
     parsed_svg_files = []
-    svg_re = re.compile("textual_flow_B([0-9]{2})K([0-9]{2})V([0-9]{2})_([^-,]+)[-,]?(.*?)_c[0-9]+\.svg")
+    svg_re = re.compile("textual_flow_B([0-9]{2})K([0-9]{2})V([0-9]{2})_([^-,]+)[-,]?(.*?)_c[0-9]+_?(.*)\.svg")
     for svg in svg_files:
         match = svg_re.match(svg)
         if not match:
             print("WARNING: File doesn't match pattern: {} - IGNORING".format(svg))
             continue
 
-        ref = [int(x) for x in match.groups()[:-1]]
+        ref = [int(x) for x in match.groups()[:-2]]
         ref.append(match.group(5))  # this isn't reliably an integer...
+        ref.append(match.group(6))  # optional suffix: this isn't an integer...
         parsed_svg_files.append(tuple(ref))
 
     parsed_svg_files.sort()
 
     listing = []
     prev_verse = None
-    for b, k, v, ws, we in parsed_svg_files:
+    for b, k, v, ws, we, suffix in parsed_svg_files:
         w = str(ws)
         if we:
             w += '-{}'.format(we)
@@ -156,10 +169,10 @@ def make_page(folder, overwrite):
             listing.append("<h3>B{B:02d}K{K:02d}V{V:02d}</h3>".format(B=b, K=k, V=v))
             prev_verse = vref
 
-        listing.append('''<a onclick="showvariant('{B:02d}', '{K:02d}', '{V:02d}', '{W}')">
-                            B{B:02d}K{K:02d}V{V:02d}/{W}
+        listing.append('''<a onclick="showvariant('{B:02d}', '{K:02d}', '{V:02d}', '{W}', '{suffix}')">
+                            B{B:02d}K{K:02d}V{V:02d}/{W} {suffix}
                           </a><br/>'''
-                       .format(B=b, K=k, V=v, W=w))
+                       .format(B=b, K=k, V=v, W=w, suffix=suffix))
 
     data = {
         'title': os.path.basename(abs_folder),

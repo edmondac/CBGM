@@ -44,8 +44,7 @@ def time_fmt(secs):
 
 
 def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
-                              connectivity=499, allow_incomplete=True,
-                              debug=False, suffix=''):
+                              allow_incomplete=True, debug=False, suffix=''):
     """
     Prints a table of combinations of potential ancestors ordered by
     the number required to account for all the readings in w1.
@@ -54,7 +53,6 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
     @param w1: witness
     @param max_comb_len: maximum length of combinations to check (-1 for unlimited)
     @param csv_file: output to a csv file rather than a tab-delim table
-    @param connectivity: maximum rank of ancestors to allow
     @param allow_incomplete: show combinations that don't explain everything
     """
     if csv_file:
@@ -127,7 +125,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
             continue
         vu_coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
         vu_coh.set_variant_unit(vu)
-        vu_combs = vu_coh.parent_combinations(reading, parent, connectivity)
+        vu_combs = vu_coh.parent_combinations(reading, parent)
         # Simplify that to just a list of tuples of witnesses
         wit_combs = [set(x.parent for x in a) for a in vu_combs]
         vu_map[vu] = (vu_combs, wit_combs)

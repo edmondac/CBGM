@@ -116,7 +116,7 @@ class GenealogicalCoherence(Coherence):
         sql = """SELECT label, parent FROM cbgm
                  WHERE variant_unit = ?
                  """
-        self.cursor.execute(sql, (self.variant_unit, ))
+        self.cursor.execute(sql, (self.variant_unit,))
         for row in self.cursor:
             data[row[0]].add(row[1])
         try:
@@ -173,7 +173,7 @@ class GenealogicalCoherence(Coherence):
         """
         # Find every variant unit in which we're extant
         sql = "SELECT variant_unit, label FROM cbgm WHERE witness = ?"
-        for vu, label in list(self.cursor.execute(sql, (self.w1, ))):
+        for vu, label in list(self.cursor.execute(sql, (self.w1,))):
             reading_obj = ReadingRelationship(vu, label, self.cursor)
             for w2 in self.all_mss:
                 if w2 == self.w1:
@@ -283,7 +283,7 @@ class GenealogicalCoherence(Coherence):
         return [x['W2'] for x in self.rows
                 if x['_NR'] != 0]
 
-    def parent_combinations(self, reading, parent_reading, max_rank=499, my_gen=1):
+    def parent_combinations(self, reading, parent_reading, *, max_rank=None, min_perc=None, my_gen=1):
         """
         Return a list of possible parent combinations that explain this reading.
 
@@ -308,6 +308,8 @@ class GenealogicalCoherence(Coherence):
         """
         assert self.variant_unit, "You must set a variant unit before calling parent_combinations"
 
+        assert not (max_rank and min_perc), "You can't specify both max_rank and min_perc"
+
         self.generate()
         if my_gen == 1:
             # top level
@@ -318,13 +320,19 @@ class GenealogicalCoherence(Coherence):
         for row in self.rows:
             # Check the real rank (_NR) - so joint 6th => 6. _RANK here could be
             # 7, 8, 9 etc. for joint 6th.
-            if row['_NR'] > max_rank:
+            if max_rank is not None and row['_NR'] > max_rank:
                 # Exceeds connectivity setting
                 continue
-            elif row['D'] == '-':
+
+            if min_perc is not None and row['PERC1'] < min_perc:
+                # Coherence percentage is too low
+                continue
+
+            if row['D'] == '-':
                 # Not a potential ancestor (undirected genealogical coherence)
                 continue
-            elif row['READING'] == reading:
+
+            if row['READING'] == reading:
                 # This matches our reading and is within the connectivity threshold - take it
                 ret.append([ParentCombination(row['W2'], row['_NR'], row['PERC1'], my_gen)])
 
@@ -350,12 +358,12 @@ class GenealogicalCoherence(Coherence):
             if partial_parent == INIT:
                 # Simple - who reads INIT?
                 partial_explanations.append(
-                    self.parent_combinations(INIT, None, max_rank, my_gen + 1))
+                    self.parent_combinations(INIT, None, max_rank=max_rank, min_perc=min_perc, my_gen=my_gen + 1))
                 continue
             if partial_parent == OL_PARENT:
                 # Simple - who reads OL_PARENT?
                 partial_explanations.append(
-                    self.parent_combinations(OL_PARENT, None, max_rank, my_gen + 1))
+                    self.parent_combinations(OL_PARENT, None, max_rank=max_rank, min_perc=min_perc, my_gen=my_gen + 1))
                 continue
 
             # We need to recurse, and find out what combinations explain our
@@ -364,11 +372,8 @@ class GenealogicalCoherence(Coherence):
                                               partial_parent,
                                               self.cursor)
 
-            expl = self.parent_combinations(
-                partial_parent,
-                reading_obj.get_parent_reading(partial_parent),
-                max_rank,
-                next_gen)
+            expl = self.parent_combinations(partial_parent, reading_obj.get_parent_reading(partial_parent),
+                                            max_rank=max_rank, min_perc=min_perc, my_gen=next_gen)
 
             partial_explanations.append(expl)
 

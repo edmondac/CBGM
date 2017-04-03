@@ -145,35 +145,47 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
     coh.generate()
 
     logger.debug("Searching parent combinations")
-    # we might need multiple parents if a reading requires it
-    best_parents_by_rank = []
-    best_rank = None
-    best_parents_by_gen = []
-    best_gen = None
-    parents = []
     max_acceptable_gen = 2  # only allow my reading or my parent's
     parent_maps = {}
     for conn_value in connectivity:
         logger.debug("Calculating for conn={}".format(conn_value))
+
+        max_rank = None
+        min_perc = None
         try:
-            combinations = coh.parent_combinations(w1_reading, w1_parent, conn_value)
+            if conn_value[-1] == '%':
+                min_perc = float(conn_value[:-1])
+                assert min_perc >= 0, "Percentage value must be between 0 and 100"
+                assert min_perc <= 100, "Percentage value must be between 0 and 100"
+            else:
+                max_rank = int(conn_value)
+        except ValueError:
+            logger.exception("Unable to parse connectivity value %s as int or float%%", conn_value)
+            raise SystemExit(2)
+        try:
+            combinations = coh.parent_combinations(w1_reading, w1_parent, max_rank=max_rank, min_perc=min_perc)
         except Exception:
             logger.exception("Couldn't get parent combinations for {}, {}, {}"
                              .format(w1_reading, w1_parent, conn_value))
             parent_maps[conn_value] = None
             continue
 
+        # we might need multiple parents if a reading requires it
+        best_parents_by_rank = []
+        best_rank = None
+        best_parents_by_gen = []
+        best_gen = None
         total = len(combinations)
         report = int(total // 10)
         for i, combination in enumerate(combinations):
             count = i + 1
             if (report and not count % report) or count == total:
                 # Report every 10% and at the end
-                logger.debug("Done {} of {} ({:.2f}%)".format(count, total, (count / total) * 100.0))
+                logger.debug("Done %s of %s (%.2f%%)", count, total, (count / total) * 100.0)
 
             if not combination:
                 # Couldn't find anything to explain it
-                logger.info("Couldn't find any parent combination for {}".format(w1_reading))
+                logger.info("Couldn't find any parent combination for %s", w1_reading)
                 continue
 
             rank = max(x.rank for x in combination)
@@ -195,17 +207,18 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
                 best_rank = rank
 
         logger.debug("Analysing results")
+        parents = []
+        if combinations:
+            if best_gen == 1:
+                # We can do this with direct parents - use them
+                parents = best_parents_by_gen
+            else:
+                # Got to use ancestors, so use the best by rank
+                parents = best_parents_by_rank
 
-        if best_gen == 1:
-            # We can do this with direct parents - use them
-            parents = best_parents_by_gen
-        else:
-            # Got to use ancestors, so use the best by rank
-            parents = best_parents_by_rank
-
-        if w1_parent == OL_PARENT and not parents:
-            # Top level in an overlapping unit with an omission in the initial text
-            parents = [ParentCombination('OL_PARENT', -1, 100.0, 1)]
+            if w1_parent == OL_PARENT and not parents:
+                # Top level in an overlapping unit with an omission in the initial text
+                parents = [ParentCombination('OL_PARENT', -1, 100.0, 1)]
 
         logger.info("Found best parents for {} (conn={}): {}".format(w1, conn_value, parents))
         parent_maps[conn_value] = parents
@@ -308,11 +321,11 @@ class TextualFlow(object):
         self.output_files = {}
         self.connectivity = []
         for conn_value in connectivity:
-            dirname = "c{}".format(conn_value)
+            dirname = "c{}".format(conn_value.replace('%', 'perc'))
             if not os.path.exists(dirname):
                 os.mkdir(dirname)
             output_file = os.path.join(os.getcwd(), dirname, "textual_flow_{}_c{}{}".format(
-                variant_unit.replace('/', '_'), conn_value, suffix))
+                variant_unit.replace('/', '_'), conn_value.replace('%', 'perc'), suffix))
 
             if os.path.exists(output_file):
                 logger.info("Textual flow diagram for {} already exists ({}) - skipping"

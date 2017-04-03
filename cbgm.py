@@ -87,8 +87,9 @@ if __name__ == "__main__":
     parser.add_argument('--tf-box-readings', default=False, action="store_true",
                         help='Draw a digram for each reading, showing the specified reading in a box, '
                              'with only direct ancestors from other readings')
-    parser.add_argument('-c', '--connectivity', default="499", metavar='N', type=str,
-                        help='Maximum allowed connectivity in a textual flow diagram (use comma separated list to perform multiple calculations)')
+    parser.add_argument('-c', '--connectivity', default="499", metavar='N/P', type=str,
+                        help='Maximum allowed connectivity in a textual flow diagram (use comma separated list to '
+                             'perform multiple calculations). Each value can be an int (rank) or perc (coherence)')
     parser.add_argument('-s', '--suffix', default='',
                         help='Filename suffix for generated files (before the extension)')
     parser.add_argument('-w', '--witness', default=None,
@@ -241,7 +242,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     if args.textual_flow:
-        conn = [int(x) for x in args.connectivity.split(',')]
+        conn = [x for x in args.connectivity.split(',')]
         if len(conn) == 1:
             logger.info("Have you considered calculating multiple connectivity "
                         "values at once? Use a comma separated list.")
