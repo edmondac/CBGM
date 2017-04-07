@@ -110,13 +110,8 @@ def generate_genealogical_coherence(w1, db_file):
     Generate genealogical coherence (variant unit independent)
     and store a cached copy.
     """
-    coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
-    if coh.check_cache():
-        logger.info("Found cached genealogical coherence for {}".format(w1))
-    else:
-        logger.info("Calculating genealogical coherence for {}".format(w1))
-        coh.generate()
-        coh.store_cache()
+    coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True)
+    coh.generate()
 
     # A return of None is interpreted as abort, so just return True
     return True
@@ -139,10 +134,8 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
     logger.info("Getting best parent(s) for {}".format(w1))
 
     logger.debug("Calculating genealogical coherence for {} at {}".format(w1, variant_unit))
-    coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
-    coh.load_cache()
+    coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True)
     coh.set_variant_unit(variant_unit)
-    coh.generate()
 
     logger.debug("Searching parent combinations")
     max_acceptable_gen = 2  # only allow my reading or my parent's

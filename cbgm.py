@@ -71,7 +71,8 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--db-file',
                         help='sqlite db filename (see populate_db.py)')
     parser.add_argument('-f', '--file',
-                        help='file containing variant reading definitions (will use populate_db.py internally). This is slower than -d if you\'re doing lots of calls.')
+                        help='file containing variant reading definitions (will use populate_db.py internally). '
+                             'This is slower than -d if you\'re doing lots of calls.')
     parser.add_argument('-m', '--max-comb-len', default=-1, metavar='N', type=int,
                         help='Maximum number of ancestors in a combination (-a). Default is unlimited.')
     parser.add_argument('--csv', default=False, action="store_true",
@@ -87,6 +88,8 @@ if __name__ == "__main__":
     parser.add_argument('--tf-box-readings', default=False, action="store_true",
                         help='Draw a digram for each reading, showing the specified reading in a box, '
                              'with only direct ancestors from other readings')
+    parser.add_argument('--coh-cache', default=False, action="store_true",
+                        help="Use the coherence cache for this database (requires -d). This is implied by -T.")
     parser.add_argument('-c', '--connectivity', default="499", metavar='N/P', type=str,
                         help='Maximum allowed connectivity in a textual flow diagram (use comma separated list to '
                              'perform multiple calculations). Each value can be an int (rank) or perc (coherence)')
@@ -121,6 +124,10 @@ if __name__ == "__main__":
         logger.info("Please only specify one of -d and -f")
         sys.exit(2)
 
+    if args.coh_cache and args.file:
+        logger.info("Cannot specify --coh-cache with --file")
+        sys.exit(8)
+
     if args.file:
         db_file = DEFAULT_DB_FILE
         populate_db.main(args.file, db_file, force=True)
@@ -140,15 +147,10 @@ if __name__ == "__main__":
                           args.status,
                           args.global_stemma,
                           args.optimal_substemma] if x]
-    coh_fn = None
-    if args.pre_genealogical_coherence:
-        coh_fn = pre_gen_coherence
-    elif args.genealogical_coherence:
-        coh_fn = gen_coherence
 
     try:
         assert len(action) == 1, "Must specify one of -P, -G, -L, -T, -X, -S or -A"
-        if coh_fn:
+        if args.pre_genealogical_coherence or args.genealogical_coherence:
             assert args.witness, "Must specify a witness (can be all)"
         if args.textual_flow or args.local_stemma:
             assert args.variant_unit, "Must specify a variant unit (can be all)"
@@ -246,6 +248,8 @@ if __name__ == "__main__":
         if len(conn) == 1:
             logger.info("Have you considered calculating multiple connectivity "
                         "values at once? Use a comma separated list.")
+        if not args.coh_cache:
+            logger.warning("You might want to consider --coh-cache - it will speed up textual flow creation for multiple variants")
         textual_flow(db_file, do_vus, conn, args.perfect, not args.tf_rank_in_node,
                      not args.tf_simple_label, args.suffix, args.tf_box_readings)
 
@@ -273,9 +277,15 @@ if __name__ == "__main__":
                 logger.debug("Running for variant unit {} ({} of {})"
                              .format(vu, i + 1, len(do_vus)))
                 output = ''
-                if coh_fn:
+                if args.pre_genealogical_coherence:
                     # Call our coherence function
-                    output += coh_fn(db_file, witness, vu, debug=args.extracols)
+                    output += args.pre_genealogical_coherence(db_file, witness, vu, debug=args.extracols,
+                                                              use_cache=args.coh_cache)
+                    output += '\n\n\n'
+                elif args.genealogical_coherence:
+                    # Call our coherence function
+                    output += args.genealogical_coherence(db_file, witness, vu, debug=args.extracols,
+                                                          use_cache=args.coh_cache)
                     output += '\n\n\n'
 
                 if not args.no_strip_spaces:

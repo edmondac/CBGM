@@ -14,13 +14,13 @@ class Coherence(object):
     Class representing pre-genealogical coherence that can be extended
     to give more info.
     """
-    def __init__(self, db_file, w1, *, pretty_p=True, debug=False):
+    def __init__(self, db_file, w1, *, pretty_p=True, debug=False, use_cache=False):
         """
         @param db_file: database file
         @param w1: witness 1 name
-        @param variant_unit: variant unit ref
         @param pretty_p: normal P or the gothic (pretty) one
         @param debug: show more columns for debugging
+        @param use_cache: use the file cache for this db to speed things up
         """
         self.conn = sqlite3.connect(db_file)
         self.cursor = self.conn.cursor()
@@ -32,6 +32,7 @@ class Coherence(object):
         self._all_attestations = None
         self._already_generated = False
         self.variant_unit = None
+        self.use_cache = use_cache
         self._cache_key = os.path.join(os.getcwd(),
                                        "{}Cache".format(self.__class__.__name__),
                                        "{}.{}.{}.cache".format(db_file.replace('/', '_'),
@@ -45,19 +46,24 @@ class Coherence(object):
         """
         Specify a non-None variant unit to extend the data in this coherence object.
 
+        We use this extra method (rather than the constructor) since the coherence data can be cached without the
+        variant unit and used later for other variant units.
+
         This adds extra data to existing rows, if they've been generated.
         """
+        if not self._already_generated:
+            # we generate it here so that caching will happen at the right time (if required)
+            self.generate()
+
+        assert self._already_generated
         assert variant_unit is not None, variant_unit
         self.variant_unit = variant_unit
         self.columns.extend(['READING', 'TEXT'])
-        if self._already_generated:
-            # Add data to existing columns
-            for row in self.rows:
-                for col in ['READING', 'TEXT']:
-                    self.add_item(row['W2'], col, row)
-        else:
-            # Be lazy and let it happen on demand
-            pass
+
+        # Add data to existing columns
+        for row in self.rows:
+            for col in ['READING', 'TEXT']:
+                self.add_item(row['W2'], col, row)
 
     def check_cache(self):
         """
@@ -69,7 +75,10 @@ class Coherence(object):
         """
         Store all rows in a cache
         """
-        assert self.variant_unit is None, "Cannot cache once variant_unit has been set"
+        if self.variant_unit is not None:
+            logger.warning("Cannot cache once variant_unit has been set")
+            return
+
         try:
             os.mkdir(os.path.dirname(self._cache_key))
         except FileExistsError:
@@ -98,11 +107,15 @@ class Coherence(object):
         self._already_generated = True
         logger.debug("Loaded {} rows from cache ({})".format(len(self.rows), self._cache_key))
 
-    def generate(self):
+    def generate(self, store_cache=True):
         """
         Generate the data
         """
         if self._already_generated:
+            return
+
+        if self.use_cache and self.check_cache():
+            self.load_cache()
             return
 
         logger.debug("Generating pre-genealogical coherence data")
@@ -114,6 +127,9 @@ class Coherence(object):
 
             self.sort()
         logger.debug("Generated pre-genealogical coherence data")
+
+        if self.use_cache and store_cache:
+            self.store_cache()
 
     def add_row(self, w2):
         """

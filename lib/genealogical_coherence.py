@@ -141,8 +141,10 @@ class GenealogicalCoherence(Coherence):
         logger.debug("Generating genealogical coherence data")
 
         self._calculate_reading_relationships()
-        # print self.reading_relationships
-        super(GenealogicalCoherence, self).generate()
+
+        # NOTE: This will load from cache if so instructed
+        super(GenealogicalCoherence, self).generate(store_cache=False)
+
         new_rows = []
         for row in self.rows:
             if row['W1>W2'] > row['W1<W2']:
@@ -159,6 +161,9 @@ class GenealogicalCoherence(Coherence):
 
         self._already_generated = True
         logger.debug("Generated genealogical coherence data")
+
+        if self.use_cache:
+            self.store_cache()
 
     def _calculate_reading_relationships(self):
         """
