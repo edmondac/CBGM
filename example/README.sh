@@ -53,7 +53,6 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 ### Genealogical coherence ###
 ../cbgm -d /tmp/test.db -G -w P75 --coh-cache
 ../cbgm -d /tmp/test.db -G -w P75 --coh-cache --verbose  # This time it should load from cache
-exit 9
 #~ Using database: /tmp/test.db
 #~ PotentialancestorsforW1=P75
 #~ W2  NR  D   PERC1   EQ  PASS    W1<W2   W1>W2   UNCL    NOREL

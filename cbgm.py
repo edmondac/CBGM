@@ -103,6 +103,7 @@ if __name__ == "__main__":
                         help="Insist on perfect coherence in a textual flow diagram")
     parser.add_argument('-n', '--no-strip-spaces', default=False, action="store_true",
                         help="Don't strip spaces from the output (stripped is better for importing into a spreadsheet)")
+    parser.add_argument('--gothic', default="False", action="store_true", help="Display a gothic P for papyri")
     parser.add_argument('--verbose', action='count')
 
     args = parser.parse_args()
@@ -279,11 +280,13 @@ if __name__ == "__main__":
                 output = ''
                 if args.pre_genealogical_coherence:
                     # Call our coherence function
-                    output += pre_gen_coherence(db_file, witness, vu, debug=args.extracols, use_cache=args.coh_cache)
+                    output += pre_gen_coherence(db_file, witness, vu, debug=args.extracols, use_cache=args.coh_cache,
+                                                pretty_p=args.gothic)
                     output += '\n\n\n'
                 elif args.genealogical_coherence:
                     # Call our coherence function
-                    output += gen_coherence(db_file, witness, vu, debug=args.extracols, use_cache=args.coh_cache)
+                    output += gen_coherence(db_file, witness, vu, debug=args.extracols, use_cache=args.coh_cache,
+                                            pretty_p=args.gothic)
                     output += '\n\n\n'
 
                 if not args.no_strip_spaces:
