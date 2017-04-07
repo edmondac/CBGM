@@ -399,14 +399,14 @@ class GenealogicalCoherence(Coherence):
             return combined
 
 
-def gen_coherence(db_file, w1, variant_unit=None, *, debug=False):
+def gen_coherence(db_file, w1, variant_unit=None, *, debug=False, use_cache=False):
     """
     Show a table of potential ancestors of w1.
 
     If variant_unit is supplied, then two extra columns are output
     showing the reading supported by each witness.
     """
-    coh = GenealogicalCoherence(db_file, w1, debug=debug)
+    coh = GenealogicalCoherence(db_file, w1, debug=debug, use_cache=use_cache)
     if variant_unit:
         coh.set_variant_unit(variant_unit)
     return "{}\n{}".format("Potential ancestors for W1={}".format(w1),

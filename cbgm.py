@@ -279,13 +279,11 @@ if __name__ == "__main__":
                 output = ''
                 if args.pre_genealogical_coherence:
                     # Call our coherence function
-                    output += args.pre_genealogical_coherence(db_file, witness, vu, debug=args.extracols,
-                                                              use_cache=args.coh_cache)
+                    output += pre_gen_coherence(db_file, witness, vu, debug=args.extracols, use_cache=args.coh_cache)
                     output += '\n\n\n'
                 elif args.genealogical_coherence:
                     # Call our coherence function
-                    output += args.genealogical_coherence(db_file, witness, vu, debug=args.extracols,
-                                                          use_cache=args.coh_cache)
+                    output += gen_coherence(db_file, witness, vu, debug=args.extracols, use_cache=args.coh_cache)
                     output += '\n\n\n'
 
                 if not args.no_strip_spaces:

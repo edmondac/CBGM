@@ -310,14 +310,14 @@ class Coherence(object):
         return "{}\n{}".format(header, '\n'.join(lines))
 
 
-def pre_gen_coherence(db_file, w1, variant_unit=None, *, debug=False):
+def pre_gen_coherence(db_file, w1, variant_unit=None, *, debug=False, use_cache=False):
     """
     Show a table of pre-genealogical coherence of all witnesses compared to w1.
 
     If variant_unit is supplied, then two extra columns are output
     showing the reading supported by each witness.
     """
-    coh = Coherence(db_file, w1, debug=debug)
+    coh = Coherence(db_file, w1, debug=debug, use_cache=use_cache)
     if variant_unit:
         coh.set_variant_unit(variant_unit)
     return "{}\n{}".format("Pre-genealogical coherence for W1={}".format(w1),
