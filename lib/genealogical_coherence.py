@@ -138,12 +138,15 @@ class GenealogicalCoherence(Coherence):
         if self._already_generated:
             return
 
+        if self.use_cache and self.check_cache():
+            self.load_cache()
+            return
+
         logger.debug("Generating genealogical coherence data")
 
         self._calculate_reading_relationships()
 
-        # NOTE: This will load from cache if so instructed
-        super(GenealogicalCoherence, self).generate(store_cache=False)
+        self._generate_rows()
 
         new_rows = []
         for row in self.rows:

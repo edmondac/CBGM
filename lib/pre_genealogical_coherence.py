@@ -75,6 +75,8 @@ class Coherence(object):
         """
         Store all rows in a cache
         """
+        assert self._already_generated, "Must generate before storing to cache"
+
         if self.variant_unit is not None:
             logger.warning("Cannot cache once variant_unit has been set")
             return
@@ -84,8 +86,6 @@ class Coherence(object):
         except FileExistsError:
             # Easier than checking and risking race conditions
             pass
-
-        self.generate()
 
         with open(self._cache_key, 'w') as f:
             json.dump(self.rows, f)
@@ -109,7 +109,21 @@ class Coherence(object):
         self._already_generated = True
         logger.debug("Loaded {} rows from cache ({})".format(len(self.rows), self._cache_key))
 
-    def generate(self, store_cache=True):
+    def _generate_rows(self):
+        """
+        Actually generate the data
+        """
+        logger.debug("Generating pre-genealogical coherence data")
+        if not self.rows:
+            for w2 in self.all_mss:
+                if self.w1 == w2:
+                    continue
+                self.add_row(w2)
+
+            self.sort()
+        logger.debug("Generated pre-genealogical coherence data")
+
+    def generate(self):
         """
         Generate the data
         """
@@ -120,15 +134,9 @@ class Coherence(object):
             self.load_cache()
             return
 
-        logger.debug("Generating pre-genealogical coherence data")
-        if not self.rows:
-            for w2 in self.all_mss:
-                if self.w1 == w2:
-                    continue
-                self.add_row(w2)
+        self._generate_rows()
 
-            self.sort()
-        logger.debug("Generated pre-genealogical coherence data")
+        self._already_generated = True
 
         if self.use_cache and store_cache:
             self.store_cache()

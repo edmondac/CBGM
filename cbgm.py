@@ -249,8 +249,6 @@ if __name__ == "__main__":
         if len(conn) == 1:
             logger.info("Have you considered calculating multiple connectivity "
                         "values at once? Use a comma separated list.")
-        if not args.coh_cache:
-            logger.warning("You might want to consider --coh-cache - it will speed up textual flow creation for multiple variants")
         textual_flow(db_file, do_vus, conn, args.perfect, not args.tf_rank_in_node,
                      not args.tf_simple_label, args.suffix, args.tf_box_readings)
 
