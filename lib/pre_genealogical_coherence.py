@@ -100,6 +100,8 @@ class Coherence(object):
         You must use check_cache before calling this, as a missing cache entry
         is an error.
         """
+        logger.debug("Loading coherence data for %s from cache", self.w1)
+
         assert self.variant_unit is None, "Cannot load from cache once variant_unit has been set"
         with open(self._cache_key) as f:
             self.rows = json.load(f)
