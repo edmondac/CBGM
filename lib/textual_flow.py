@@ -36,10 +36,10 @@ def darken(col, by=75):
     r, g, b = int(col[1:3], 16), int(col[3:5], 16), int(col[5:7], 16)
 
     def dark(x, by=by):
-            new = max(x - by, 0)
-            return str(hex(new))[2:]
+        new = max(x - by, 0)
+        return str(hex(new))[2:]
 
-    return '#{}{}{}'.format(dark(r), dark(g), dark(b))
+    return '#{:0>2}{:0>2}{:0>2}'.format(dark(r), dark(g), dark(b))
 
 
 class ForestError(Exception):
