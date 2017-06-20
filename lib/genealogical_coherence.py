@@ -11,15 +11,18 @@ logger = logging.getLogger(__name__)
 
 
 class ParentCombination(object):
-    def __init__(self, parent, rank, perc, gen):
-        self.parent = parent
-        self.rank = rank
-        self.perc = perc
-        self.gen = gen
+    def __init__(self, parent, rank, perc, gen, prior=None, posterior=None):
+        self.parent = parent  # witness label
+        self.rank = rank  # integer rank
+        self.perc = perc  # percentage coherence
+        self.gen = gen  # generation (e.g. 1=parent, 2=grandparent, ...)
+        self.prior = prior  # integer number of prior readings in the parent - or None=undefined
+        self.posterior = posterior  # integer number of posterior readings in the parent - or None=undefined
+
 
     def __repr__(self):
-        return "<Parent Combination: parent={}, rank={}, perc={}, gen={}>".format(
-            self.parent, self.rank, self.perc, self.gen)
+        return "<Parent Combination: parent={}, rank={}, perc={}, gen={}, prior={}, posterior={}>".format(
+            self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior)
 
 
 class TooManyAborts(Exception):
@@ -82,6 +85,18 @@ class ReadingRelationship(object):
                  WHERE variant_unit = ?
                  AND label = ?"""
         self.cursor.execute(sql, (self.variant_unit, reading))
+
+#        FIXME: If no witness attests the parent reading... perhaps...
+#         [2017-04-12 00:48:52,945] [29142] [textual_flow.py:162] [ERROR] Couldn't get parent combinations for m, j, 20
+#         Traceback (most recent call last):
+#           File "/gpfs/bb/ace209/cbgm/CBGM/lib/textual_flow.py", line 159, in get_parents
+#             combinations = coh.parent_combinations(w1_reading, w1_parent, max_rank=max_rank, min_perc=min_perc)
+#           File "/gpfs/bb/ace209/cbgm/CBGM/lib/genealogical_coherence.py", line 383, in parent_combinations
+#             expl = self.parent_combinations(partial_parent, reading_obj.get_parent_reading(partial_parent),
+#           File "/gpfs/bb/ace209/cbgm/CBGM/lib/genealogical_coherence.py", line 85, in get_parent_reading
+#             return self.cursor.fetchone()[0]
+#         TypeError: 'NoneType' object is not subscriptable
+
         return self.cursor.fetchone()[0]
 
 
@@ -342,7 +357,14 @@ class GenealogicalCoherence(Coherence):
 
             if row['READING'] == reading:
                 # This matches our reading and is within the connectivity threshold - take it
-                ret.append([ParentCombination(row['W2'], row['_NR'], row['PERC1'], my_gen)])
+
+                # This is in a row for W2, but we want the prior readings in the PARENT.
+                # So We need the W1<W2 entry (which is the posterior readings in the child.)
+                # And vice versa for the posterior count.
+                prior = row['W1<W2']
+                posterior = row['W1>W2']
+                ret.append([ParentCombination(row['W2'], row['_NR'], row['PERC1'],
+                                              my_gen, prior, posterior)])
 
         if parent_reading in (INIT, OL_PARENT, UNCL):
             # No parents - nothing further to do

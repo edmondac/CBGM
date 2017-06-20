@@ -220,8 +220,8 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
 
 
 def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
-                 ranks_on_edges=True, include_perc_in_label=True, suffix='',
-                 box_readings=False, force_serial=False):
+                 ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
+                 show_strength_values=False, suffix='', box_readings=False, force_serial=False):
     """
     Create a textual flow diagram for the specified variant units. This will
     work out if we're using MPI and act accordingly...
@@ -271,8 +271,9 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
                 mpihandler.queue_textual_flow(
                     vu, db_file=db_file, connectivity=connectivity,
                     perfect_only=perfect_only, ranks_on_edges=ranks_on_edges,
-                    include_perc_in_label=include_perc_in_label, suffix=suffix,
-                    box_readings=box_readings)
+                    include_perc_in_label=include_perc_in_label,
+                    show_strengths=show_strengths, show_strength_values=show_strength_values,
+                    suffix=suffix, box_readings=box_readings)
 
             return mpihandler.mpi_wait(stop=True)
         else:
@@ -284,8 +285,9 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
             logger.debug("Running for variant unit {} ({} of {})"
                          .format(vu, i + 1, len(variant_units)))
             t = TextualFlow(db_file, vu, connectivity, perfect_only,
-                            ranks_on_edges, include_perc_in_label, suffix,
-                            box_readings)
+                            ranks_on_edges, include_perc_in_label,
+                            show_strengths, show_strength_values,
+                            suffix, box_readings)
             t.calculate_textual_flow()
 
         if len(variant_units) == 1:
@@ -296,8 +298,8 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
 
 class TextualFlow(object):
     def __init__(self, db_file, variant_unit, connectivity, perfect_only=False,
-                 ranks_on_edges=True, include_perc_in_label=True, suffix='',
-                 box_readings=False, mpihandler=None):
+                 ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
+                 show_strength_values=False, suffix='', box_readings=False, mpihandler=None):
         """
         @param db_file: sqlite database
         @param variant_unit: draw the textual flow of this variant unit
@@ -305,6 +307,8 @@ class TextualFlow(object):
         @param perfect_only: raise an exception if coherence is not perfect (I.e. this is a forest)
         @param ranks_on_edges: label the ranks on the edges rather than in the nodes
         @param include_perc_in_label: show the coherence percentage of a parent in the label (edges only)
+        @param show_strengths: show the strength of textual flow as width of edges
+        @param show_strength_values: show the prior/posterior values under the edge label
         @param suffix: suffix to use in filename (before the extension)
         @param box_readings: Draw a diagram for each reading in a box
         @param mpihandler: optional MpiHandler instance
@@ -338,6 +342,8 @@ class TextualFlow(object):
         self.perfect_only = perfect_only
         self.ranks_on_edges = ranks_on_edges
         self.include_perc_in_label = include_perc_in_label
+        self.show_strengths = show_strengths
+        self.show_strength_values = show_strength_values
         self.suffix = suffix
         self.box_readings = box_readings
         self.parent_maps = {}
@@ -438,6 +444,27 @@ class TextualFlow(object):
         # Calculate edges and subgraph_members
         node_label_map = {}
         subgraph_members = set()
+
+        strength_factor = 0
+        strength_offset = 0
+        if self.show_strengths:
+            max_strength = 0
+            min_strength = 100000
+            for i, (w1, w1_reading, w1_parent) in enumerate(data):
+                parents = self.parent_maps[w1][conn_value]
+                for parent in parents:
+                    if parent.prior is None or parent.posterior is None:
+                        # E.g. OL_PARENT case, where the strength is undefined
+                        strength = 1
+                    else:
+                        strength = parent.prior - parent.posterior
+                    max_strength = max(max_strength, strength)
+                    min_strength = min(min_strength, strength)
+
+            # This gives us a value between 0.5 and 5
+            strength_factor = 4.5 / (max_strength - min_strength)
+            strength_offset = 0.5 - (min_strength * strength_factor)
+
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
             if w1_reading == group_reading:
                 subgraph_members.add(w1)
@@ -481,14 +508,22 @@ class TextualFlow(object):
                     logger.debug("Ignoring %s as it's not in my dataset", p)
                     continue
 
+                label = None
                 if self.ranks_on_edges:
                     if self.include_perc_in_label:
                         label = "{} ({:.1f})".format(p.rank, p.perc)
                     else:
                         label = p.rank
-                    G.add_edge(p.parent, w1, label=label, color=witnesses[i][1]['color'])
-                else:
-                    G.add_edge(p.parent, w1, color=witnesses[i][1]['color'])
+
+                penwidth = 1
+                if self.show_strengths:
+                    # We show lines with width 0.5 to 5 (as that range looks good).
+                    penwidth = strength_offset + (p.prior - p.posterior) * strength_factor
+                    if self.show_strength_values:
+                        label += "\n[{}/{}]".format(p.prior, p.posterior)
+
+                G.add_edge(p.parent, w1, label=label, color=witnesses[i][1]['color'], penwidth=penwidth)
+
 
         # Add the nodes
         for wit, args in witnesses:

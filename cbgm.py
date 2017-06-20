@@ -85,6 +85,10 @@ if __name__ == "__main__":
                         help='Show the rank in the node (old method) rather than on the edge')
     parser.add_argument('--tf-simple-label', default=False, action="store_true",
                         help='Show only the rank in the edge label, rather than also the percentage')
+    parser.add_argument('--tf-hide-strength', default=False, action="store_true",
+                        help='Hide the textual flow strength (old method)')
+    parser.add_argument('--tf-show-strength-values', default=False, action="store_true",
+                        help='Show the strength values of textual flow (incompatible with --tf-hide-strength')
     parser.add_argument('--tf-box-readings', default=False, action="store_true",
                         help='Draw a diagram for each reading, showing that reading in a box, '
                              'with only direct ancestors from other readings')
@@ -250,7 +254,8 @@ if __name__ == "__main__":
             logger.info("Have you considered calculating multiple connectivity "
                         "values at once? Use a comma separated list.")
         textual_flow(db_file, do_vus, conn, args.perfect, not args.tf_rank_in_node,
-                     not args.tf_simple_label, args.suffix, args.tf_box_readings)
+                     not args.tf_simple_label, not args.tf_hide_strength,
+                     args.tf_show_strength_values, args.suffix, args.tf_box_readings)
 
     elif args.local_stemma:
         output = local_stemma(db_file, do_vus, suffix=args.suffix)
