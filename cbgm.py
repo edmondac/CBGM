@@ -86,7 +86,7 @@ if __name__ == "__main__":
     parser.add_argument('--tf-simple-label', default=False, action="store_true",
                         help='Show only the rank in the edge label, rather than also the percentage')
     parser.add_argument('--tf-box-readings', default=False, action="store_true",
-                        help='Draw a digram for each reading, showing the specified reading in a box, '
+                        help='Draw a diagram for each reading, showing that reading in a box, '
                              'with only direct ancestors from other readings')
     parser.add_argument('--coh-cache', default=False, action="store_true",
                         help="Use the coherence cache for this database (requires -d). This is implied by -T.")
