@@ -6,4 +6,4 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PARENT="$( dirname ${DIR} )"
 export PYTHONPATH=${PYTHONPATH}:${PARENT}
 
-exec python -m CBGM.cbgm $@
+exec python3 -m CBGM.cbgm $@

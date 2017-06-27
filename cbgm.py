@@ -87,6 +87,10 @@ if __name__ == "__main__":
                         help='Show only the rank in the edge label, rather than also the percentage')
     parser.add_argument('--tf-hide-strength', default=False, action="store_true",
                         help='Hide the textual flow strength (old method)')
+    parser.add_argument('--tf-very-weak-threshold', default=5,
+                        help='Threshold for considering textual flow very weak (default 5)')
+    parser.add_argument('--tf-weak-threshold', default=25,
+                        help='Threshold for considering textual flow weak (default 25)')
     parser.add_argument('--tf-show-strength-values', default=False, action="store_true",
                         help='Show the strength values of textual flow (incompatible with --tf-hide-strength')
     parser.add_argument('--tf-box-readings', default=False, action="store_true",
@@ -255,6 +259,7 @@ if __name__ == "__main__":
                         "values at once? Use a comma separated list.")
         textual_flow(db_file, do_vus, conn, args.perfect, not args.tf_rank_in_node,
                      not args.tf_simple_label, not args.tf_hide_strength,
+                     args.tf_weak_threshold, args.tf_very_weak_threshold,
                      args.tf_show_strength_values, args.suffix, args.tf_box_readings)
 
     elif args.local_stemma:

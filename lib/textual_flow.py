@@ -70,6 +70,7 @@ class MpiHandler(mpisupport.MpiParent):
         """
         Make a TextualFlow object, and get it to queue up all its MPI work.
         """
+        print(kwargs)
         try:
             tf = TextualFlow(variant_unit=vu, **kwargs, mpihandler=self)
             self.textual_flow_objects[vu] = tf
@@ -221,6 +222,7 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
 
 def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
                  ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
+                 weak_strength_threshold=5, very_weak_strength_threshold=25,
                  show_strength_values=False, suffix='', box_readings=False, force_serial=False):
     """
     Create a textual flow diagram for the specified variant units. This will
@@ -272,7 +274,10 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
                     vu, db_file=db_file, connectivity=connectivity,
                     perfect_only=perfect_only, ranks_on_edges=ranks_on_edges,
                     include_perc_in_label=include_perc_in_label,
-                    show_strengths=show_strengths, show_strength_values=show_strength_values,
+                    show_strengths=show_strengths,
+                    weak_strength_threshold=weak_strength_threshold,
+                    very_weak_strength_threshold=very_weak_strength_threshold,
+                    show_strength_values=show_strength_values,
                     suffix=suffix, box_readings=box_readings)
 
             return mpihandler.mpi_wait(stop=True)
@@ -285,9 +290,9 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
             logger.debug("Running for variant unit {} ({} of {})"
                          .format(vu, i + 1, len(variant_units)))
             t = TextualFlow(db_file, vu, connectivity, perfect_only,
-                            ranks_on_edges, include_perc_in_label,
-                            show_strengths, show_strength_values,
-                            suffix, box_readings)
+                            ranks_on_edges, include_perc_in_label, show_strengths,
+                            weak_strength_threshold, very_weak_strength_threshold,
+                            show_strength_values, suffix, box_readings)
             t.calculate_textual_flow()
 
         if len(variant_units) == 1:
@@ -299,6 +304,7 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
 class TextualFlow(object):
     def __init__(self, db_file, variant_unit, connectivity, perfect_only=False,
                  ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
+                 weak_strength_threshold=5, very_weak_strength_threshold=25,
                  show_strength_values=False, suffix='', box_readings=False, mpihandler=None):
         """
         @param db_file: sqlite database
@@ -308,6 +314,8 @@ class TextualFlow(object):
         @param ranks_on_edges: label the ranks on the edges rather than in the nodes
         @param include_perc_in_label: show the coherence percentage of a parent in the label (edges only)
         @param show_strengths: show the strength of textual flow as width of edges
+        @param weak_strength_threshold: strength weaker than this will be shown as "weak"
+        @param very_weak_strength_threshold: strength weaker than this will be shown as "very weak"
         @param show_strength_values: show the prior/posterior values under the edge label
         @param suffix: suffix to use in filename (before the extension)
         @param box_readings: Draw a diagram for each reading in a box
@@ -343,6 +351,8 @@ class TextualFlow(object):
         self.ranks_on_edges = ranks_on_edges
         self.include_perc_in_label = include_perc_in_label
         self.show_strengths = show_strengths
+        self.weak_strength_threshold = weak_strength_threshold
+        self.very_weak_strength_threshold = very_weak_strength_threshold
         self.show_strength_values = show_strength_values
         self.suffix = suffix
         self.box_readings = box_readings
@@ -445,26 +455,6 @@ class TextualFlow(object):
         node_label_map = {}
         subgraph_members = set()
 
-        strength_factor = 0
-        strength_offset = 0
-        if self.show_strengths:
-            max_strength = 0
-            min_strength = 100000
-            for i, (w1, w1_reading, w1_parent) in enumerate(data):
-                parents = self.parent_maps[w1][conn_value]
-                for parent in parents:
-                    if parent.prior is None or parent.posterior is None:
-                        # E.g. OL_PARENT case, where the strength is undefined
-                        strength = 1
-                    else:
-                        strength = parent.prior - parent.posterior
-                    max_strength = max(max_strength, strength)
-                    min_strength = min(min_strength, strength)
-
-            # This gives us a value between 0.5 and 5
-            strength_factor = 4.5 / (max_strength - min_strength)
-            strength_offset = 0.5 - (min_strength * strength_factor)
-
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
             if w1_reading == group_reading:
                 subgraph_members.add(w1)
@@ -515,14 +505,18 @@ class TextualFlow(object):
                     else:
                         label = p.rank
 
-                penwidth = 1
+                style = "solid"
                 if self.show_strengths:
-                    # We show lines with width 0.5 to 5 (as that range looks good).
-                    penwidth = strength_offset + (p.prior - p.posterior) * strength_factor
+                    strength = p.prior - p.posterior
+                    if strength <= self.very_weak_strength_threshold:
+                        style = "dotted"
+                    elif strength <= self.weak_strength_threshold:
+                        style = "dashed"
+
                     if self.show_strength_values:
                         label += "\n[{}/{}]".format(p.prior, p.posterior)
 
-                G.add_edge(p.parent, w1, label=label, color=witnesses[i][1]['color'], penwidth=penwidth)
+                G.add_edge(p.parent, w1, label=label, color=witnesses[i][1]['color'], style=style)
 
 
         # Add the nodes
@@ -530,12 +524,27 @@ class TextualFlow(object):
             args['label'] = node_label_map[wit]
             G.add_node(wit, **args)
 
+        # Add legend if needed
+        if self.show_strengths:
+            G.add_node("leg_s", label="Textual flow strength", shape="plaintext")
+            G.add_node("leg_e1", label="", style="invis", height=0.2, fixedsize=True)
+            G.add_node("leg_e2", label="", style="invis", height=0.2, fixedsize=True)
+            G.add_node("leg_e3", label="", style="invis", height=0.2, fixedsize=True)
+            G.add_edge("leg_s", "leg_e1", style="dotted",
+                       label="<=%s  " % self.very_weak_strength_threshold)
+            G.add_edge("leg_s", "leg_e2", style="dashed",
+                       label="  <=%s" % self.weak_strength_threshold)
+            G.add_edge("leg_s", "leg_e3", style="solid",
+                       label=">%s" % self.weak_strength_threshold)
+            G.subgraph(["leg_s", "leg_e1", "leg_e2", "leg_e3"],
+                       name="cluster_legend", style="rounded")
+
         # Add subgroup if needed
         if group_reading and subgraph_members:
             G.subgraph(subgraph_members, name="cluster_reading")
 
-        logger.info("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
-                                                                       G.number_of_edges()))
+        logger.info("Creating graph with %s nodes and %s edges",
+                    G.number_of_nodes(), G.number_of_edges())
         # Keep the dotfile so we can change the look and feel later if we want
         if group_reading:
             dotfile = "{}_{}.dot".format(self.output_files[conn_value], group_reading)
@@ -545,8 +554,8 @@ class TextualFlow(object):
             svgfile = "{}.svg".format(self.output_files[conn_value])
 
         G.write(dotfile)
-        G.draw(svgfile, prog="dot")
-        # subprocess.check_call(['dot', '-Tsvg', dotfile], stdout=open(svgfile, 'w'))
+
+        subprocess.check_call(['dot', '-Tsvg', dotfile], stdout=open(svgfile, 'w'))
         logger.info("Written to {} and {}".format(dotfile, svgfile))
 
     def mpi_result(self, args, ret):
