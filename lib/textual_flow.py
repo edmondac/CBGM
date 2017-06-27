@@ -326,11 +326,11 @@ class TextualFlow(object):
         self.output_files = {}
         self.connectivity = []
         for conn_value in connectivity:
-            dirname = "c{}".format(conn_value.replace('%', 'perc'))
+            dirname = "c{}".format(str(conn_value).replace('%', 'perc'))
             if not os.path.exists(dirname):
                 os.mkdir(dirname)
             output_file = os.path.join(os.getcwd(), dirname, "textual_flow_{}_c{}{}".format(
-                variant_unit.replace('/', '_'), conn_value.replace('%', 'perc'), suffix))
+                variant_unit.replace('/', '_'), str(conn_value).replace('%', 'perc'), suffix))
 
             if os.path.exists(output_file):
                 logger.info("Textual flow diagram for {} already exists ({}) - skipping"
