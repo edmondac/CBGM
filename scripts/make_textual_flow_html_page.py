@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 Script to create an HTML summary of the files created when running "cbgm -T ...". The folder structure
@@ -138,7 +138,7 @@ def make_page(folder, overwrite):
         image_structure += '''
             <h3 id="c{}"></h3>
             <a id="c{}" target="_blank"><img id="c{}" class="image"/></a>
-        '''.format(sanitised_f, sanitised_f, sanitised_f, sanitised_f)
+        '''.format(sanitised_f, sanitised_f, sanitised_f)
 
     svg_files = [x for x in os.listdir(os.path.join(abs_folder, 'c{}'.format(conn_folders[0])))
                  if os.path.splitext(x)[1] == '.svg']
