@@ -321,16 +321,17 @@ class TextualFlow(object):
         @param box_readings: Draw a diagram for each reading in a box
         @param mpihandler: optional MpiHandler instance
         """
-        assert type(connectivity) == list, "Connectivity must be a list"
+        assert type(connectivity) == list, "Connectivity must be a list (was %s)" % connectivity
         # Fast abort if it already exists
         self.output_files = {}
         self.connectivity = []
         for conn_value in connectivity:
-            dirname = "c{}".format(str(conn_value).replace('%', 'perc'))
+            assert type(conn_value) == str, "Connectivity values must be strings (was %s:%s)" % (conn_value, type(conn_value))
+            dirname = "c{}".format(conn_value.replace('%', 'perc'))
             if not os.path.exists(dirname):
                 os.mkdir(dirname)
             output_file = os.path.join(os.getcwd(), dirname, "textual_flow_{}_c{}{}".format(
-                variant_unit.replace('/', '_'), str(conn_value).replace('%', 'perc'), suffix))
+                variant_unit.replace('/', '_'), conn_value.replace('%', 'perc'), suffix))
 
             if os.path.exists(output_file):
                 logger.info("Textual flow diagram for {} already exists ({}) - skipping"

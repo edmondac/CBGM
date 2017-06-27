@@ -224,7 +224,7 @@ if __name__ == "__main__":
                         help='force mode - overwrite any files that get in the way')
     parser.add_argument('-p', '--perfect', default=False, action='store_true',
                         help='perfect coherence - reject forests')
-    parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,
+    parser.add_argument('-c', '--connectivity', default="499", metavar='N', type=str,
                         help='Maximum allowed connectivity in a textual flow diagram')
     parser.add_argument('-s', '--single', default=False, action='store_true',
                         help='Use the single process version (MPI-enabled is default)')
