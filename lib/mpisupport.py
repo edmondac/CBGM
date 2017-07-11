@@ -231,7 +231,7 @@ def mpi_child(fn):
         time.sleep(3)
 
         # Send ready
-        logger.debug("Child {} (remote) is ready".format(rank))
+        logger.debug("Child {} (remote) sending hello".format(rank))
         MPI.COMM_WORLD.send(True, dest=0)
 
         start = time.time()
@@ -244,7 +244,7 @@ def mpi_child(fn):
             time.sleep(1)
 
         if retry:
-            logger.info("Heard nothing from parent - will send another hello")
+            logger.debug("Child {} (remote) heard nothing from parent - will send another hello")
             continue
 
         try:
