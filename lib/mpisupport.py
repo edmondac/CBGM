@@ -228,13 +228,16 @@ def mpi_child(fn):
     logger.debug("Child {} (remote) starting".format(rank))
     while True:
         # A little sleep to let everything start...
-        time.sleep(3)
+        time.sleep(30)
 
         # Send ready
         logger.debug("Child {} (remote) sending hello".format(rank))
         try:
             MPI.COMM_WORLD.send(True, dest=0)
         except Exception:
+            # Sometimes we see messages like this:
+            # [bb2a3c26][[4455,1],95][btl_tcp_endpoint.c:818:mca_btl_tcp_endpoint_complete_connect] connect() to 169.254.95.120 failed: Connection refused (111)
+            # That seems to kill the process... and we're lost.
             logger.warning("Error saying hello", exc_info=True)
             time.sleep(5)
             continue
