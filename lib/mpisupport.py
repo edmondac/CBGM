@@ -21,6 +21,9 @@ def is_parent():
     return MPI.COMM_WORLD.Get_rank() == 0
 
 
+CHILD_RETRY_HELLO = 60
+
+
 class MpiParent(object):
     mpicomm = None
     mpi_queue = queue.Queue()
@@ -200,7 +203,7 @@ class MpiParent(object):
         assert cls.mpicomm.size > 1, "Please run this under MPI with more than one processor"
         for child in range(1, cls.mpicomm.size):
             t = threading.Thread(target=cls.mpi_manage_child,
-                                 args=(child, ),
+                                 args=(child,),
                                  daemon=True)
             t.start()
             cls.mpi_child_threads.append(t)
@@ -231,9 +234,18 @@ def mpi_child(fn):
         logger.debug("Child {} (remote) is ready".format(rank))
         MPI.COMM_WORLD.send(True, dest=0)
 
+        start = time.time()
+        retry = False
         # child - wait to be given a data structure
         while not MPI.COMM_WORLD.Iprobe(source=0):
+            if time.time() - start > CHILD_RETRY_HELLO:
+                retry = True
+                break
             time.sleep(1)
+
+        if retry:
+            logger.info("Heard nothing from parent - will send another hello")
+            continue
 
         try:
             args = MPI.COMM_WORLD.recv(source=0)
