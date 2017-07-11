@@ -238,6 +238,8 @@ def mpi_child(fn):
             logger.warning("Error saying hello", exc_info=True)
             time.sleep(5)
             continue
+        else:
+            logger.debug("Child {} (remote) sent hello".format(rank))
 
         start = time.time()
         retry = False
@@ -249,13 +251,13 @@ def mpi_child(fn):
             time.sleep(1)
 
         if retry:
-            logger.debug("Child {} (remote) heard nothing from parent - will send another hello")
+            logger.debug("Child {} (remote) heard nothing from parent - will send another hello".format(rank))
             continue
 
         try:
             args = MPI.COMM_WORLD.recv(source=0)
         except EOFError:
-            logger.exception("Error receiving instructions - carrying on")
+            logger.exception("Child {} error receiving instructions - carrying on".format(rank))
             continue
 
         if args is None:
