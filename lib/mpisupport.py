@@ -228,7 +228,7 @@ def mpi_child(fn):
     logger.debug("Child {} (remote) starting".format(rank))
     while True:
         # A little sleep to let everything start...
-        time.sleep(30)
+        time.sleep(3)
 
         # Send ready
         logger.debug("Child {} (remote) sending hello".format(rank))
