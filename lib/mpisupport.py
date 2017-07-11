@@ -232,7 +232,12 @@ def mpi_child(fn):
 
         # Send ready
         logger.debug("Child {} (remote) sending hello".format(rank))
-        MPI.COMM_WORLD.send(True, dest=0)
+        try:
+            MPI.COMM_WORLD.send(True, dest=0)
+        except Exception:
+            logger.warning("Error saying hello", exc_info=True)
+            time.sleep(5)
+            continue
 
         start = time.time()
         retry = False
