@@ -233,7 +233,7 @@ def mpi_child(fn):
         # Send ready
         logger.debug("Child {} (remote) sending hello".format(rank))
         try:
-            MPI.COMM_WORLD.isend(True, dest=0)
+            MPI.COMM_WORLD.send(True, dest=0)
         except Exception:
             # Sometimes we see messages like this:
             # [bb2a3c26][[4455,1],95][btl_tcp_endpoint.c:818:mca_btl_tcp_endpoint_complete_connect] connect() to 169.254.95.120 failed: Connection refused (111)
