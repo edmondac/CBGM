@@ -159,8 +159,7 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, 
             logger.exception("Unable to parse connectivity value %s as int or float%%", conn_value)
             raise SystemExit(2)
         try:
-            combinations = coh.parent_combinations(w1_reading, w1_parent, max_rank=max_rank, min_perc=min_perc,
-                                                   min_strength=min_strength)
+            combinations = coh.parent_combinations(w1_reading, w1_parent, max_rank=max_rank, min_perc=min_perc)
         except Exception:
             logger.exception("Couldn't get parent combinations for {}, {}, {}"
                              .format(w1_reading, w1_parent, conn_value))
