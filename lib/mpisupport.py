@@ -160,7 +160,14 @@ class MpiParent(object):
                     time.sleep(5)
                     return
 
-            ret, meminfo = cls.mpicomm.recv(source=child)
+            data = cls.mpicomm.recv(source=child)
+            if ready is True:
+                # This is just a "hello"
+                stat(child, "sent hello")
+                continue
+
+            # This must be real data back...
+            ret, meminfo = data
             stat(child, "sent results back", meminfo)
 
             # process the result by handing it to the latest_instance's
