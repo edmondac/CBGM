@@ -116,6 +116,8 @@ class MpiParent(object):
                 cls.mpi_child_meminfo[child] = meminfo
             logger.debug("Child {}: {}".format(child, status))
 
+        waiting_for_results = False
+
         while True:
             # Wait for the child to be ready
             start = time.time()
@@ -144,7 +146,6 @@ class MpiParent(object):
 
             # send it to the remote child
             stat(child, "sending data to child")
-
             cls.mpicomm.send(args, dest=child)
 
             if args is None:
@@ -169,15 +170,14 @@ class MpiParent(object):
                         return
 
                 data = cls.mpicomm.recv(source=child)
-                if ready is True:
+                if data is True:
                     # This is just a "hello"
-                    stat(child, "recv hello")
+                    stat(child, "recv hello (%s)", time.ctime())
                     continue
 
                 # This must be real data back...
                 break
 
-            # This must be real data back...
             ret, meminfo = data
             stat(child, "sent results back", meminfo)
 
