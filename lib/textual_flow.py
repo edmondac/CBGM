@@ -106,7 +106,7 @@ class MpiHandler(mpisupport.MpiParent):
             raise KeyError("Unknown MPI child key: {}".format(key))
 
 
-def generate_genealogical_coherence(w1, db_file, *, min_strength=None):
+def generate_genealogical_coherence(w1, db_file, min_strength):
     """
     Generate genealogical coherence (variant unit independent)
     and store a cached copy.
@@ -265,7 +265,7 @@ def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
             mpihandler.mpi_queue.put(("GENCOH", w1, db_file, min_strength))
         else:
             logger.debug("Generating genealogical coherence for W1={} ({}/{})".format(w1, i, len(witnesses)))
-            generate_genealogical_coherence(w1, db_file, min_strength=min_strength)
+            generate_genealogical_coherence(w1, db_file, min_strength)
 
     if mpi_mode:
         # Wait for the queue, but leave the remote children running
