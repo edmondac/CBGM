@@ -19,6 +19,12 @@ class ParentCombination(object):
         self.prior = prior  # integer number of prior readings in the parent - or None=undefined
         self.posterior = posterior  # integer number of posterior readings in the parent - or None=undefined
 
+    @property
+    def strength(self):
+        if self.prior is None or self.posterior is None:
+            return -1
+
+        return self.prior - self.posterior
 
     def __repr__(self):
         return "<Parent Combination: parent={}, rank={}, perc={}, gen={}, prior={}, posterior={}>".format(
@@ -358,8 +364,9 @@ class GenealogicalCoherence(Coherence):
                 # Coherence percentage is too low
                 continue
 
-            if row['D'] == '-':
-                # Not a potential ancestor (undirected genealogical coherence)
+            if row['_NR'] == 0:
+                # Not a potential ancestor (undirected genealogical coherence or too weak)
+                logger.debug("Ignoring %s as _NR is 0", row)
                 continue
 
             if row['READING'] == reading:

@@ -132,7 +132,7 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, 
 
     This can take a long time...
     """
-    logger.info("Getting best parent(s) for {}".format(w1))
+    logger.debug("Getting best parent(s) for {}".format(w1))
 
     logger.debug("Calculating genealogical coherence for {} at {}".format(w1, variant_unit))
     if min_strength:
@@ -159,7 +159,8 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, 
             logger.exception("Unable to parse connectivity value %s as int or float%%", conn_value)
             raise SystemExit(2)
         try:
-            combinations = coh.parent_combinations(w1_reading, w1_parent, max_rank=max_rank, min_perc=min_perc)
+            combinations = coh.parent_combinations(w1_reading, w1_parent, max_rank=max_rank, min_perc=min_perc,
+                                                   min_strength=min_strength)
         except Exception:
             logger.exception("Couldn't get parent combinations for {}, {}, {}"
                              .format(w1_reading, w1_parent, conn_value))
@@ -216,7 +217,10 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, 
                 # Top level in an overlapping unit with an omission in the initial text
                 parents = [ParentCombination('OL_PARENT', -1, 100.0, 1)]
 
-        logger.info("Found best parents for {} (conn={}): {}".format(w1, conn_value, parents))
+        logger.debug("Found best parents for {} (conn={}): {}".format(w1, conn_value, parents))
+        if min_strength:
+            assert parents.strength < min_strength, "Parent is too weak - something has gone wrong {}".format(parents)
+
         parent_maps[conn_value] = parents
 
     return parent_maps
