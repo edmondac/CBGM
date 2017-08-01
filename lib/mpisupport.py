@@ -156,7 +156,7 @@ class MpiParent(object):
 
             # get the results back
             start = time.time()
-            while True;
+            while True:
                 while not cls.mpicomm.Iprobe(source=child):
                     time.sleep(1)
                     if time.time() - start > cls.mpi_child_timeout:
@@ -167,13 +167,13 @@ class MpiParent(object):
                         cls.mpi_queue.task_done()
                         time.sleep(5)
                         return
-        
+
                 data = cls.mpicomm.recv(source=child)
                 if ready is True:
                     # This is just a "hello"
                     stat(child, "recv hello")
                     continue
-                
+
                 # This must be real data back...
                 break
 
