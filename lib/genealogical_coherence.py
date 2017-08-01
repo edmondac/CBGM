@@ -27,8 +27,8 @@ class ParentCombination(object):
         return self.prior - self.posterior
 
     def __repr__(self):
-        return "<Parent Combination: parent={}, rank={}, perc={}, gen={}, prior={}, posterior={}>".format(
-            self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior)
+        return "<Parent Combination: parent={}, rank={}, perc={}, gen={}, prior={}, posterior={}, strength={}>".format(
+            self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior, self.strength)
 
 
 class TooManyAborts(Exception):
