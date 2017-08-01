@@ -378,6 +378,9 @@ class GenealogicalCoherence(Coherence):
                 # And vice versa for the posterior count.
                 prior = row['W1<W2']
                 posterior = row['W1>W2']
+                if self.min_strength:
+                    assert prior - posterior >= self.min_strength, "This row shouldn't be a potential ancestor: {}".format(row)
+
                 ret.append([ParentCombination(row['W2'], row['_NR'], row['PERC1'],
                                               my_gen, prior, posterior)])
 
