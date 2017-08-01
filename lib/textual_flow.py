@@ -393,8 +393,9 @@ class TextualFlow(object):
         for i, (w1, w1_reading, w1_parent) in enumerate(data):
             if self.mpihandler:
                 self.mpihandler.mpi_queue.put(("PARENTS", self.variant_unit, w1,
-                                              w1_reading, w1_parent,
-                                              self.connectivity, self.db_file))
+                                               w1_reading, w1_parent,
+                                               self.connectivity, self.db_file,
+                                               self.min_strength))
             else:
                 logger.debug("Calculating parents {}/{}".format(i, len(data)))
                 parent_maps = get_parents(self.variant_unit, w1, w1_reading, w1_parent,
