@@ -87,9 +87,9 @@ if __name__ == "__main__":
                         help='Show only the rank in the edge label, rather than also the percentage')
     parser.add_argument('--tf-hide-strength', default=False, action="store_true",
                         help='Hide the textual flow strength (old method)')
-    parser.add_argument('--tf-very-weak-threshold', default=5,
+    parser.add_argument('--tf-very-weak-threshold', default=5, type=int,
                         help='Threshold for considering textual flow very weak (default 5)')
-    parser.add_argument('--tf-weak-threshold', default=25,
+    parser.add_argument('--tf-weak-threshold', default=25, type=int,
                         help='Threshold for considering textual flow weak (default 25)')
     parser.add_argument('--tf-show-strength-values', default=False, action="store_true",
                         help='Show the strength values of textual flow (incompatible with --tf-hide-strength')
