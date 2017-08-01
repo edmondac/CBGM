@@ -219,7 +219,7 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, 
         logger.debug("Found best parents for {} (conn={}): {}".format(w1, conn_value, parents))
         if min_strength:
             for parent in parents:
-                assert parent.strength < min_strength, "Parent is too weak - something has gone wrong {}".format(parent)
+                assert parent.strength >= min_strength, "Parent is too weak - something has gone wrong {}".format(parent)
 
         parent_maps[conn_value] = parents
 
