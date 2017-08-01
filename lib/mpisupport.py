@@ -32,6 +32,7 @@ class MpiParent(object):
     mpi_child_meminfo = {}
     mpi_child_timeout = 3600
     mpi_child_ready_timeout = 30
+    mpi_parent_status = ""
 
     # WARNING - this operates as a singleton class - always using the
     # latest instance created.
@@ -56,7 +57,7 @@ class MpiParent(object):
             cls._mpi_init()
 
         # When the queue is done, we can continue.
-        logger.debug("MPI: Waiting for work to finish")
+        cls.update_parent_stats("Waiting for work to finish")
         # This waits for an empty queue AND task_done to have been called
         # for each item.
         cls.mpi_queue.join()
@@ -65,12 +66,12 @@ class MpiParent(object):
             # Nothing more to do for now
             return
 
-        logger.debug("MPI: Telling children to exit")
-        for t in cls.mpi_child_threads:
+        cls.update_parent_stats("Telling children to exit")
+        for _ in cls.mpi_child_threads:
             cls.mpi_queue.put(None)
 
         # Clean up the threads, in case we run out
-        logger.debug("MPI: Waiting for threads to exit")
+        cls.update_parent_stats("Waiting for threads to exit")
         running_threads = [t for t in cls.mpi_child_threads]
         while running_threads:
             t = running_threads.pop(0)
@@ -78,23 +79,29 @@ class MpiParent(object):
             if t.is_alive():
                 running_threads.append(t)
             else:
-                logger.debug("Thread {} joined - waiting for {} more"
-                             .format(t, len(running_threads)))
+                cls.update_parent_stats("Thread {} joined - waiting for {} more"
+                                    .format(t, len(running_threads)))
 
         # Set the list as empty, so it'll be re-made if more work is required.
         cls.mpi_child_threads = []
 
-        logger.debug("MPI: Work done")
+        cls.update_parent_stats("Work done")
         # We need to let threads, remote MPI processes etc. all clean up
         # properly - and a second seems to be ample time for this.
         time.sleep(1)
 
     @classmethod
     def show_stats(cls):
-        all_stats = '\n\t'.join(['{} ({}): {}'.format(k, cls.mpi_child_meminfo.get(k, "-"),
-                                                      cls.mpi_child_status[k])
-                                 for k in sorted(cls.mpi_child_status.keys())])
-        logger.debug("Status:\n\t{}".format(all_stats))
+        child_stats = '\n\t'.join(['{} ({}): {}'.format(k, cls.mpi_child_meminfo.get(k, "-"),
+                                                        cls.mpi_child_status[k])
+                                   for k in sorted(cls.mpi_child_status.keys())])
+        logger.debug("Status:\n\tParent: %s\n\tQueue: %s\n\t%s",
+                     cls.parent_stats, cls.mpi_queue.qsize(), child_stats)
+
+    @classmethod
+    def update_parent_stats(cls, msg):
+        logger.debug(msg)
+        cls.mpi_parent_status = msg
 
     @classmethod
     def mpi_manage_child(cls, child):
@@ -163,7 +170,7 @@ class MpiParent(object):
             data = cls.mpicomm.recv(source=child)
             if ready is True:
                 # This is just a "hello"
-                stat(child, "sent hello")
+                stat(child, "recv hello")
                 continue
 
             # This must be real data back...
