@@ -317,7 +317,7 @@ class GenealogicalCoherence(Coherence):
         """
         self.generate()
         return [x['W2'] for x in self.rows
-                if x['_NR'] != 0]
+                if x['NR'] != 0]
 
     def parent_combinations(self, reading, parent_reading, *, max_rank=None, min_perc=None, my_gen=1):
         """
@@ -352,6 +352,7 @@ class GenealogicalCoherence(Coherence):
             self._parent_search = set()
 
         ret = []
+        potanc = self.potential_ancestors()
         # Things that explain it by themselves:
         for row in self.rows:
             # Check the real rank (_NR) - so joint 6th => 6. _RANK here could be
@@ -364,9 +365,9 @@ class GenealogicalCoherence(Coherence):
                 # Coherence percentage is too low
                 continue
 
-            if row['_NR'] == 0:
+            if row['W2'] not in potanc:
                 # Not a potential ancestor (undirected genealogical coherence or too weak)
-                logger.debug("Ignoring %s as _NR is 0", row)
+                logger.debug("Ignoring %s as it's not a potential ancestor", row)
                 continue
 
             if row['READING'] == reading:
