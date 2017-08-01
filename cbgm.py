@@ -96,6 +96,9 @@ if __name__ == "__main__":
     parser.add_argument('--tf-box-readings', default=False, action="store_true",
                         help='Draw a diagram for each reading, showing that reading in a box, '
                              'with only direct ancestors from other readings')
+    parser.add_argument('--min-strength', type=int, default=None,
+                        help='Minimum strength to allow for a genealogical relationship (default None = disabled)'
+                             ' - this applies to Genealogical Coherence and Textual Flow')
     parser.add_argument('--coh-cache', default=False, action="store_true",
                         help="Use the coherence cache for this database (requires -d). This is implied by -T.")
     parser.add_argument('-c', '--connectivity', default="499", metavar='N/P', type=str,
@@ -257,10 +260,14 @@ if __name__ == "__main__":
         if len(conn) == 1:
             logger.info("Have you considered calculating multiple connectivity "
                         "values at once? Use a comma separated list.")
-        textual_flow(db_file, do_vus, conn, args.perfect, not args.tf_rank_in_node,
-                     not args.tf_simple_label, not args.tf_hide_strength,
-                     args.tf_weak_threshold, args.tf_very_weak_threshold,
-                     args.tf_show_strength_values, args.suffix, args.tf_box_readings)
+        textual_flow(db_file, variant_units=do_vus, connectivity=conn,
+                     perfect_only=args.perfect, ranks_on_edges=not args.tf_rank_in_node,
+                     include_perc_in_label=not args.tf_simple_label,
+                     show_strengths=not args.tf_hide_strength,
+                     weak_strength_threshold=args.tf_weak_threshold,
+                     very_weak_strength_threshold=args.tf_very_weak_threshold,
+                     show_strength_values=args.tf_show_strength_values, suffix=args.suffix,
+                     box_readings=args.tf_box_readings, min_strength=args.min_strength)
 
     elif args.local_stemma:
         output = local_stemma(db_file, do_vus, suffix=args.suffix)
@@ -294,7 +301,7 @@ if __name__ == "__main__":
                 elif args.genealogical_coherence:
                     # Call our coherence function
                     output += gen_coherence(db_file, witness, vu, debug=args.extracols, use_cache=args.coh_cache,
-                                            pretty_p=args.gothic)
+                                            pretty_p=args.gothic, min_strength=args.min_strength)
                     output += '\n\n\n'
 
                 if not args.no_strip_spaces:

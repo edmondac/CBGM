@@ -32,7 +32,8 @@ def single_hypothesis(stemmata, unique_ref, all_mss, force,
 
     # 2. Make the textual flow diagram
     try:
-        of = textual_flow(db, [vu], [connectivity], perfect_only, force_serial=True)
+        of = textual_flow(db, variant_units=[vu], connectivity=[connectivity],
+                          perfect_only=perfect_only, force_serial=True)
         svg = of[connectivity] + '.svg'
     except CyclicDependency:
         return None

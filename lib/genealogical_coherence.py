@@ -104,7 +104,7 @@ class GenealogicalCoherence(Coherence):
     """
     Class representing genealogical coherence (potential ancestors)
     """
-    def __init__(self, *o, **k):
+    def __init__(self, *o, min_strength=None, **k):
         super().__init__(*o, **k)
 
         self.columns.insert(2, 'D')
@@ -118,6 +118,7 @@ class GenealogicalCoherence(Coherence):
         self.reading_relationships = defaultdict(dict)
         self._parent_search = set()
         self._done_cycle_check = False
+        self.min_strength = min_strength
 
     def _detect_cycles(self):
         """
@@ -215,8 +216,10 @@ class GenealogicalCoherence(Coherence):
     def add_D(self, w2, row):
         """
         Direction - this is used in the same way as the CBGM's genealogical
-        queries program. So, it shows '-' for no direction - and basically
-        nothing else.
+        queries program. So, it shows '-' for no direction.
+
+        Additionally, I use it to show weak textual flow, if self.min_strength
+        has been set.
         """
         if 'W1<W2' not in row:
             return False
@@ -225,6 +228,10 @@ class GenealogicalCoherence(Coherence):
 
         if row['W1<W2'] == row['W1>W2']:
             row['D'] = '-'  # no direction
+            row['NR'] = 0  # so rank 0
+        elif self.min_strength and (row['W1<W2'] - row['W1>W2']) < self.min_strength:
+            # We will make these act like non-direction relationships
+            row['D'] = 'w'  # too weak
             row['NR'] = 0  # so rank 0
         else:
             row['D'] = ''
@@ -300,7 +307,7 @@ class GenealogicalCoherence(Coherence):
 
     def potential_ancestors(self):
         """
-        Return a list of potential ancestors
+        Return a list of potential ancestors. This respects the work done in self.add_D above.
         """
         self.generate()
         return [x['W2'] for x in self.rows
@@ -424,15 +431,18 @@ class GenealogicalCoherence(Coherence):
             return combined
 
 
-def gen_coherence(db_file, w1, variant_unit=None, *, pretty_p=False, debug=False, use_cache=False):
+def gen_coherence(db_file, w1, variant_unit=None, *, pretty_p=False, debug=False, use_cache=False, min_strength=None):
     """
     Show a table of potential ancestors of w1.
 
     If variant_unit is supplied, then two extra columns are output
     showing the reading supported by each witness.
     """
-    coh = GenealogicalCoherence(db_file, w1, pretty_p=pretty_p, debug=debug, use_cache=use_cache)
+    coh = GenealogicalCoherence(db_file, w1, pretty_p=pretty_p, debug=debug, use_cache=use_cache,
+                                min_strength=min_strength)
     if variant_unit:
         coh.set_variant_unit(variant_unit)
-    return "{}\n{}".format("Potential ancestors for W1={}".format(w1),
-                           coh.tab_delim_table())
+    title = "Potential ancestors for W1={}".format(w1)
+    if min_strength:
+        title += ' [min_strength={}]'.format(min_strength)
+    return "{}\n{}".format(title, coh.tab_delim_table())

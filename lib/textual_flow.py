@@ -106,19 +106,19 @@ class MpiHandler(mpisupport.MpiParent):
             raise KeyError("Unknown MPI child key: {}".format(key))
 
 
-def generate_genealogical_coherence(w1, db_file):
+def generate_genealogical_coherence(w1, db_file, *, min_strength=None):
     """
     Generate genealogical coherence (variant unit independent)
     and store a cached copy.
     """
-    coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True)
+    coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True, min_strength=min_strength)
     coh.generate()
 
     # A return of None is interpreted as abort, so just return True
     return True
 
 
-def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
+def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, min_strength):
     """
     Calculate the best parents for this witness at this variant unit
 
@@ -135,7 +135,9 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
     logger.info("Getting best parent(s) for {}".format(w1))
 
     logger.debug("Calculating genealogical coherence for {} at {}".format(w1, variant_unit))
-    coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True)
+    if min_strength:
+        logger.debug("Setting min_strength = %s", min_strength)
+    coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True, min_strength=min_strength)
     coh.set_variant_unit(variant_unit)
 
     logger.debug("Searching parent combinations")
@@ -220,10 +222,11 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file):
     return parent_maps
 
 
-def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
+def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
                  ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
-                 weak_strength_threshold=5, very_weak_strength_threshold=25,
-                 show_strength_values=False, suffix='', box_readings=False, force_serial=False):
+                 weak_strength_threshold=25, very_weak_strength_threshold=5,
+                 show_strength_values=False, suffix='', box_readings=False, force_serial=False,
+                 min_strength=None):
     """
     Create a textual flow diagram for the specified variant units. This will
     work out if we're using MPI and act accordingly...
@@ -258,7 +261,7 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
             mpihandler.mpi_queue.put(("GENCOH", w1, db_file))
         else:
             logger.debug("Generating genealogical coherence for W1={} ({}/{})".format(w1, i, len(witnesses)))
-            generate_genealogical_coherence(w1, db_file)
+            generate_genealogical_coherence(w1, db_file, min_strength=min_strength)
 
     if mpi_mode:
         # Wait for the queue, but leave the remote children running
@@ -271,14 +274,12 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
                 logger.debug("Running for variant unit {} ({} of {})"
                              .format(vu, i + 1, len(variant_units)))
                 mpihandler.queue_textual_flow(
-                    vu, db_file=db_file, connectivity=connectivity,
-                    perfect_only=perfect_only, ranks_on_edges=ranks_on_edges,
-                    include_perc_in_label=include_perc_in_label,
-                    show_strengths=show_strengths,
-                    weak_strength_threshold=weak_strength_threshold,
+                    vu, db_file=db_file, connectivity=connectivity, perfect_only=perfect_only,
+                    ranks_on_edges=ranks_on_edges, include_perc_in_label=include_perc_in_label,
+                    show_strengths=show_strengths, weak_strength_threshold=weak_strength_threshold,
                     very_weak_strength_threshold=very_weak_strength_threshold,
-                    show_strength_values=show_strength_values,
-                    suffix=suffix, box_readings=box_readings)
+                    show_strength_values=show_strength_values, suffix=suffix, box_readings=box_readings,
+                    min_strength=min_strength)
 
             return mpihandler.mpi_wait(stop=True)
         else:
@@ -289,10 +290,12 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
         for i, vu in enumerate(variant_units):
             logger.debug("Running for variant unit {} ({} of {})"
                          .format(vu, i + 1, len(variant_units)))
-            t = TextualFlow(db_file, vu, connectivity, perfect_only,
-                            ranks_on_edges, include_perc_in_label, show_strengths,
-                            weak_strength_threshold, very_weak_strength_threshold,
-                            show_strength_values, suffix, box_readings)
+            t = TextualFlow(db_file, variant_unit=vu, connectivity=connectivity, perfect_only=perfect_only,
+                            ranks_on_edges=ranks_on_edges, include_perc_in_label=include_perc_in_label,
+                            show_strengths=show_strengths, weak_strength_threshold=weak_strength_threshold,
+                            very_weak_strength_threshold=very_weak_strength_threshold,
+                            show_strength_values=show_strength_values, suffix=suffix,
+                            box_readings=box_readings, min_strength=min_strength)
             t.calculate_textual_flow()
 
         if len(variant_units) == 1:
@@ -302,10 +305,11 @@ def textual_flow(db_file, variant_units, connectivity, perfect_only=False,
 
 
 class TextualFlow(object):
-    def __init__(self, db_file, variant_unit, connectivity, perfect_only=False,
+    def __init__(self, db_file, *, variant_unit, connectivity, perfect_only=False,
                  ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
-                 weak_strength_threshold=5, very_weak_strength_threshold=25,
-                 show_strength_values=False, suffix='', box_readings=False, mpihandler=None):
+                 weak_strength_threshold=25, very_weak_strength_threshold=5,
+                 show_strength_values=False, suffix='', box_readings=False,
+                 min_strength=None, mpihandler=None):
         """
         @param db_file: sqlite database
         @param variant_unit: draw the textual flow of this variant unit
@@ -319,6 +323,7 @@ class TextualFlow(object):
         @param show_strength_values: show the prior/posterior values under the edge label
         @param suffix: suffix to use in filename (before the extension)
         @param box_readings: Draw a diagram for each reading in a box
+        @param min_strength: Minimum strength for genealogical coherence relationships (default None = disabled)
         @param mpihandler: optional MpiHandler instance
         """
         assert type(connectivity) == list, "Connectivity must be a list (was %s)" % connectivity
@@ -358,6 +363,7 @@ class TextualFlow(object):
         self.suffix = suffix
         self.box_readings = box_readings
         self.parent_maps = {}
+        self.min_strength = min_strength
 
     def calculate_textual_flow(self):
         """
@@ -371,6 +377,9 @@ class TextualFlow(object):
         logger.info("Setting connectivity to {}".format(self.connectivity))
         if self.perfect_only:
             logger.info("Insisting on perfect coherence...")
+
+        if self.min_strength:
+            logger.info("Setting min strength = %s", self.min_strength)
 
         sql = """SELECT witness, label, parent
                  FROM cbgm
@@ -389,7 +398,8 @@ class TextualFlow(object):
             else:
                 logger.debug("Calculating parents {}/{}".format(i, len(data)))
                 parent_maps = get_parents(self.variant_unit, w1, w1_reading, w1_parent,
-                                          self.connectivity, self.db_file)
+                                          self.connectivity, self.db_file,
+                                          min_strength=self.min_strength)
                 self.parent_maps[w1] = parent_maps  # a parent map per connectivity setting
 
         if self.mpihandler:
