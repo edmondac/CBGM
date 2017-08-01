@@ -262,7 +262,7 @@ def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
     witnesses = [x[0] for x in list(cursor.execute(sql))]
     for i, w1 in enumerate(witnesses):
         if mpi_mode:
-            mpihandler.mpi_queue.put(("GENCOH", w1, db_file))
+            mpihandler.mpi_queue.put(("GENCOH", w1, db_file, min_strength))
         else:
             logger.debug("Generating genealogical coherence for W1={} ({}/{})".format(w1, i, len(witnesses)))
             generate_genealogical_coherence(w1, db_file, min_strength=min_strength)
