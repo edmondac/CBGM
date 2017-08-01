@@ -95,8 +95,8 @@ class MpiParent(object):
         child_stats = '\n\t'.join(['{} ({}): {}'.format(k, cls.mpi_child_meminfo.get(k, "-"),
                                                         cls.mpi_child_status[k])
                                    for k in sorted(cls.mpi_child_status.keys())])
-        logger.debug("Status:\n\tParent: %s\n\tQueue: %s\n\t%s",
-                     cls.mpi_parent_status, cls.mpi_queue.qsize(), child_stats)
+        logger.info("Status:\n\tParent: %s\n\tQueue: %s\n\t%s",
+                    cls.mpi_parent_status, cls.mpi_queue.qsize(), child_stats)
 
     @classmethod
     def update_parent_stats(cls, msg):
