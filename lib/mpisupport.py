@@ -156,22 +156,26 @@ class MpiParent(object):
 
             # get the results back
             start = time.time()
-            while not cls.mpicomm.Iprobe(source=child):
-                time.sleep(1)
-                if time.time() - start > cls.mpi_child_timeout:
-                    logger.error("Child {} took too long to return. Aborting.".format(child))
-                    stat(child, "timeout - task returned to the queue")
-                    # Put it back on the queue for someone else to do
-                    cls.mpi_queue.put(args)
-                    cls.mpi_queue.task_done()
-                    time.sleep(5)
-                    return
-
-            data = cls.mpicomm.recv(source=child)
-            if ready is True:
-                # This is just a "hello"
-                stat(child, "recv hello")
-                continue
+            while True;
+                while not cls.mpicomm.Iprobe(source=child):
+                    time.sleep(1)
+                    if time.time() - start > cls.mpi_child_timeout:
+                        logger.error("Child {} took too long to return. Aborting.".format(child))
+                        stat(child, "timeout - task returned to the queue")
+                        # Put it back on the queue for someone else to do
+                        cls.mpi_queue.put(args)
+                        cls.mpi_queue.task_done()
+                        time.sleep(5)
+                        return
+        
+                data = cls.mpicomm.recv(source=child)
+                if ready is True:
+                    # This is just a "hello"
+                    stat(child, "recv hello")
+                    continue
+                
+                # This must be real data back...
+                break
 
             # This must be real data back...
             ret, meminfo = data
