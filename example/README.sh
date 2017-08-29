@@ -625,4 +625,12 @@ rm 05.csv
 # a τον ιησουν A, P75, 01, 02, 03, 05, 07, 011, 013, 019, 021, 022, 028, 030, 031, 032, 034, 036, 037, 038, 044, 045, 047, 063, 0141, 0211
 # b αυτον 017
 
+../cbgm -f example_input.py nexus example.nexus
+# Will populate /tmp/_default_cbgm_db.db
+# Wrote 41 variant units
+# [2017-08-29 11:40:53,490] [20620] [cbgm.py:226] [INFO] Using database: /tmp/_default_cbgm_db.db
+# Including only witnesses extant in 0.0 (0%) variant units
+# 27/27: 02     
+# Wrote example.nexus
+
 echo "All tests completed with good exit codes"

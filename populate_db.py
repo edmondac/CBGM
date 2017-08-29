@@ -62,7 +62,8 @@ class Reading(object):
 
 class LacunaReading(Reading):
     def __init__(self, ms_support):
-        self.ms_support = set(ms_support)
+        self._ms_support = set(ms_support)
+        self.ms_support = False
         self.lacuna = True
         self.label = LAC
         self.parent = None
@@ -120,8 +121,7 @@ def populate(data, all_mss, db_file, force=False):
             vu_count += 1
             all_wits_found = set()
             for reading in data[verse][vu]:
-                if not reading.lacuna:
-                    reading.calc_mss_support(all_mss)
+                reading.calc_mss_support(all_mss)
 
                 if reading.ms_support & all_wits_found:
                     raise IOError("HELP - I've already seen these witnesses for {}/{}: {}"

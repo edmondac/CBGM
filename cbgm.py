@@ -12,6 +12,7 @@ from .lib.combinations_of_ancestors import combinations_of_ancestors
 from .lib.genealogical_coherence import gen_coherence
 from .lib.pre_genealogical_coherence import pre_gen_coherence
 from .lib.global_stemma import global_stemma, optimal_substemma
+from .lib.nexus import nexus
 from . import populate_db
 
 DEFAULT_DB_FILE = '/tmp/_default_cbgm_db.db'
@@ -185,6 +186,12 @@ if __name__ == "__main__":
     # Status
     status_parser = subparsers.add_parser('status', help='Show status of data (for cross-checking etc.)')
 
+    # NEXUS file
+    nexus_parser = subparsers.add_parser('nexus', help='Create a NEXUS file')
+    nexus_parser.add_argument('-p', '--perc', default=0, type=int,
+                              help='Percentage extant a witnesses must be to be included')
+    nexus_parser.add_argument('nexus_file', help='Output filename')
+
     args = parser.parse_args()
 
     # Logging
@@ -258,9 +265,9 @@ if __name__ == "__main__":
             do_vus = [args.variant_unit]
         assert do_vus
 
-    if args.cmd in ('optsub', 'globlal'):
+    if args.cmd in ('optsub', 'global', 'nexus'):
         if not args.file:
-            logger.info("A data file is required to create the optimal substemma or global stemma ('-f')")
+            logger.info("A data file is required to create the optimal substemma, global stemma, or a nexus file ('-f')")
             sys.exit(1)
 
     # Do the required command
@@ -325,5 +332,8 @@ if __name__ == "__main__":
 
                 logger.info("Output was:\n{}" .format(output))
 
+    elif args.cmd == 'nexus':
+        nexus(args.file, args.perc, args.nexus_file)
+
     else:
-        assert "Unexpected cmd: {}".format(args.cmd)
+        assert False, "Unexpected cmd: {}".format(args.cmd)

@@ -1,0 +1,72 @@
+#nexus
+BEGIN Taxa;
+DIMENSIONS ntax=27;
+TAXLABELS
+019
+030
+0211
+028
+032
+091
+036
+013
+0141
+03
+P75
+021
+01
+011
+047
+038
+05
+07
+037
+045
+044
+017
+063
+031
+034
+022
+02
+;
+END;
+BEGIN Characters;
+DIMENSIONS nchar=41;
+
+FORMAT
+    datatype=STANDARD
+    missing=-
+    gap=?
+    symbols=""
+;
+MATRIX
+019 a-b-aaa--a-abaaaaaaaahaaaaabaaabaaaaaabaa
+030 aaaaaaaaaaaaaaaaaaaabaaaaaaaaaaacaaabaaaa
+0211 abaaaabaaadabaaaaaaabaabaaaaaaaaabaabaaaa
+028 aaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaacaaaaa
+032 a-b-aaa--a-abaaaacaabcaaababaaabaaaaaaaaa
+091 ----a----a-abaaaaaacada-------a-a----a-a-
+036 aaaaaaaaaaaaaaaaaaaabdaaaaaaaaaaaaaabaaaa
+013 aaaaaaaaaaaaaaaaaaaabaaaaaaaaaaabaaaacaaa
+0141 aaaaaaaaaaaabaaaaaaabiaaaaabaaaaaaaaaaaaa
+03 a-b-aaa--ababaaaaaaaacaaaaabaaabaaaaaaaaa
+P75 a-b-aaa--ababaaaaaaaaba-aaabaaabaaaaaabaa
+021 aaaaaaaaaaaaaaaaaaaabdaaaaaaaaaaaaaaaaaaa
+01 baaabaabaacabbacabba--bbbabababc-aacabbbb
+011 aaaaaaaaaaaaaaaaaaaabaaaaaabaaaaaaaaaaaaa
+047 aaabaaaaabaaaaaaaaaabdaaaaaaaaaaaaaaaaaaa
+038 aaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaabaaa
+05 abaaaaacabcabaaaaaac--caabacaaaba-b--a-a-
+07 aaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaa
+037 aaabaaaaaa-aaaaaaaaabaaaaaaaaaaaaaaaaaaaa
+045 aaaaabaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaa
+044 a-b-aaa--aaabaaaaaaabgaaababaaabaaaaaaaaa
+017 aaaaaaaaaaaabaaaaaaabfaaaaaaabaaaaaaaaaaa
+063 a-b-aaa--aaaaaaaaaaabaaaaaaa-aa-a------aa
+031 aaaaaaaaaaaa-aa--aaa-aaaaaaaaaaaaaaaa-a-a
+034 aaaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaa
+022 a-b-aaa--a-abaaabaaabeaaaaabaaabaaaaaaaaa
+02 a-b-aaa--abbbaaaaaabbaaaaaabaaaaaaaaaaaaa
+;
+END;
