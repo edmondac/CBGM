@@ -39,7 +39,7 @@ def load(inputfile):
     if inputfile.endswith('.py'):
         inputfile = inputfile[:-3]
     mod = importlib.import_module(inputfile)
-    return mod.struct, list(mod.all_mss)
+    return mod.struct, sorted(mod.all_mss)
 
 
 def nexus(input_file, min_extant_perc, output_file):

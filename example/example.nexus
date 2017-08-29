@@ -2,33 +2,33 @@
 BEGIN Taxa;
 DIMENSIONS ntax=27;
 TAXLABELS
-019
-030
-0211
-028
-032
-091
-036
-013
-0141
-03
-P75
-021
 01
 011
-047
-038
-05
-07
-037
-045
-044
+013
+0141
 017
-063
-031
-034
-022
+019
 02
+021
+0211
+022
+028
+03
+030
+031
+032
+034
+036
+037
+038
+044
+045
+047
+05
+063
+07
+091
+P75
 ;
 END;
 BEGIN Characters;
@@ -41,32 +41,32 @@ FORMAT
     symbols=""
 ;
 MATRIX
-019 a-b-aaa--a-abaaaaaaaahaaaaabaaabaaaaaabaa
-030 aaaaaaaaaaaaaaaaaaaabaaaaaaaaaaacaaabaaaa
-0211 abaaaabaaadabaaaaaaabaabaaaaaaaaabaabaaaa
-028 aaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaacaaaaa
-032 a-b-aaa--a-abaaaacaabcaaababaaabaaaaaaaaa
-091 ----a----a-abaaaaaacada-------a-a----a-a-
-036 aaaaaaaaaaaaaaaaaaaabdaaaaaaaaaaaaaabaaaa
-013 aaaaaaaaaaaaaaaaaaaabaaaaaaaaaaabaaaacaaa
-0141 aaaaaaaaaaaabaaaaaaabiaaaaabaaaaaaaaaaaaa
-03 a-b-aaa--ababaaaaaaaacaaaaabaaabaaaaaaaaa
-P75 a-b-aaa--ababaaaaaaaaba-aaabaaabaaaaaabaa
-021 aaaaaaaaaaaaaaaaaaaabdaaaaaaaaaaaaaaaaaaa
-01 baaabaabaacabbacabba--bbbabababc-aacabbbb
-011 aaaaaaaaaaaaaaaaaaaabaaaaaabaaaaaaaaaaaaa
-047 aaabaaaaabaaaaaaaaaabdaaaaaaaaaaaaaaaaaaa
-038 aaaaabaaaabaaaabaaaabaaaaaaaaaaaaaaaabaaa
-05 abaaaaacabcabaaaaaac--caabacaaaba-b--a-a-
-07 aaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaa
-037 aaabaaaaaa-aaaaaaaaabaaaaaaaaaaaaaaaaaaaa
-045 aaaaabaaaaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaa
-044 a-b-aaa--aaabaaaaaaabgaaababaaabaaaaaaaaa
-017 aaaaaaaaaaaabaaaaaaabfaaaaaaabaaaaaaaaaaa
-063 a-b-aaa--aaaaaaaaaaabaaaaaaa-aa-a------aa
-031 aaaaaaaaaaaa-aa--aaa-aaaaaaaaaaaaaaaa-a-a
-034 aaaaaaaabaaaaabaaaaabaaaaaaaaaaaaaaaaaaaa
-022 a-b-aaa--a-abaaabaaabeaaaaabaaabaaaaaaaaa
-02 a-b-aaa--abbbaaaaaabbaaaaaabaaaaaaaaaaaaa
+01 bbaabaababaaacabbcbaaaaabbbbcba-cbab--abb
+011 aabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaa
+013 aaaaaaaaaaaaaaaaaaaaaaaaaaaaacabaaaaabaaa
+0141 aabaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaibaaa
+017 aaaaaaaaabaaaaaaaaaaaabaaaaaaaaaaaaafbaaa
+019 aabaa---abaaaa-aa-aabaaaaababaaaaaaahaaaa
+02 aabaa---ababaa-aabaabaaaaaaaaaaaaaaaabbaa
+021 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadbaaa
+0211 baaaaabaabbaaaaaadaaababaaaaaaaaaaaaabaaa
+022 aabaa---abaaaa-aa-aabaaaaaaabaaaaabaebaaa
+028 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaabaaa
+03 aabaa---abaaaa-aabaabaaaaaaabaaaaaaacaaaa
+030 aaaaaaaaaaaaaaaaaaaaabaaaaaaaaacaaaaabaaa
+031 aaaaaaaaa-aaa-aaaaaaaaaaaaa-a-aaaa-aa-aaa
+032 aabba---abaaaa-aa-aabaaaaaaabaaaaaaacbaac
+034 aaaaabaaaaaaaaaaaaabaaaaaaaaaaaaaaaaabaaa
+036 aaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaadbaaa
+037 aaaaaaaaaaaaaabaa-aaaaaaaaaaaaaaaaaaabaaa
+038 aaaaaaaaaaaabbaaabaaaaaaaaaaabaaaaaaabaaa
+044 aabba---abaaaa-aaaaabaaaaaaabaaaaaaagbaaa
+045 aaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaa
+047 aaaaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaadbaaa
+05 aacbaabcbbaaaaaaacaaa-a-aa-ababa--ac--caa
+063 aaaaa---aaaaaa-aaaaab-a-a--a---a-aaaabaaa
+07 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaa
+091 --------ab-a-a-a--aa----a--a-a-a--aadacaa
+P75 -abaa---abaaaa-aabaabaaaaababaaaaaaabaaaa
 ;
 END;
