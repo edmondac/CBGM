@@ -2,30 +2,12 @@
 #!/usr/bin/python
 
 import sys
-import string
 import importlib
+import unicodedata
 from .shared import LAC
 
 MISSING = "-"
-# We won't actually use GAP here, since Phylogenetic software (e.g. MrBayes)
-# tends to treat missing and gap the same anyway...
 GAP = "?"
-
-_possible_symbols = list(string.ascii_letters) + list(string.digits)
-_sym_map = {}
-
-
-def get_symbol(x):
-    """
-    Return an appropriate symbol to use for MyBayes, always returning the
-    same symbol for the same input.
-    """
-    if x in _sym_map:
-        return _sym_map[x]
-    else:
-        sym = _possible_symbols.pop(0)
-        _sym_map[x] = sym
-        return sym
 
 
 def load(inputfile):
@@ -41,6 +23,23 @@ def load(inputfile):
     mod = importlib.import_module(inputfile)
     return mod.struct, sorted(mod.all_mss)
 
+
+def sanitise_wit(wit):
+    """
+    MrBayes doesn't like some chars in taxon names
+    """
+    conv = []
+    for char in unicodedata.normalize('NFD', wit):
+        name = unicodedata.name(char)
+        if name.split()[0] not in ('DIGIT', 'LATIN'):
+            rep = 'U{}'.format(ord(char))
+            print("Converting character '{}' ({}) in '{}' to '{}'".format(char, name, wit, rep))
+            conv.append((char, rep))
+
+    for f, t in conv:
+        wit = wit.replace(f, t)
+
+    return wit
 
 def nexus(input_file, min_extant_perc, output_file):
     """
@@ -79,11 +78,14 @@ def nexus(input_file, min_extant_perc, output_file):
                             sig = reading.label
 
                 assert sig, "Witness {} not found in VU {}/{}".format(wit, verse, vu)
+                if len(sig) > 1:
+                    # Corner case, like multiple parents. Treat as gap...
+                    sig = GAP
                 stripe.append(sig)
 
         this_count = len([x for x in stripe if x != MISSING])
         if this_count > target:
-            matrix.append("{} {}".format(wit, ''.join(stripe)))
+            matrix.append("{} {}".format(sanitise_wit(wit), ''.join(stripe)))
         else:
             print("Deleting witness {} - it is only extant in {} variant unit(s)".format(wit, this_count))
             del witnesses[witnesses.index(wit)]
@@ -109,7 +111,7 @@ MATRIX
 ;
 END;
 """.format(len(witnesses),
-           "\n".join(witnesses),
+           "\n".join(sanitise_wit(x) for x in witnesses),
            len(all_vus),
            MISSING,
            GAP,
