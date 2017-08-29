@@ -17,7 +17,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Pre-genealogical coherence ###
-../cbgm -d /tmp/test.db -P -w P75
+../cbgm -d /tmp/test.db coh -P P75
 # Using database: /tmp/test.db
 # Pre-genealogicalcoherenceforW1=P75
 # W2  NR  PERC1   EQ  PASS
@@ -51,8 +51,8 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Genealogical coherence ###
-../cbgm -d /tmp/test.db -G -w P75 --coh-cache
-../cbgm -d /tmp/test.db -G -w P75 --coh-cache --verbose  # This time it should load from cache
+../cbgm -d /tmp/test.db coh -G P75 --cache
+../cbgm -d /tmp/test.db --verbose coh -G P75 --cache  # This time it should load from cache
 # Using database: /tmp/test.db
 # PotentialancestorsforW1=P75
 # W2  NR  D   PERC1   EQ  PASS    W1<W2   W1>W2   UNCL    NOREL
@@ -60,7 +60,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 # 03  0   -   94.444  34  36  0   0   2   0
 # A   1       93.333  14  15  1   0   0   0
 # 091 0   -   88.889  16  18  0   0   2   0
-../cbgm -d /tmp/test.db -G -w 011 --coh-cache
+../cbgm -d /tmp/test.db coh -G 011 --cache
 # [2017-08-01 14:04:59,277] [27661] [cbgm.py:152] [INFO] Using database: /tmp/test.db
 # [2017-08-01 14:04:59,346] [27661] [cbgm.py:310] [INFO] Output was:
 # PotentialancestorsforW1=011
@@ -81,7 +81,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 # A   7       80.000  12  15  3           
 # 091 8       77.778  14  18  1       3   
 test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
-../cbgm -d /tmp/test.db -G -w 011 --coh-cache --min-strength=2
+../cbgm -d /tmp/test.db coh -G 011 --cache --min-strength=2
 # [2017-08-01 14:05:00,170] [27678] [cbgm.py:152] [INFO] Using database: /tmp/test.db
 # [2017-08-01 14:05:00,243] [27678] [cbgm.py:310] [INFO] Output was:
 # PotentialancestorsforW1=011[min_strength=2]
@@ -105,7 +105,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Local Stemmata ###
-../cbgm -d /tmp/test.db -L -v 21/2
+../cbgm -d /tmp/test.db local 21/2
 # Using database: /tmp/test.db
 # Creating graph with 2 nodes and 1 edges
 # Couldn't import dot_parser, loading of dot files will not be possible.
@@ -119,7 +119,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Textual flow diagram ###
-../cbgm -d /tmp/test.db -T -v all -c 2,499
+../cbgm -d /tmp/test.db tf all -c 2,499
 # [2017-01-26 22:10:11,364] [7317] [cbgm.py:125] [INFO] Using database: /tmp/test.db
 # [2017-01-26 22:10:11,385] [7317] [textual_flow.py:215] [INFO] Creating textual flow diagram for 22/20
 # [2017-01-26 22:10:11,385] [7317] [textual_flow.py:216] [INFO] Setting connectivity to [2, 499]
@@ -290,7 +290,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Summary of variant units ###
-../cbgm -d /tmp/test.db -X -w P75
+../cbgm -d /tmp/test.db status
 # Using database: /tmp/test.db
 # All variant units (41): 21/2, 21/6-8, 21/20-24, 21/28-30, 21/36, 22/3, 22/10, 22/12, 22/20, 22/40, 22/40-52, 22/42, 22/46, 22/52, 22/60, 22/61, 22/62-66, 22/68-70, 22/76, 22/80, 22/88, 23/1, 23/2-10, 23/3, 23/4-10, 23/12-16, 23/20-22, 23/26-30, 24/2-10, 24/6, 24/14, 24/14-20, 24/28, 24/30, 24/30-32, 24/30-38, 24/31, 24/32, 24/36, 24/38, 24/50-52
 
@@ -398,7 +398,8 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Combinations of Ancestors ###
-../cbgm -d /tmp/test.db -A -w 05 --max-comb-len=100000 --csv
+rm 05.csv
+../cbgm -d /tmp/test.db combanc 05 --max-comb-len=100000 --csv
 # Using database: /tmp/test.db
 # Found 20 potential ancestors for 05
 # Witness 05 has reading 'a' at 21/2 with parent INIT
@@ -439,7 +440,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Apparatus ###
-../apparatus.py  /tmp/test.db
+../apparatus.py /tmp/test.db
 # Using database: /tmp/test.db
 
 # 21/2
