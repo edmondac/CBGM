@@ -41,32 +41,32 @@ FORMAT
     symbols=""
 ;
 MATRIX
-01 bbaabaababaaacabbcbaaaaabbbbcba-cbab--abb
-011 aabaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaa
-013 aaaaaaaaaaaaaaaaaaaaaaaaaaaaacabaaaaabaaa
-0141 aabaaaaaabaaaaaaaaaaaaaaaaaaaaaaaaaaibaaa
-017 aaaaaaaaabaaaaaaaaaaaabaaaaaaaaaaaaafbaaa
-019 aabaa---abaaaa-aa-aabaaaaababaaaaaaahaaaa
-02 aabaa---ababaa-aabaabaaaaaaaaaaaaaaaabbaa
-021 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaadbaaa
-0211 baaaaabaabbaaaaaadaaababaaaaaaaaaaaaabaaa
-022 aabaa---abaaaa-aa-aabaaaaaaabaaaaabaebaaa
-028 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacaaaabaaa
-03 aabaa---abaaaa-aabaabaaaaaaabaaaaaaacaaaa
-030 aaaaaaaaaaaaaaaaaaaaabaaaaaaaaacaaaaabaaa
-031 aaaaaaaaa-aaa-aaaaaaaaaaaaa-a-aaaa-aa-aaa
-032 aabba---abaaaa-aa-aabaaaaaaabaaaaaaacbaac
-034 aaaaabaaaaaaaaaaaaabaaaaaaaaaaaaaaaaabaaa
-036 aaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaadbaaa
-037 aaaaaaaaaaaaaabaa-aaaaaaaaaaaaaaaaaaabaaa
-038 aaaaaaaaaaaabbaaabaaaaaaaaaaabaaaaaaabaaa
-044 aabba---abaaaa-aaaaabaaaaaaabaaaaaaagbaaa
-045 aaaaaaaaaaaabaaaaaaaaaaaaaaaaaaaaaaaabaaa
-047 aaaaaaaabaaaaabaaaaaaaaaaaaaaaaaaaaadbaaa
-05 aacbaabcbbaaaaaaacaaa-a-aa-ababa--ac--caa
-063 aaaaa---aaaaaa-aaaaab-a-a--a---a-aaaabaaa
-07 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabaaa
-091 --------ab-a-a-a--aa----a--a-a-a--aadacaa
-P75 -abaa---abaaaa-aabaabaaaaababaaaaaaabaaaa
+01 babbaabcaaaaabbababacabbba--bbbbbaaacbca-
+011 abaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaa
+013 aaaaaaaaaaaaaaaaaaaaaaaaaabacaaaaaaaaaaab
+0141 abaaaaaaaaaaaaaaaabaaaaaaabiaaaaaaaaaaaaa
+017 aaaaaaaaaaaaaaaaaabaaaaaaabfaaaaaaaaaaaba
+019 abaaaaa-a-b---aaaabaaaaaaaahaaaabaaaaabaa
+02 abaaaaaba-b---abaabaaaaaabbaaaaaaaaaaaaaa
+021 aaaaaaaaaaaaaaaaaaaaaaaaaabdaaaaaaaaaaaaa
+0211 aabaaaadbbaaaaaaaabaaaaaaabaaaaaababaaaaa
+022 abaaaaa-a-b---aaaabaabaaaabeaaaaaaaaaabaa
+028 aaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaacaaaa
+03 abaaaaaba-b---aaaabaaaaaaaacaaaaaaaaaabaa
+030 aaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaabaaaac
+031 aaaaaaaaaaaaaaaaaa-a--aaaa-a--aaaaaaaaaaa
+032 abaabaa-a-b---aaaabaaacaaabcaaaaaaaaaabaa
+034 aaaaaaaaaaabaaaaabaaaaaaaabaaaaaaaaaaaaaa
+036 aaaaaaaaaaaaaaaaaaaaaaaaaabdaaaaaaabaaaaa
+037 aaaaaaa-aaaabaaaaaaaaaaaaabaaaaaaaaaaaaaa
+038 aaaaababaaaaaaaaaaaabaaaaababaaaaaaaaaaaa
+044 abaabaaaa-b---aaaabaaaaaaabgaaaaaaaaaabaa
+045 aaaaabaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaa
+047 aaaaaaaaaaaabaaaaaabaaaaaabdaaaaaaaaaaaaa
+05 acaabaacabaaacaaaabbaaacac--aaaa--b---baa
+063 aaaaaaaaa-b---aaaaaaaaaaaaba-aa------a-aa
+07 aaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaa
+091 --------------aaaabaaaaaacadaaa---------a
+P75 ab-aaaaba-b---aaaabaaaaaaaabaaaabaaaaabaa
 ;
 END;

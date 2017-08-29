@@ -67,8 +67,8 @@ def nexus(input_file, min_extant_perc, output_file):
         sys.stdout.write("\r{}/{}: {}    ".format(i + 1, len(witnesses_copy), wit))
         sys.stdout.flush()
         stripe = []
-        for verse in struct:
-            for vu in struct[verse]:
+        for verse in sorted(struct):
+            for vu in sorted(struct[verse]):
                 sig = None
                 for reading in struct[verse][vu]:
                     reading.calc_mss_support(witnesses)
