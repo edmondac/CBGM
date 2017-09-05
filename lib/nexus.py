@@ -98,7 +98,7 @@ def nexus(input_file, min_extant_perc, output_file):
             print("Deleting witness {} - it is only extant in {} variant unit(s)".format(wit, this_count))
             too_fragmentary.add(wit)
 
-    good_wits = sorted(set(witnesses) + set(['A']) - too_fragmentary)
+    good_wits = sorted(set(witnesses) | set(['A']) - too_fragmentary)
     print("Good witnesses are: {}".format(good_wits))
 
     nexus_data = """#nexus
