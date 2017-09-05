@@ -61,7 +61,7 @@ def nexus(input_file, min_extant_perc, output_file):
 
     symbols = set()
     matrix = []
-    witnesses_copy = witnesses[:]
+    witnesses_copy = witnesses[:] + ['A']
     for i, wit in enumerate(witnesses_copy):
         sys.stdout.write("\r{}/{}: {}    ".format(i + 1, len(witnesses_copy), wit))
         sys.stdout.flush()
@@ -70,17 +70,25 @@ def nexus(input_file, min_extant_perc, output_file):
             for vu in sorted(struct[verse]):
                 sig = None
                 for reading in struct[verse][vu]:
-                    reading.calc_mss_support(witnesses)
-                    if reading.ms_support and wit in reading.ms_support:
-                        if reading.label == LAC:
-                            sig = MISSING
-                        else:
+                    if wit == 'A':
+                        if reading.parent == INIT:
                             sig = reading.label
+                    else:
+                        reading.calc_mss_support(witnesses)
+                        if reading.ms_support and wit in reading.ms_support:
+                            if reading.label == LAC:
+                                sig = MISSING
+                            else:
+                                sig = reading.label
 
-                assert sig, "Witness {} not found in VU {}/{}".format(wit, verse, vu)
+                if not sig:
+                    if wit == 'A':
+                        sig = MISSING
+                    else:
+                        raise ValueError("Witness {} not found in VU {}/{}".format(wit, verse, vu))
                 if len(sig) > 1:
-                    # Corner case, like multiple parents. Treat as gap...
-                    sig = GAP
+                    # Corner case, like multiple parents. Treat as missing...
+                    sig = MISSING
                 stripe.append(sig)
 
         this_count = len([x for x in stripe if x != MISSING])
