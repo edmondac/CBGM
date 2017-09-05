@@ -255,6 +255,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
 
         print("{}\n{}\n\n".format(header, '\n'.join(lines)))
 
+    return True
 
 def mpi_child_wrapper(*args):
     """
