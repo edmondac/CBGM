@@ -95,13 +95,10 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
     print("Found {} potential ancestors for {}".format(len(pot_an), w1))
     n_combs = 2 ** len(pot_an)
     if n_combs > 10000 and max_comb_len == -1:
-        print(("WARNING: {} combinations of ancestors detected. This table could "
-               "be very large and take a long time to create.\n"
-               "Consider re-running with --max-comb-len set to e.g. 1000000"
-               .format(n_combs)))
-        ok = input("Continue? [y/N]")
-        if ok.strip().lower() != 'y':
-            return False
+        logger.warning("{} combinations of ancestors detected. This table could "
+                       "be very large and take a long time to create.\n"
+                       "Consider re-running with --max-comb-len set to e.g. 1000000"
+                       .format(n_combs))
 
     if n_combs > max_comb_len and max_comb_len != -1:
         print("Would create {} combinations, but limited by max-comb-len to {}"
