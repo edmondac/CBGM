@@ -172,7 +172,7 @@ class MpiParent(object):
                 data = cls.mpicomm.recv(source=child)
                 if data is True:
                     # This is just a "hello"
-                    stat(child, "recv hello (%s)", time.ctime())
+                    stat(child, "recv hello ({})".format(time.ctime()))
                     continue
 
                 # This must be real data back...
