@@ -4,7 +4,7 @@
 import sys
 import importlib
 import unicodedata
-from .shared import LAC
+from .shared import LAC, INIT
 
 MISSING = "-"
 GAP = "?"
