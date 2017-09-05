@@ -56,14 +56,14 @@ def nexus(input_file, min_extant_perc, output_file):
         for vu in struct[verse]:
             all_vus.append("{}/{}".format(verse, vu))
 
-    target = len(witnesses) * min_extant_perc / 100.0
+    target = len(all_vus) * min_extant_perc / 100.0
     print("Including only witnesses extant in {} ({}%) variant units".format(target, min_extant_perc))
 
     symbols = set()
     matrix = []
-    witnesses_copy = witnesses[:] + ['A']
-    for i, wit in enumerate(witnesses_copy):
-        sys.stdout.write("\r{}/{}: {}    ".format(i + 1, len(witnesses_copy), wit))
+    too_fragmentary = set()
+    for i, wit in enumerate(sorted(witnesses + ['A'])):
+        sys.stdout.write("\r{}/{}: {}    ".format(i + 1, len(witnesses) + 1, wit))
         sys.stdout.flush()
         stripe = []
         for verse in sorted(struct):
@@ -96,7 +96,10 @@ def nexus(input_file, min_extant_perc, output_file):
             matrix.append("{} {}".format(sanitise_wit(wit), ''.join(stripe)))
         else:
             print("Deleting witness {} - it is only extant in {} variant unit(s)".format(wit, this_count))
-            del witnesses[witnesses.index(wit)]
+            too_fragmentary.add(wit)
+
+    good_wits = sorted(set(witnesses) + set(['A']) - too_fragmentary)
+    print("Good witnesses are: {}".format(good_wits))
 
     nexus_data = """#nexus
 BEGIN Taxa;
@@ -118,8 +121,8 @@ MATRIX
 {}
 ;
 END;
-""".format(len(witnesses),
-           "\n".join(sanitise_wit(x) for x in witnesses),
+""".format(len(good_wits),
+           "\n".join(sanitise_wit(x) for x in good_wits),
            len(all_vus),
            MISSING,
            GAP,
