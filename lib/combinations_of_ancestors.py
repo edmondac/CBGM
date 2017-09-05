@@ -4,12 +4,18 @@ import sys
 import time
 import csv
 import os
+import logging
+import sqlite3
 from itertools import chain, combinations
 from collections import defaultdict
 from .shared import UNCL, POSTERIOR, EQUAL, pretty_p, numify, memoize
-from .genealogical_coherence import GenealogicalCoherence
+from .genealogical_coherence import GenealogicalCoherence, generate_genealogical_coherence_cache
+
+from . import mpisupport
 
 DELIM = "\t"
+
+logger = logging.getLogger(__name__)
 
 
 @memoize
@@ -43,7 +49,7 @@ def time_fmt(secs):
     return "{}h".format(secs // 3600)
 
 
-def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
+def combinations_of_ancestors(db_file, w1, max_comb_len, csv_file=False,
                               allow_incomplete=True, debug=False, suffix=''):
     """
     Prints a table of combinations of potential ancestors ordered by
@@ -83,7 +89,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
     # vus_* = my columns listing the relevant variant units
 
     # First to find all potential ancestors...
-    coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
+    coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True)
     pot_an = coh.potential_ancestors()
 
     print("Found {} potential ancestors for {}".format(len(pot_an), w1))
@@ -123,7 +129,7 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
     for idx, (vu, reading, parent) in enumerate(my_vus):
         if parent == 'UNCL':
             continue
-        vu_coh = GenealogicalCoherence(db_file, w1, pretty_p=False)
+        vu_coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True)
         vu_coh.set_variant_unit(vu)
         vu_combs = vu_coh.parent_combinations(reading, parent)
         # Simplify that to just a list of tuples of witnesses
@@ -251,3 +257,78 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, *, csv_file=False,
             lines.append(DELIM.join(bits))
 
         print("{}\n{}\n\n".format(header, '\n'.join(lines)))
+
+
+def mpi_child_wrapper(*args):
+    """
+    Wraps MPI child calls and executes the appropriate function.
+    """
+    key = args[0]
+    if key == "GENCOH":
+        return (key, generate_genealogical_coherence_cache(*args[1:]))
+    elif key == "COMBANC":
+        return (key, combinations_of_ancestors(*args[1:]))
+    else:
+        raise KeyError("Unknown MPI child key: {}".format(key))
+
+
+class MpiHandler(mpisupport.MpiParent):
+    mpi_child_timeout = 3600 * 4  # 4 hours
+
+    def mpi_handle_result(self, args, ret):
+        """
+        Handle an MPI result
+        @param args: original args sent to the child
+        @param ret: response from the child
+        """
+        key = ret[0]
+        if key in ("GENCOH", "COMBANC"):
+            # There's nothing to do for genealogical coherence, since the point
+            # is just to store it in a cache - and the child did that.
+            # Likewise for combanc, the child has written out the data.
+            assert ret[1] is True, ret
+        else:
+            raise KeyError("Unknown MPI child key: {}".format(key))
+
+
+def combanc_for_all_witnesses_mpi(db_file, max_comb_len, *, csv_file=False,
+                                  allow_incomplete=True, debug=False, suffix=''):
+    """
+    Generate combination of ancestor info for all witnesses, using MPI.
+
+    See combinations_of_ancestors for description of arguments.
+    """
+    if 'OMPI_COMM_WORLD_SIZE' not in os.environ:
+        raise IOError("This must be run with MPI support (e.g. mpirun)")
+
+    # We have been run with mpiexec
+    mpi_parent = mpisupport.is_parent()
+
+    if mpi_parent:
+        mpihandler = MpiHandler()
+    else:
+        # MPI child
+        mpisupport.mpi_child(mpi_child_wrapper)
+        return "MPI child"
+
+    # First generate genealogical coherence cache
+    sql = "SELECT DISTINCT(witness) FROM cbgm"
+    conn = sqlite3.connect(db_file)
+    cursor = conn.cursor()
+    witnesses = [x[0] for x in list(cursor.execute(sql))]
+    for w1 in witnesses:
+        mpihandler.mpi_queue.put(("GENCOH", w1, db_file))
+
+    # Wait for the queue, but leave the remote children running
+    mpihandler.mpi_wait(stop=False)
+
+    # Now generate combanc data
+    if mpi_parent:
+        for i, w1 in enumerate(witnesses):
+            logger.debug("Queueing for witness %s (%s of %s)", w1, i + 1, len(witnesses))
+            mpihandler.mpi_queue.put(("COMBANC", db_file, w1, max_comb_len, csv_file,
+                                      allow_incomplete, debug, suffix))
+        return mpihandler.mpi_wait(stop=True)
+    else:
+        # MPI child - nothing to do as the children are already running
+        pass

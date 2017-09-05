@@ -113,7 +113,7 @@ class Coherence(object):
         """
         Actually generate the data
         """
-        logger.debug("Generating pre-genealogical coherence data")
+        logger.debug("Generating pre-genealogical coherence data for %s", self.w1)
         if not self.rows:
             for w2 in self.all_mss:
                 if self.w1 == w2:
@@ -121,7 +121,7 @@ class Coherence(object):
                 self.add_row(w2)
 
             self.sort()
-        logger.debug("Generated pre-genealogical coherence data")
+        logger.debug("Generated pre-genealogical coherence data for %s", self.w1)
 
     def generate(self):
         """

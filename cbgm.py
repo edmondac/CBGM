@@ -5,10 +5,11 @@ import sqlite3
 import sys
 import logging
 import time
+import os
 from .lib.local_stemma import local_stemma
 from .lib.shared import sort_mss, sorted_vus
 from .lib.textual_flow import textual_flow
-from .lib.combinations_of_ancestors import combinations_of_ancestors
+from .lib.combinations_of_ancestors import combinations_of_ancestors, combanc_for_all_witnesses_mpi
 from .lib.genealogical_coherence import gen_coherence
 from .lib.pre_genealogical_coherence import pre_gen_coherence
 from .lib.global_stemma import global_stemma, optimal_substemma
@@ -112,7 +113,7 @@ if __name__ == "__main__":
     coh_parser.add_argument('-n', '--no-strip-spaces', default=False, action="store_true",
                             help="Don't strip spaces from the output (stripped is better for importing into a spreadsheet)")
     coh_parser.add_argument('--gothic', default="False", action="store_true", help="Display a gothic P for papyri")
-    # NOTE: The textual flow command (below) implies use of the coherence cache
+    # NOTE: The textual flow and combination of ancestors commands (below) imply use of the coherence cache
     coh_parser.add_argument('-c', '--cache', default=False, action="store_true",
                             help="Use the coherence cache for this database (requires -d).")
     coh_parser.add_argument('-e', '--extracols', default=False, action="store_true",
@@ -303,11 +304,16 @@ if __name__ == "__main__":
                      box_readings=args.box_readings, min_strength=args.min_strength)
 
     elif args.cmd == 'combanc':
-        for witness in do_mss:
-            combinations_of_ancestors(db_file, witness, args.max_comb_len,
-                                      csv_file=args.csv,
-                                      allow_incomplete=not args.only_complete,
-                                      debug=args.extracols, suffix=args.suffix)
+        if args.witness == 'all' and 'OMPI_COMM_WORLD_SIZE' in os.environ:
+            combanc_for_all_witnesses_mpi(db_file, args.max_comb_len, csv_file=args.csv,
+                                          allow_incomplete=not args.only_complete,
+                                          debug=args.extracols, suffix=args.suffix)
+        else:
+            for witness in do_mss:
+                combinations_of_ancestors(db_file, witness, args.max_comb_len,
+                                          csv_file=args.csv,
+                                          allow_incomplete=not args.only_complete,
+                                          debug=args.extracols, suffix=args.suffix)
 
     elif args.cmd == 'coh':
         for witness in do_mss:

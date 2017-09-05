@@ -164,7 +164,7 @@ class GenealogicalCoherence(Coherence):
             self.load_cache()
             return
 
-        logger.debug("Generating genealogical coherence data")
+        logger.debug("Generating genealogical coherence data for %s", self.w1)
 
         self._calculate_reading_relationships()
 
@@ -185,7 +185,7 @@ class GenealogicalCoherence(Coherence):
         self.sort()
 
         self._already_generated = True
-        logger.debug("Generated genealogical coherence data")
+        logger.debug("Generated genealogical coherence data for %s", self.w1)
 
         if self.use_cache:
             self.store_cache()
@@ -440,6 +440,18 @@ class GenealogicalCoherence(Coherence):
             prod = product(*partial_explanations)
             combined = list(list(set(chain(*x))) for x in prod)
             return combined
+
+
+def generate_genealogical_coherence_cache(w1, db_file, min_strength=None):
+    """
+    Generate genealogical coherence (variant unit independent)
+    and store a cached copy.
+    """
+    coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True, min_strength=min_strength)
+    coh.generate()
+
+    # A return of None is interpreted as abort, so just return True
+    return True
 
 
 def gen_coherence(db_file, w1, variant_unit=None, *, pretty_p=False, debug=False, use_cache=False, min_strength=None):

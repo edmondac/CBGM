@@ -7,7 +7,7 @@ import pygraphviz
 import string
 import os
 from .shared import OL_PARENT
-from .genealogical_coherence import GenealogicalCoherence, ParentCombination
+from .genealogical_coherence import GenealogicalCoherence, ParentCombination, generate_genealogical_coherence_cache
 from . import mpisupport
 
 # Colours from http://www.hitmill.com/html/pastels.html
@@ -52,7 +52,7 @@ def mpi_child_wrapper(*args):
     """
     key = args[0]
     if key == "GENCOH":
-        return (key, generate_genealogical_coherence(*args[1:]))
+        return (key, generate_genealogical_coherence_cache(*args[1:]))
     elif key == "PARENTS":
         return (key, get_parents(*args[1:]))
     else:
@@ -104,18 +104,6 @@ class MpiHandler(mpisupport.MpiParent):
             tf.mpi_result(args[1:], ret[1])
         else:
             raise KeyError("Unknown MPI child key: {}".format(key))
-
-
-def generate_genealogical_coherence(w1, db_file, min_strength):
-    """
-    Generate genealogical coherence (variant unit independent)
-    and store a cached copy.
-    """
-    coh = GenealogicalCoherence(db_file, w1, pretty_p=False, use_cache=True, min_strength=min_strength)
-    coh.generate()
-
-    # A return of None is interpreted as abort, so just return True
-    return True
 
 
 def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, min_strength):
@@ -265,7 +253,7 @@ def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
             mpihandler.mpi_queue.put(("GENCOH", w1, db_file, min_strength))
         else:
             logger.debug("Generating genealogical coherence for W1={} ({}/{})".format(w1, i, len(witnesses)))
-            generate_genealogical_coherence(w1, db_file, min_strength)
+            generate_genealogical_coherence_cache(w1, db_file, min_strength)
 
     if mpi_mode:
         # Wait for the queue, but leave the remote children running
