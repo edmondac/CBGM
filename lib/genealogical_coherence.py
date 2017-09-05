@@ -59,7 +59,7 @@ class ReadingRelationship(object):
 
         # Even though some readings have multiple parents (c&d), the question
         # here is not 'does X explain Y completely?' but instead it's 'which of
-        # X and Y is PRIOR?' Local stemma are not allowed loops, so we can
+        # X and Y is PRIOR?' Local stemmata are not allowed loops, so we can
         # always answer that question.
 
         def check(reading, desired_parent):
@@ -92,18 +92,12 @@ class ReadingRelationship(object):
                  AND label = ?"""
         self.cursor.execute(sql, (self.variant_unit, reading))
 
-#        FIXME: If no witness attests the parent reading... perhaps...
-#         [2017-04-12 00:48:52,945] [29142] [textual_flow.py:162] [ERROR] Couldn't get parent combinations for m, j, 20
-#         Traceback (most recent call last):
-#           File "/gpfs/bb/ace209/cbgm/CBGM/lib/textual_flow.py", line 159, in get_parents
-#             combinations = coh.parent_combinations(w1_reading, w1_parent, max_rank=max_rank, min_perc=min_perc)
-#           File "/gpfs/bb/ace209/cbgm/CBGM/lib/genealogical_coherence.py", line 383, in parent_combinations
-#             expl = self.parent_combinations(partial_parent, reading_obj.get_parent_reading(partial_parent),
-#           File "/gpfs/bb/ace209/cbgm/CBGM/lib/genealogical_coherence.py", line 85, in get_parent_reading
-#             return self.cursor.fetchone()[0]
-#         TypeError: 'NoneType' object is not subscriptable
-
-        return self.cursor.fetchone()[0]
+        row = self.cursor.fetchone()
+        if row is None:
+            logger.warning("No parent reading found for %s reading %s - returning UNCL", self.variant_unit, reading)
+            return UNCL
+        else:
+            return row[0]
 
 
 class GenealogicalCoherence(Coherence):
