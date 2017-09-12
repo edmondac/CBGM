@@ -120,6 +120,10 @@ class GenealogicalCoherence(Coherence):
         self._done_cycle_check = False
         self.min_strength = min_strength
 
+        if self.min_strength:
+            # The normal cached coherence values will be wrong if we want min strength...
+            self._cache_key += '.min_strength.{}'.format(self.min_strength)
+
     def _detect_cycles(self):
         """
         Search for cycles in our data
