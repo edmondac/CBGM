@@ -154,8 +154,6 @@ if __name__ == "__main__":
                             help='W1 witness ("all" shows all in sequence)')
     anc_parser.add_argument('-m', '--max-comb-len', default=-1, metavar='N', type=int,
                             help='Maximum number of ancestors in a combination (-a). Default is unlimited.')
-    anc_parser.add_argument('-c', '--csv', default=False, action="store_true",
-                            help='Write a csv file rather than printing the output')
     anc_parser.add_argument('--only-complete', default=False, action="store_true",
                             help="Don't allow incomplete combinations of ancestors")
     anc_parser.add_argument('-e', '--extracols', default=False, action="store_true",
@@ -305,13 +303,11 @@ if __name__ == "__main__":
 
     elif args.cmd == 'combanc':
         if args.witness == 'all' and 'OMPI_COMM_WORLD_SIZE' in os.environ:
-            combanc_for_all_witnesses_mpi(db_file, args.max_comb_len, csv_file=args.csv,
-                                          allow_incomplete=not args.only_complete,
+            combanc_for_all_witnesses_mpi(db_file, args.max_comb_len, allow_incomplete=not args.only_complete,
                                           debug=args.extracols, suffix=args.suffix)
         else:
             for witness in do_mss:
                 combinations_of_ancestors(db_file, witness, args.max_comb_len,
-                                          csv_file=args.csv,
                                           allow_incomplete=not args.only_complete,
                                           debug=args.extracols, suffix=args.suffix)
 

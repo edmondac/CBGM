@@ -14,4 +14,13 @@ INSTALL
  - openmpi-bin
  - libopenmpi-dev
  - graphviz
-2) You need a python 3 virtualenv, using requirements.txt
+2) You need a python 3.5 virtualenv, using the provided requirements.txt
+
+USE
+---
+
+Run "./cbgm --help" for info, and for info about the subcommands do, for example,
+"./cbgm combanc --help".
+
+Also see the "examples" folder, including the README.sh in there, which can be executed
+with bash to test the common CBGM features.
