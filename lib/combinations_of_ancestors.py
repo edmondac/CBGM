@@ -136,11 +136,13 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, allow_incomplete=True, 
     @param w1: witness
     @param max_comb_len: maximum length of combinations to check (-1 for unlimited)
     @param allow_incomplete: show combinations that don't explain everything
+
+    Always returns True - for MPI purposes.
     """
     output_file = "{}{}.csv".format(w1, suffix)
     if os.path.exists(output_file):
         logger.info("SKIPPING %s as %s already exists", w1, output_file)
-        return None
+        return True
 
     using_mpi = 'OMPI_COMM_WORLD_SIZE' in os.environ
 
