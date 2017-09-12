@@ -1,0 +1,17 @@
+INTRODUCTION
+------------
+
+This is my implementation of the CBGM. It was designed for testing and changing the 
+various algorithms and is not (therefore) the fastest user-facing package. The idea
+was that everything be calculated from scratch each time - although in later development
+I added a Genealogical Coherence Cache for convenience (and speed). If you change the
+input data then remember to delete the old cache...
+
+INSTALL
+-------
+
+1) You need these packages installed (these are the Ubuntu names):
+ - openmpi-bin
+ - libopenmpi-dev
+ - graphviz
+2) You need a python 3 virtualenv, using requirements.txt
