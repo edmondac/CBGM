@@ -398,8 +398,8 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Combinations of Ancestors ###
-rm 05.csv
-../cbgm -d /tmp/test.db combanc 05 --max-comb-len=100000 --csv
+test -e 05.csv && rm 05.csv
+../cbgm -d /tmp/test.db combanc 05 --max-comb-len=100000
 # Using database: /tmp/test.db
 # Found 20 potential ancestors for 05
 # Witness 05 has reading 'a' at 21/2 with parent INIT
