@@ -134,7 +134,7 @@ if __name__ == "__main__":
     tf_parser.add_argument('--weak-threshold', default=25, type=int,
                            help='Threshold for considering textual flow weak (default 25)')
     tf_parser.add_argument('--show-strength-values', default=False, action="store_true",
-                           help='Show the strength values of textual flow (incompatible with --tf-hide-strength')
+                           help='Show the strength values of textual flow (incompatible with --hide-strength')
     tf_parser.add_argument('--box-readings', default=False, action="store_true",
                            help='Draw a diagram for each reading, showing that reading in a box, '
                                 'with only direct ancestors from other readings')
