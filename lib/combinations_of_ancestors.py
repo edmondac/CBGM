@@ -200,8 +200,8 @@ def combinations_of_ancestors(db_file, w1, max_comb_len, allow_incomplete=True, 
                 so_far = time.time() - start
                 perc = done * 100.0 / total
                 rem = (so_far * 100 / perc) - so_far
-                msg = "{}/{} ({:.2f}%) (Time taken: {}, remaining {}) - found {}     ".format(
-                    done, total, perc, time_fmt(so_far), time_fmt(rem), numrows)
+                msg = "{}/{} ({:.2f}%) {} (Time taken: {}, remaining {}) - found {}     ".format(
+                    done, total, perc, w1, time_fmt(so_far), time_fmt(rem), numrows)
                 if using_mpi:
                     logger.debug(msg)
                 else:
