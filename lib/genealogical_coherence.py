@@ -342,6 +342,9 @@ class GenealogicalCoherence(Coherence):
         """
         assert self.variant_unit, "You must set a variant unit before calling parent_combinations"
 
+        logger.debug("parent_combinations: vu=%s, reading=%s, parent=%s, max_rank=%s, min_perc=%s, my_gen=%s",
+                     self.variant_unit, reading, parent_reading, max_rank, min_perc, my_gen)
+
         assert not (max_rank and min_perc), "You can't specify both max_rank and min_perc"
 
         self.generate()
@@ -418,10 +421,16 @@ class GenealogicalCoherence(Coherence):
                                               partial_parent,
                                               self.cursor)
 
-            expl = self.parent_combinations(partial_parent, reading_obj.get_parent_reading(partial_parent),
-                                            max_rank=max_rank, min_perc=min_perc, my_gen=next_gen)
+            next_reading = partial_parent
+            next_parent = reading_obj.get_parent_reading(partial_parent)
 
-            partial_explanations.append(expl)
+            if next_reading == reading and next_parent == parent_reading:
+                # No point recursing just warn the user...
+                logger.warning("Would recurse infinitely... w1=%s, vu=%s, reading=%s, parent=%s, partial_parent=%s",
+                               self.w1, self.variant_unit, reading, parent_reading, partial_parent)
+            else:
+                expl = self.parent_combinations(next_reading, next_parent, max_rank=max_rank, min_perc=min_perc, my_gen=next_gen)
+                partial_explanations.append(expl)
 
         if not partial_explanations:
             # We couldn't find anything
