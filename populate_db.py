@@ -39,6 +39,10 @@ class Reading(object):
         self.ms_support = False
         self.parent = parent
 
+        if label in parent.split('&'):
+            print("WARNING: Reading {} has parent {} - causing a loop. Greek: {}, MSS: {}"
+                  .format(label, parent, greek, ms_support))
+
     def calc_mss_support(self, all_mss):
         """
         Calculate manuscript support based on the list of all mss passed in
