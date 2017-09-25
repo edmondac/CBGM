@@ -119,7 +119,9 @@ def define_columns(debug=False):
     columns = ['Vorf', 'Vorfanz', 'Stellen', 'Post', 'Fragl', 'Offen',
                'Hinweis', 'sum_rank', 'ranks']
     if debug:
-        columns.extend(['vus_stellen', 'vus_post', 'vus_fragl', 'vus_offen'])
+        # vus_stellen is just too much for spreadsheet programs - so ignore it.
+        #columns.extend(['vus_stellen', 'vus_post', 'vus_fragl', 'vus_offen'])
+        columns.extend(['vus_post', 'vus_fragl', 'vus_offen'])
     else:
         # Just include this one
         columns.extend(['vus_post'])
