@@ -174,6 +174,8 @@ if __name__ == "__main__":
     gs_parser = subparsers.add_parser('global', help='Generate global stemma (SVG)')
     gs_parser.add_argument('-s', '--suffix', default='',
                            help='Filename suffix for generated files (before the extension)')
+    gs_parser.add_argument('--hide-initial-text', default=False, action="store_true",
+                            help="Hide the initial text, and all links from it")
 
     # Optimal substemmata
     opt_parser = subparsers.add_parser('optsub', help='Generate optimal substemmata data')
@@ -274,7 +276,7 @@ if __name__ == "__main__":
         status(cursor)
 
     elif args.cmd == 'global':
-        global_stemma(args.file, suffix=args.suffix)
+        global_stemma(args.file, args.suffix, args.hide_initial_text)
 
     elif args.cmd == 'optsub':
         for wit in do_mss:

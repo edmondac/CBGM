@@ -26,7 +26,7 @@ def load(inputfile):
     return mod.optimal_substemmata
 
 
-def nodes_and_edges(w1, comb_anc, optsub):
+def nodes_and_edges(w1, comb_anc, optsub, hide_initial_text=False):
     """
     Calculate the nodes and edges for the supplied optimal substemma of w1
     """
@@ -90,7 +90,7 @@ def optimal_substemma(inputfile, w1, suffix=''):
     print("Written diagram to {}".format(output_file))
 
 
-def global_stemma(inputfile, suffix=''):
+def global_stemma(inputfile, suffix='', hide_initial_text=False):
     """
     Make the global stemma
     """
@@ -106,7 +106,7 @@ def global_stemma(inputfile, suffix=''):
             raise ValueError("No optimal substemma for {}".format(w1))
         elif len(comb_anc) == 1:
             # Simple case
-            nodes, edges = nodes_and_edges(w1, comb_anc[0], optsub)
+            nodes, edges = nodes_and_edges(w1, comb_anc[0], optsub, hide_initial_text)
             G.add_nodes_from(nodes)
             for pri, post in edges:
                 G.add_edge(pri, post)
@@ -114,7 +114,7 @@ def global_stemma(inputfile, suffix=''):
             # Complex case - multiple alternatives
             all_edges = []
             for comb in comb_anc:
-                nodes, edges = nodes_and_edges(w1, comb, optsub)
+                nodes, edges = nodes_and_edges(w1, comb, optsub, hide_initial_text)
                 G.add_nodes_from(nodes)
                 all_edges.append(edges)
 
@@ -130,7 +130,7 @@ def global_stemma(inputfile, suffix=''):
     print("Creating graph with {} nodes and {} edges".format(G.number_of_nodes(),
                                                              G.number_of_edges()))
     with open(dot_file, 'w') as dotfile:
-        networkx.write_dot(G, dot_file)
+        networkx.write_dot(G, dotfile)
 
     subprocess.check_call(['dot', '-Tsvg', dot_file, '-o', output_file])
 
@@ -138,3 +138,4 @@ def global_stemma(inputfile, suffix=''):
 
     print("For different layouts try running dot's synonyms like 'circo -Tsvg {} -o circo_{}'"
           .format(dot_file, output_file))
+
