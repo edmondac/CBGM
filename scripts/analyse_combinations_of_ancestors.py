@@ -51,11 +51,11 @@ class Analyser(object):
                 # Don't already have one of this size
                 best_by_size[row['Vorfanz']] = row
                 continue
-            if row['Post'] < existing['Post']:
+            if int(row['Post']) < int(existing['Post']):
                 # This one explains fewer by posterity
                 best_by_size[row['Vorfanz']] = row
                 continue
-            if row['Post'] == existing['Post'] and row['sum_rank'] < existing['sum_rank']:
+            if row['Post'] == existing['Post'] and int(row['sum_rank']) < int(existing['sum_rank']):
                 # This one has lower sum_rank, while explaining the same number by posterity
                 best_by_size[row['Vorfanz']] = row
                 continue
@@ -76,7 +76,7 @@ class Analyser(object):
         log("Excluded rows with more combinations but no better results: %s combinations left", len(best_by_post))
 
         if len(best_by_post) == 1:
-            log("Only one combination left: %s", best_by_post.values()[0]['Vorf'])
+            log("Only one combination left: %s", list(best_by_post.values())[0]['Vorf'])
 
         else:
             log("Human thought required...")
