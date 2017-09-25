@@ -57,6 +57,10 @@ def nodes_and_edges(w1, comb_anc, optsub, hide_initial_text=False):
 
         assert '>' not in node, "Intermediary nodes should be specified with '<'"
 
+    if hide_initial_text:
+        nodes = {x for x in nodes if x != 'A'}
+        edges = {(x, y) for (x, y) in edges if x != 'A'}
+
     return nodes, edges
 
 
@@ -120,9 +124,13 @@ def global_stemma(inputfile, suffix='', hide_initial_text=False):
 
             common = set.intersection(*all_edges)
             for pri, post in common:
+                if hide_initial_text and pri == 'A':
+                    continue
                 G.add_edge(pri, post)
             for alternative in all_edges:
                 for pri, post in alternative:
+                    if hide_initial_text and pre == 'A':
+                        continue
                     if (pri, post) in common:
                         continue
                     G.add_edge(pri, post, style='dashed')
