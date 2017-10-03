@@ -129,7 +129,7 @@ def global_stemma(inputfile, suffix='', hide_initial_text=False):
                 G.add_edge(pri, post)
             for alternative in all_edges:
                 for pri, post in alternative:
-                    if hide_initial_text and pre == 'A':
+                    if hide_initial_text and pri == 'A':
                         continue
                     if (pri, post) in common:
                         continue
