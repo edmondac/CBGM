@@ -106,7 +106,7 @@ class MpiHandler(mpisupport.MpiParent):
             raise KeyError("Unknown MPI child key: {}".format(key))
 
 
-def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, min_strength):
+def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, min_strength, include_undirected=False):
     """
     Calculate the best parents for this witness at this variant unit
 
@@ -147,7 +147,8 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, 
             logger.exception("Unable to parse connectivity value %s as int or float%%", conn_value)
             raise SystemExit(2)
         try:
-            combinations = coh.parent_combinations(w1_reading, w1_parent, max_rank=max_rank, min_perc=min_perc)
+            combinations = coh.parent_combinations(w1_reading, w1_parent, max_rank=max_rank, min_perc=min_perc,
+                                                   include_undirected=include_undirected)
         except Exception:
             logger.exception("Couldn't get parent combinations for {}, {}, {}"
                              .format(w1_reading, w1_parent, conn_value))
@@ -207,7 +208,8 @@ def get_parents(variant_unit, w1, w1_reading, w1_parent, connectivity, db_file, 
         logger.debug("Found best parents for {} (conn={}): {}".format(w1, conn_value, parents))
         if min_strength:
             for parent in parents:
-                assert parent.strength >= min_strength, "Parent is too weak - something has gone wrong {}".format(parent)
+                if not include_undirected:
+                    assert parent.strength >= min_strength, "Parent is too weak - something has gone wrong {}".format(parent)
 
         parent_maps[conn_value] = parents
 
@@ -218,7 +220,7 @@ def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
                  ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
                  weak_strength_threshold=25, very_weak_strength_threshold=5,
                  show_strength_values=False, suffix='', box_readings=False, force_serial=False,
-                 min_strength=None):
+                 min_strength=None, include_undirected=False):
     """
     Create a textual flow diagram for the specified variant units. This will
     work out if we're using MPI and act accordingly...
@@ -271,7 +273,7 @@ def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
                     show_strengths=show_strengths, weak_strength_threshold=weak_strength_threshold,
                     very_weak_strength_threshold=very_weak_strength_threshold,
                     show_strength_values=show_strength_values, suffix=suffix, box_readings=box_readings,
-                    min_strength=min_strength)
+                    min_strength=min_strength, include_undirected=include_undirected)
 
             return mpihandler.mpi_wait(stop=True)
         else:
@@ -286,8 +288,8 @@ def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
                             ranks_on_edges=ranks_on_edges, include_perc_in_label=include_perc_in_label,
                             show_strengths=show_strengths, weak_strength_threshold=weak_strength_threshold,
                             very_weak_strength_threshold=very_weak_strength_threshold,
-                            show_strength_values=show_strength_values, suffix=suffix,
-                            box_readings=box_readings, min_strength=min_strength)
+                            show_strength_values=show_strength_values, suffix=suffix, box_readings=box_readings,
+                            min_strength=min_strength, include_undirected=include_undirected)
             t.calculate_textual_flow()
 
         if len(variant_units) == 1:
@@ -301,7 +303,7 @@ class TextualFlow(object):
                  ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
                  weak_strength_threshold=25, very_weak_strength_threshold=5,
                  show_strength_values=False, suffix='', box_readings=False,
-                 min_strength=None, mpihandler=None):
+                 min_strength=None, include_undirected=None, mpihandler=None):
         """
         @param db_file: sqlite database
         @param variant_unit: draw the textual flow of this variant unit
@@ -316,6 +318,7 @@ class TextualFlow(object):
         @param suffix: suffix to use in filename (before the extension)
         @param box_readings: Draw a diagram for each reading in a box
         @param min_strength: Minimum strength for genealogical coherence relationships (default None = disabled)
+        @param include_undirected: Include undirected relationships (as a group)
         @param mpihandler: optional MpiHandler instance
         """
         assert type(connectivity) == list, "Connectivity must be a list (was %s)" % connectivity
@@ -356,6 +359,7 @@ class TextualFlow(object):
         self.box_readings = box_readings
         self.parent_maps = {}
         self.min_strength = min_strength
+        self.include_undirected = include_undirected
 
     def calculate_textual_flow(self):
         """
@@ -387,12 +391,13 @@ class TextualFlow(object):
                 self.mpihandler.mpi_queue.put(("PARENTS", self.variant_unit, w1,
                                                w1_reading, w1_parent,
                                                self.connectivity, self.db_file,
-                                               self.min_strength))
+                                               self.min_strength, self.include_undirected))
             else:
                 logger.debug("Calculating parents {}/{}".format(i, len(data)))
                 parent_maps = get_parents(self.variant_unit, w1, w1_reading, w1_parent,
                                           self.connectivity, self.db_file,
-                                          min_strength=self.min_strength)
+                                          min_strength=self.min_strength,
+                                          include_undirected=self.include_undirected)
                 self.parent_maps[w1] = parent_maps  # a parent map per connectivity setting
 
         if self.mpihandler:
@@ -520,7 +525,15 @@ class TextualFlow(object):
                     if self.show_strength_values:
                         label += "\n[{}/{}]".format(p.prior, p.posterior)
 
-                G.add_edge(p.parent, w1, label=label, color=witnesses[i][1]['color'], style=style)
+                kwargs = {
+                    'label': label,
+                    'color': witnesses[i][1]['color'],
+                    'style': style}
+                if p.undirected:
+                    kwargs['dir'] = 'both'
+                    kwargs['color'] = 'red'
+
+                G.add_edge(p.parent, w1, **kwargs)
 
 
         # Add the nodes

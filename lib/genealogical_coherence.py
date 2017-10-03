@@ -11,13 +11,14 @@ logger = logging.getLogger(__name__)
 
 
 class ParentCombination(object):
-    def __init__(self, parent, rank, perc, gen, prior=None, posterior=None):
+    def __init__(self, parent, rank, perc, gen, prior=None, posterior=None, undirected=False):
         self.parent = parent  # witness label
         self.rank = rank  # integer rank
         self.perc = perc  # percentage coherence
         self.gen = gen  # generation (e.g. 1=parent, 2=grandparent, ...)
         self.prior = prior  # integer number of prior readings in the parent - or None=undefined
         self.posterior = posterior  # integer number of posterior readings in the parent - or None=undefined
+        self.undirected = undirected  # boolean - is this relationship undirected?
 
     @property
     def strength(self):
@@ -27,8 +28,9 @@ class ParentCombination(object):
         return self.prior - self.posterior
 
     def __repr__(self):
-        return "<Parent Combination: parent={}, rank={}, perc={}, gen={}, prior={}, posterior={}, strength={}>".format(
-            self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior, self.strength)
+        return ("<Parent Combination: parent={}, rank={}, perc={}, gen={}, prior={}, posterior={}, "
+                "strength={}, undirected={}>".format(
+            self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior, self.strength, self.undirected))
 
 
 class TooManyAborts(Exception):
@@ -317,7 +319,8 @@ class GenealogicalCoherence(Coherence):
         return [x['W2'] for x in self.rows
                 if x['NR'] != 0]
 
-    def parent_combinations(self, reading, parent_reading, *, max_rank=None, min_perc=None, my_gen=1):
+    def parent_combinations(self, reading, parent_reading, *, max_rank=None, min_perc=None, include_undirected=False,
+                            my_gen=1):
         """
         Return a list of possible parent combinations that explain this reading.
 
@@ -356,6 +359,7 @@ class GenealogicalCoherence(Coherence):
         potanc = self.potential_ancestors()
         # Things that explain it by themselves:
         for row in self.rows:
+            undirected = False
             # Check the real rank (_NR) - so joint 6th => 6. _RANK here could be
             # 7, 8, 9 etc. for joint 6th.
             if max_rank is not None and row['_NR'] > max_rank:
@@ -367,9 +371,12 @@ class GenealogicalCoherence(Coherence):
                 continue
 
             if row['W2'] not in potanc:
-                # Not a potential ancestor (undirected genealogical coherence or too weak)
-                logger.debug("Ignoring %s as it's not a potential ancestor", row)
-                continue
+                if include_undirected:
+                    undirected = True
+                else:
+                    # Not a potential ancestor (undirected genealogical coherence or too weak)
+                    logger.debug("Ignoring %s as it's not a potential ancestor", row)
+                    continue
 
             if row['READING'] == reading:
                 # This matches our reading and is within the connectivity threshold - take it
@@ -379,11 +386,11 @@ class GenealogicalCoherence(Coherence):
                 # And vice versa for the posterior count.
                 prior = row['W1<W2']
                 posterior = row['W1>W2']
-                if self.min_strength:
+                if self.min_strength and not include_undirected:
                     assert prior - posterior >= self.min_strength, "This row shouldn't be a potential ancestor: {}".format(row)
 
                 ret.append([ParentCombination(row['W2'], row['_NR'], row['PERC1'],
-                                              my_gen, prior, posterior)])
+                                              my_gen, prior, posterior, undirected)])
 
         if parent_reading in (INIT, OL_PARENT, UNCL):
             # No parents - nothing further to do
@@ -407,12 +414,14 @@ class GenealogicalCoherence(Coherence):
             if partial_parent == INIT:
                 # Simple - who reads INIT?
                 partial_explanations.append(
-                    self.parent_combinations(INIT, None, max_rank=max_rank, min_perc=min_perc, my_gen=my_gen + 1))
+                    self.parent_combinations(INIT, None, max_rank=max_rank, min_perc=min_perc,
+                                             include_undirected=include_undirected, my_gen=my_gen + 1))
                 continue
             if partial_parent == OL_PARENT:
                 # Simple - who reads OL_PARENT?
                 partial_explanations.append(
-                    self.parent_combinations(OL_PARENT, None, max_rank=max_rank, min_perc=min_perc, my_gen=my_gen + 1))
+                    self.parent_combinations(OL_PARENT, None, max_rank=max_rank, min_perc=min_perc,
+                                             include_undirected=include_undirected, my_gen=my_gen + 1))
                 continue
 
             # We need to recurse, and find out what combinations explain our
@@ -429,7 +438,8 @@ class GenealogicalCoherence(Coherence):
                 logger.warning("Would recurse infinitely... w1=%s, vu=%s, reading=%s, parent=%s, partial_parent=%s",
                                self.w1, self.variant_unit, reading, parent_reading, partial_parent)
             else:
-                expl = self.parent_combinations(next_reading, next_parent, max_rank=max_rank, min_perc=min_perc, my_gen=next_gen)
+                expl = self.parent_combinations(next_reading, next_parent, max_rank=max_rank, min_perc=min_perc,
+                                                include_undirected=include_undirected, my_gen=next_gen)
                 partial_explanations.append(expl)
 
         if not partial_explanations:

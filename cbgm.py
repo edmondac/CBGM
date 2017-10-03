@@ -147,6 +147,8 @@ if __name__ == "__main__":
                            help='Filename suffix for generated files (before the extension)')
     tf_parser.add_argument('--perfect', default=False, action="store_true",
                            help="Insist on perfect coherence in a textual flow diagram")
+    tf_parser.add_argument('--include-undirected', default=False, action="store_true",
+                           help="Include undirected relationships in a textual flow diagram")
 
     # Combination of ancestors
     anc_parser = subparsers.add_parser('combanc', help='Generate combination of ancestors')
@@ -301,7 +303,8 @@ if __name__ == "__main__":
                      weak_strength_threshold=args.weak_threshold,
                      very_weak_strength_threshold=args.very_weak_threshold,
                      show_strength_values=args.show_strength_values, suffix=args.suffix,
-                     box_readings=args.box_readings, min_strength=args.min_strength)
+                     box_readings=args.box_readings, min_strength=args.min_strength,
+                     include_undirected=args.include_undirected)
 
     elif args.cmd == 'combanc':
         if args.witness == 'all' and 'OMPI_COMM_WORLD_SIZE' in os.environ:
