@@ -138,7 +138,7 @@ class Coherence(object):
 
         self._already_generated = True
 
-        if self.use_cache and store_cache:
+        if self.use_cache:
             self.store_cache()
 
     def add_row(self, w2):

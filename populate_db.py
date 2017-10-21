@@ -66,7 +66,7 @@ class Reading(object):
 
 class LacunaReading(Reading):
     def __init__(self, ms_support):
-        self._ms_support = set(ms_support)
+        self._ms_support = ms_support
         self.ms_support = False
         self.lacuna = True
         self.label = LAC
