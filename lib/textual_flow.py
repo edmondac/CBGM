@@ -570,6 +570,10 @@ class TextualFlow(object):
             dotfile = "{}.dot".format(self.output_files[conn_value])
             svgfile = "{}.svg".format(self.output_files[conn_value])
 
+        # In case the reading label has a slash in it...
+        dotfile = dotfile.replace('/', '_')
+        svgfile = svgfile.replace('/', '_')
+
         G.write(dotfile)
 
         subprocess.check_call(['dot', '-Tsvg', dotfile], stdout=open(svgfile, 'w'))
