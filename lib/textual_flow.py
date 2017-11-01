@@ -564,15 +564,11 @@ class TextualFlow(object):
                     G.number_of_nodes(), G.number_of_edges())
         # Keep the dotfile so we can change the look and feel later if we want
         if group_reading:
-            dotfile = "{}_{}.dot".format(self.output_files[conn_value], group_reading)
-            svgfile = "{}_{}.svg".format(self.output_files[conn_value], group_reading)
+            dotfile = "{}_{}.dot".format(self.output_files[conn_value], group_reading.replace('/', '_'))
+            svgfile = "{}_{}.svg".format(self.output_files[conn_value], group_reading.replace('/', '_'))
         else:
             dotfile = "{}.dot".format(self.output_files[conn_value])
             svgfile = "{}.svg".format(self.output_files[conn_value])
-
-        # In case the reading label has a slash in it...
-        dotfile = dotfile.replace('/', '_')
-        svgfile = svgfile.replace('/', '_')
 
         G.write(dotfile)
 
