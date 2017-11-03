@@ -325,6 +325,7 @@ class TextualFlow(object):
         # Fast abort if it already exists
         self.output_files = {}
         self.connectivity = []
+        self.readings = []  # populated if box_readings is True
         for conn_value in connectivity:
             assert type(conn_value) == str, "Connectivity values must be strings (was %s:%s)" % (conn_value, type(conn_value))
             dirname = "c{}".format(conn_value.replace('%', 'perc'))
@@ -333,10 +334,30 @@ class TextualFlow(object):
             output_file = os.path.join(os.getcwd(), dirname, "textual_flow_{}_c{}{}".format(
                 variant_unit.replace('/', '_'), conn_value.replace('%', 'perc'), suffix))
 
-            if os.path.exists(output_file):
-                logger.info("Textual flow diagram for {} already exists ({}) - skipping"
-                            .format(variant_unit, output_file))
-                continue
+            if box_readings:
+                sql = """SELECT witness, label, parent
+                    FROM cbgm
+                    WHERE variant_unit = \"{}\"
+                    """.format(self.variant_unit)
+                conn = sqlite3.connect(self.db_file)
+                cursor = conn.cursor()
+                self.readings = list(cursor.execute(sql))
+                already_done = 0
+                for reading in self.readings:
+                    dotfile = "{}_{}.dot".format(output_file, reading.replace('/', '_'))
+                    if os.path.exists(dotfile):
+                        already_done += 1
+
+                if already_done == len(self.readings):
+                    logger.info("Textual flow diagrams (for {} readings) for {} already exists ({}) - skipping"
+                                .format(already_done, variant_unit, output_file))
+                    continue
+
+            else:
+                if os.path.exists(output_file):
+                    logger.info("Textual flow diagram for {} already exists ({}) - skipping"
+                                .format(variant_unit, output_file))
+                    continue
 
             self.output_files[conn_value] = output_file
             self.connectivity.append(conn_value)
@@ -377,23 +398,15 @@ class TextualFlow(object):
         if self.min_strength:
             logger.info("Setting min strength = %s", self.min_strength)
 
-        sql = """SELECT witness, label, parent
-                 FROM cbgm
-                 WHERE variant_unit = \"{}\"
-                 """.format(self.variant_unit)
-        conn = sqlite3.connect(self.db_file)
-        cursor = conn.cursor()
-        data = list(cursor.execute(sql))
-
         # 1. Calculate the best parent for each witness
-        for i, (w1, w1_reading, w1_parent) in enumerate(data):
+        for i, (w1, w1_reading, w1_parent) in enumerate(self.readings):
             if self.mpihandler:
                 self.mpihandler.mpi_queue.put(("PARENTS", self.variant_unit, w1,
                                                w1_reading, w1_parent,
                                                self.connectivity, self.db_file,
                                                self.min_strength, self.include_undirected))
             else:
-                logger.debug("Calculating parents {}/{}".format(i, len(data)))
+                logger.debug("Calculating parents {}/{}".format(i, len(self.readings)))
                 parent_maps = get_parents(self.variant_unit, w1, w1_reading, w1_parent,
                                           self.connectivity, self.db_file,
                                           min_strength=self.min_strength,
@@ -412,9 +425,9 @@ class TextualFlow(object):
         # 2. Draw the diagrams
         for conn_value in self.connectivity:
             if self.box_readings:
-                self._draw_box_diagrams(conn_value, data)
+                self._draw_box_diagrams(conn_value, self.readings)
             else:
-                self._draw_diagram(conn_value, data)
+                self._draw_diagram(conn_value, self.readings)
 
         if self.mpihandler:
             self.mpihandler.done(self.variant_unit)
@@ -424,8 +437,7 @@ class TextualFlow(object):
         Make a diagram for each reading, showing those witnesses attesting the reading in a box, and their direct
         ancestors (attesting a different reading) outside the box.
         """
-        readings = set(x[1] for x in data)
-
+        readings = set(x[1] for x in self.readings)
         for reading in readings:
             want_witnesses = set()
             for w1, w1_reading, w1_parent in data:
