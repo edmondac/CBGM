@@ -325,7 +325,18 @@ class TextualFlow(object):
         # Fast abort if it already exists
         self.output_files = {}
         self.connectivity = []
-        self.readings = []  # populated if box_readings is True
+
+        # Fetch reading info
+        sql = """SELECT witness, label, parent
+                    FROM cbgm
+                    WHERE variant_unit = \"{}\"
+                    """.format(variant_unit)
+        conn = sqlite3.connect(db_file)
+        cursor = conn.cursor()
+        self.reading_data = list(cursor.execute(sql))  # (witness, label, parent) combinations
+        self.readings = set(x[1] for x in self.reading_data)  # just the unique reading labels
+
+        # Work out if we can quickly abort, and calculate the output filenames
         for conn_value in connectivity:
             assert type(conn_value) == str, "Connectivity values must be strings (was %s:%s)" % (conn_value, type(conn_value))
             dirname = "c{}".format(conn_value.replace('%', 'perc'))
@@ -335,13 +346,6 @@ class TextualFlow(object):
                 variant_unit.replace('/', '_'), conn_value.replace('%', 'perc'), suffix))
 
             if box_readings:
-                sql = """SELECT DISTINCT label
-                    FROM cbgm
-                    WHERE variant_unit = \"{}\"
-                    """.format(variant_unit)
-                conn = sqlite3.connect(db_file)
-                cursor = conn.cursor()
-                self.readings = list(cursor.execute(sql))
                 already_done = 0
                 for reading in self.readings:
                     dotfile = "{}_{}.dot".format(output_file, reading[0].replace('/', '_'))
@@ -354,7 +358,7 @@ class TextualFlow(object):
                     continue
 
             else:
-                if os.path.exists(output_file):
+                if os.path.exists(output_file + '.dot'):
                     logger.info("Textual flow diagram for {} already exists ({}) - skipping"
                                 .format(variant_unit, output_file))
                     continue
@@ -399,7 +403,7 @@ class TextualFlow(object):
             logger.info("Setting min strength = %s", self.min_strength)
 
         # 1. Calculate the best parent for each witness
-        for i, (w1, w1_reading, w1_parent) in enumerate(self.readings):
+        for i, (w1, w1_reading, w1_parent) in enumerate(self.reading_data):
             if self.mpihandler:
                 self.mpihandler.mpi_queue.put(("PARENTS", self.variant_unit, w1,
                                                w1_reading, w1_parent,
@@ -425,22 +429,21 @@ class TextualFlow(object):
         # 2. Draw the diagrams
         for conn_value in self.connectivity:
             if self.box_readings:
-                self._draw_box_diagrams(conn_value, self.readings)
+                self._draw_box_diagrams(conn_value)
             else:
-                self._draw_diagram(conn_value, self.readings)
+                self._draw_diagram(conn_value)
 
         if self.mpihandler:
             self.mpihandler.done(self.variant_unit)
 
-    def _draw_box_diagrams(self, conn_value, data):
+    def _draw_box_diagrams(self, conn_value):
         """
         Make a diagram for each reading, showing those witnesses attesting the reading in a box, and their direct
         ancestors (attesting a different reading) outside the box.
         """
-        readings = set(x[1] for x in self.readings)
-        for reading in readings:
+        for reading in self.readings:
             want_witnesses = set()
-            for w1, w1_reading, w1_parent in data:
+            for w1, w1_reading, w1_parent in self.reading_data:
                 if w1_reading != reading:
                     continue
 
@@ -453,21 +456,20 @@ class TextualFlow(object):
                     want_witnesses |= set(x.parent for x in parents)
 
             logger.info("Drawing diagram for reading %s", reading)
-            self._draw_diagram(conn_value, [x for x in data if x[0] in want_witnesses], reading)
+            self._draw_diagram(conn_value, reading)
 
 
-    def _draw_diagram(self, conn_value, data, group_reading=None):
+    def _draw_diagram(self, conn_value, group_reading=None):
         """
         Draw the textual flow diagram for the specified connectivity value
 
         Draw a box around witnesses attesting group_reading, if not None.
         """
-
         # get the colour for the first char of the label (e.g. for b1 just get b)
         witnesses = [(x[0], {'color': darken(COLOURMAP.get(x[1][0], '#cccccc')),
                              'fillcolor': COLOURMAP.get(x[1][0], '#cccccc'),
                              'style': 'filled'})  # See http://www.graphviz.org/
-                     for x in data]
+                     for x in self.reading_data]
         witness_names = [x[0] for x in witnesses]
 
         G = pygraphviz.AGraph(strict=True, directed=True)
@@ -476,7 +478,7 @@ class TextualFlow(object):
         node_label_map = {}
         subgraph_members = set()
 
-        for i, (w1, w1_reading, w1_parent) in enumerate(data):
+        for i, (w1, w1_reading, w1_parent) in enumerate(self.reading_data):
             if w1_reading == group_reading:
                 subgraph_members.add(w1)
 
@@ -546,7 +548,6 @@ class TextualFlow(object):
                     kwargs['color'] = 'red'
 
                 G.add_edge(p.parent, w1, **kwargs)
-
 
         # Add the nodes
         for wit, args in witnesses:
