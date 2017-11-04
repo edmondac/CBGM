@@ -255,6 +255,10 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 # ** See examples/textual_flow_22_20_c2.svg and examples/textual_flow_22_20_c499.svg
 
+# Same but with the individual readings in boxes in their own diagrams
+../cbgm -d /tmp/test.db tf all -c 2,499 --box-readings
+# ...
+
 
 ### Stripes (summary of attestations) ###
 ../stripes.py /tmp/test.db

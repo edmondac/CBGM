@@ -1,0 +1,88 @@
+strict digraph  {
+	node [label="\N"];
+	subgraph cluster_reading {
+		A		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="A (b)",
+			style=filled];
+		P75		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="P75 (b)",
+			style=filled];
+		A -> P75		 [color="#835da9",
+			label="1 (93.3)",
+			style=dotted];
+		03		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="03 (b)",
+			style=filled];
+		A -> 03		 [color="#835da9",
+			label="1 (93.3)",
+			style=dotted];
+		019		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="019 (b)",
+			style=filled];
+		A -> 019		 [color="#835da9",
+			label="1 (93.3)",
+			style=dotted];
+		044		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="044 (b)",
+			style=filled];
+		022		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="022 (b)",
+			style=filled];
+		044 -> 022		 [color="#835da9",
+			label="1 (91.7)",
+			style=dotted];
+		03 -> 044		 [color="#835da9",
+			label="1 (89.2)",
+			style=dotted];
+		02		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="02 (b)",
+			style=filled];
+		03 -> 02		 [color="#835da9",
+			label="1 (86.5)",
+			style=dotted];
+		032		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="032 (b)",
+			style=filled];
+		03 -> 032		 [color="#835da9",
+			label="1 (91.7)",
+			style=dotted];
+		063		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="063 (b)",
+			style=filled];
+		019 -> 063		 [color="#835da9",
+			label="1 (85.7)",
+			style=dotted];
+	}
+	subgraph cluster_legend {
+		graph [style=rounded];
+		leg_s		 [label="Textual flow strength",
+			shape=plaintext];
+		leg_e1		 [fixedsize=True,
+			height=0.2,
+			label="",
+			style=invis];
+		leg_s -> leg_e1		 [label="<=5  ",
+			style=dotted];
+		leg_e2		 [fixedsize=True,
+			height=0.2,
+			label="",
+			style=invis];
+		leg_s -> leg_e2		 [label="  <=25",
+			style=dashed];
+		leg_e3		 [fixedsize=True,
+			height=0.2,
+			label="",
+			style=invis];
+		leg_s -> leg_e3		 [label=">25",
+			style=solid];
+	}
+}

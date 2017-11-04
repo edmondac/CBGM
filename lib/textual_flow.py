@@ -335,16 +335,16 @@ class TextualFlow(object):
                 variant_unit.replace('/', '_'), conn_value.replace('%', 'perc'), suffix))
 
             if box_readings:
-                sql = """SELECT witness, label, parent
+                sql = """SELECT DISTINCT label
                     FROM cbgm
                     WHERE variant_unit = \"{}\"
-                    """.format(self.variant_unit)
-                conn = sqlite3.connect(self.db_file)
+                    """.format(variant_unit)
+                conn = sqlite3.connect(db_file)
                 cursor = conn.cursor()
                 self.readings = list(cursor.execute(sql))
                 already_done = 0
                 for reading in self.readings:
-                    dotfile = "{}_{}.dot".format(output_file, reading.replace('/', '_'))
+                    dotfile = "{}_{}.dot".format(output_file, reading[0].replace('/', '_'))
                     if os.path.exists(dotfile):
                         already_done += 1
 
@@ -361,10 +361,6 @@ class TextualFlow(object):
 
             self.output_files[conn_value] = output_file
             self.connectivity.append(conn_value)
-
-        if not self.output_files:
-            logger.info("Nothing to do - skipping variant unit {}".format(variant_unit))
-            return
 
         self.mpihandler = mpihandler
         self.db_file = db_file
@@ -390,6 +386,10 @@ class TextualFlow(object):
         show a textual flow diagram for a single reading) there can be multiple
         ancestors for a witness...
         """
+        if not self.output_files:
+            logger.info("Nothing to do - skipping variant unit {}".format(self.variant_unit))
+            return
+
         logger.info("Creating textual flow diagram for {}".format(self.variant_unit))
         logger.info("Setting connectivity to {}".format(self.connectivity))
         if self.perfect_only:

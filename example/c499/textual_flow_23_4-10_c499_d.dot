@@ -1,0 +1,53 @@
+strict digraph  {
+	node [label="\N"];
+	subgraph cluster_legend {
+		graph [style=rounded];
+		leg_s		 [label="Textual flow strength",
+			shape=plaintext];
+		leg_e1		 [fixedsize=True,
+			height=0.2,
+			label="",
+			style=invis];
+		leg_s -> leg_e1		 [label="<=5  ",
+			style=dotted];
+		leg_e2		 [fixedsize=True,
+			height=0.2,
+			label="",
+			style=invis];
+		leg_s -> leg_e2		 [label="  <=25",
+			style=dashed];
+		leg_e3		 [fixedsize=True,
+			height=0.2,
+			label="",
+			style=invis];
+		leg_s -> leg_e3		 [label=">25",
+			style=solid];
+	}
+	subgraph cluster_reading {
+		021		 [color="#b43b77",
+			fillcolor="#FF86C2",
+			label="021 (d)",
+			style=filled];
+		036		 [color="#b43b77",
+			fillcolor="#FF86C2",
+			label="036 (d)",
+			style=filled];
+		021 -> 036		 [color="#b43b77",
+			label="1 (97.6)",
+			style=dotted];
+		047		 [color="#b43b77",
+			fillcolor="#FF86C2",
+			label="047 (d)",
+			style=filled];
+		021 -> 047		 [color="#b43b77",
+			label="1 (95.1)",
+			style=dotted];
+		091		 [color="#b43b77",
+			fillcolor="#FF86C2",
+			label="091 (d)",
+			style=filled];
+		091 -> 021		 [color="#b43b77",
+			label="3 (83.3)",
+			style=dotted];
+	}
+}
