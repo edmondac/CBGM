@@ -1,6 +1,6 @@
 #nexus
 BEGIN Taxa;
-DIMENSIONS ntax=27;
+DIMENSIONS ntax=28;
 TAXLABELS
 01
 011
@@ -28,6 +28,7 @@ TAXLABELS
 063
 07
 091
+A
 P75
 ;
 END;
@@ -67,6 +68,7 @@ MATRIX
 063 aaaaaaaaa-b---aaaaaaaaaaaaba-aa------a-aa
 07 aaaaaaaaaaaaaaaaaaaaaaaaaabaaaaaaaaaaaaaa
 091 --------------aaaabaaaaaacadaaa---------a
+A a--a--a-a-b---aaba-a-a----a-a------a---a-
 P75 ab-aaaaba-b---aaaabaaaaaaaabaaaabaaaaabaa
 ;
 END;

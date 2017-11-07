@@ -1,18 +1,5 @@
 strict digraph  {
 	node [label="\N"];
-	subgraph cluster_reading {
-		05		 [color="#27b34a",
-			fillcolor="#72FE95",
-			label="05 (c)",
-			style=filled];
-		01		 [color="#27b34a",
-			fillcolor="#72FE95",
-			label="01 (c)",
-			style=filled];
-		05 -> 01		 [color="#27b34a",
-			label="25 (33.3)",
-			style=dotted];
-	}
 	subgraph cluster_legend {
 		graph [style=rounded];
 		leg_s		 [label="Textual flow strength",
@@ -35,5 +22,18 @@ strict digraph  {
 			style=invis];
 		leg_s -> leg_e3		 [label=">25",
 			style=solid];
+	}
+	subgraph cluster_reading {
+		05		 [color="#27b34a",
+			fillcolor="#72FE95",
+			label="05 (c)",
+			style=filled];
+		01		 [color="#27b34a",
+			fillcolor="#72FE95",
+			label="01 (c)",
+			style=filled];
+		05 -> 01		 [color="#27b34a",
+			label="25 (33.3)",
+			style=dotted];
 	}
 }

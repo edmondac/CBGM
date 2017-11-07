@@ -28,13 +28,6 @@ strict digraph  {
 			fillcolor="#CEA8F4",
 			label="044 (b)",
 			style=filled];
-		0141		 [color="#835da9",
-			fillcolor="#CEA8F4",
-			label="0141 (b)",
-			style=filled];
-		044 -> 0141		 [color="#835da9",
-			label="1 (89.2)",
-			style=dotted];
 		022		 [color="#835da9",
 			fillcolor="#CEA8F4",
 			label="022 (b)",
@@ -48,6 +41,13 @@ strict digraph  {
 			style=filled];
 		044 -> 011		 [color="#835da9",
 			label="2 (86.5)",
+			style=dotted];
+		0141		 [color="#835da9",
+			fillcolor="#CEA8F4",
+			label="0141 (b)",
+			style=filled];
+		044 -> 0141		 [color="#835da9",
+			label="1 (89.2)",
 			style=dotted];
 		03		 [color="#835da9",
 			fillcolor="#CEA8F4",
