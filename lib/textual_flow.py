@@ -456,20 +456,29 @@ class TextualFlow(object):
                     want_witnesses |= set(x.parent for x in parents)
 
             logger.info("Drawing diagram for reading %s", reading)
-            self._draw_diagram(conn_value, reading)
+            self._draw_diagram(conn_value, include_witnesses=want_witnesses, group_reading=reading)
 
-
-    def _draw_diagram(self, conn_value, group_reading=None):
+    def _draw_diagram(self, conn_value, *, include_witnesses=None, group_reading=None):
         """
         Draw the textual flow diagram for the specified connectivity value
 
+        Include only those witnesses listed in include_witnesses - unless it's None, in which case include them all.
+
         Draw a box around witnesses attesting group_reading, if not None.
         """
+        if not include_witnesses:
+            # Include all witnesses
+            include_witnesses = set(x[0] for x in self.reading_data)
+
+        # Restrict the witnesses included
+        my_reading_data = [x for x in self.reading_data if x[0] in include_witnesses]
+
         # get the colour for the first char of the label (e.g. for b1 just get b)
         witnesses = [(x[0], {'color': darken(COLOURMAP.get(x[1][0], '#cccccc')),
                              'fillcolor': COLOURMAP.get(x[1][0], '#cccccc'),
                              'style': 'filled'})  # See http://www.graphviz.org/
-                     for x in self.reading_data]
+                     for x in my_reading_data]
+
         witness_names = [x[0] for x in witnesses]
 
         G = pygraphviz.AGraph(strict=True, directed=True)
@@ -478,7 +487,7 @@ class TextualFlow(object):
         node_label_map = {}
         subgraph_members = set()
 
-        for i, (w1, w1_reading, w1_parent) in enumerate(self.reading_data):
+        for i, (w1, w1_reading, w1_parent) in enumerate(my_reading_data):
             if w1_reading == group_reading:
                 subgraph_members.add(w1)
 
