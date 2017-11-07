@@ -22,8 +22,15 @@ COLOURS = ("#FF8A8A", "#FF86E3", "#FF86C2", "#FE8BF0", "#EA8DFE", "#DD88FD", "#A
 #         colours += '<table><tr><td bgcolor="{}">HELLO THERE {}</td></tr></table>\n'.format(col, col)
 #     f.write("""<html>{}</html>""".format(colours))
 
+# Colours for lowercase letter labels
 COLOURMAP = {x: COLOURS[(i * 10) % len(COLOURS)]
              for (i, x) in enumerate(string.ascii_lowercase)}
+
+# Add Text un Textwert labels
+# “1” = Majority; “2” = “NA”; “1/2” - where 1 and 2 agree; “3” etc. special readings (all the other ones)
+for i, x in enumerate(['1/2'] + [str(x) for x in range(20)]):
+    COLOURMAP[x] = COLOURS[(i * 10) % len(COLOURS)]
+
 
 logger = logging.getLogger(__name__)
 
