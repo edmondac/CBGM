@@ -67,7 +67,7 @@ HTML_TEMPLATE = """<html>
         </style>
         <script>
             var conn_values = $conn_values;
-            function showvariant(book, chapter, verse, word, suffix) {
+            function showvariant(typ, book, chapter, verse, word, suffix) {
                 for (i = 0; i < conn_values.length; ++i) {
                     var cv = conn_values[i];
                     if (suffix) {
@@ -75,7 +75,11 @@ HTML_TEMPLATE = """<html>
                     } else {
                         suff_bit = '';
                     }
-                    var tf = cv + '/textual_flow_B' + book + 'K' + chapter + 'V' + verse + '_' + word + '_' + cv + suff_bit + '.svg';
+                    if (typ == 'type1') {
+                        var tf = cv + '/textual_flow_B' + book + 'K' + chapter + 'V' + verse + '_' + word + '_' + cv + suff_bit + '.svg';
+                    } else if (typ == 'type2') {
+                        var tf = cv + '/textual_flow_0_' + book + chapter + verse + word + '_' + cv + suff_bit + '.svg';
+                    }
                     $$("img#" + cv).attr('src', tf);
                     $$("a#" + cv).attr('href', tf);
                     $$("h3#" + cv).text(tf);
@@ -145,34 +149,52 @@ def make_page(folder, overwrite):
     print("Found {} SVG files in c{}".format(len(svg_files), conn_folders[0]))
     parsed_svg_files = []
     svg_re = re.compile("textual_flow_B([0-9]{2})K([0-9]{2})V([0-9]{2})_([^-,]+)[-,]?(.*?)_c[0-9]+_?(.*)\.svg")
+    svg_re2 = re.compile("textual_flow_0_([0-9])([0-9]{2})([0-9]{2})([0-9]{3})-([0-9]+)_c[0-9]+_?(.*)\.svg")
     for svg in svg_files:
         match = svg_re.match(svg)
-        if not match:
-            print("WARNING: File doesn't match pattern: {} - IGNORING".format(svg))
-            continue
+        if match:
+            ref = ['type1'] + [int(x) for x in match.groups()[:-2]]
+            ref.append(match.group(5))  # this isn't reliably an integer...
+            ref.append(match.group(6))  # optional suffix: this isn't an integer...
+            # E.g. ref = ['type1', 4, 18, 33, 2, '42', 'a']
+        else:
+            # Try the second pattern
+            match = svg_re2.match(svg)
+            if match:
+                ref = ['type2'] + [int(x) for x in match.groups()[:-1]]
+                ref.append(match.group(6))
+                # E.g. ref = ['type2', 4, 18, 21, 14, 41821014, '1_2']
+            else:
+                print("WARNING: File doesn't match pattern: {} - IGNORING".format(svg))
+                continue
 
-        ref = [int(x) for x in match.groups()[:-2]]
-        ref.append(match.group(5))  # this isn't reliably an integer...
-        ref.append(match.group(6))  # optional suffix: this isn't an integer...
         parsed_svg_files.append(tuple(ref))
 
     parsed_svg_files.sort()
 
     listing = []
     prev_verse = None
-    for b, k, v, ws, we, suffix in parsed_svg_files:
-        w = str(ws)
+    for typ, b, k, v, ws, we, suffix in parsed_svg_files:
+        if typ == 'type1':
+            b_fmt = '{:02d}'.format(b)
+            w = str(ws)
+        elif typ == 'type2':
+            b_fmt = str(b)
+            w = '{:03d}'.format(ws)
+
         if we:
             w += '-{}'.format(we)
+
         vref = (b, k, v)
         if prev_verse != vref:
             listing.append("<h3>B{B:02d}K{K:02d}V{V:02d}</h3>".format(B=b, K=k, V=v))
             prev_verse = vref
 
-        listing.append('''<a onclick="showvariant('{B:02d}', '{K:02d}', '{V:02d}', '{W}', '{suffix}')">
-                            B{B:02d}K{K:02d}V{V:02d}/{W} {suffix}
+
+        listing.append('''<a onclick="showvariant('{typ}', '{B}', '{K:02d}', '{V:02d}', '{W}', '{suffix}')">
+                            B{B}K{K:02d}V{V:02d}/{W} {suffix}
                           </a><br/>'''
-                       .format(B=b, K=k, V=v, W=w, suffix=suffix))
+                       .format(typ=typ, B=b_fmt, K=k, V=v, W=w, suffix=suffix))
 
     data = {
         'title': os.path.basename(abs_folder),
