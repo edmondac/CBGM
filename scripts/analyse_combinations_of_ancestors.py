@@ -1,12 +1,24 @@
 #!/usr/bin/env python3
-# Analyse a CSV combination of ancestors file, to find the best combination
+# Analyse a CSV combination of ancestors file, to find the best combination.
+# It outputs in a form that can easily be transformed into my CBGM's input
+# format for optimal stemmata.
 
 
 import csv
 
 
 def log(msg, *args):
-    print(" > {}".format(msg % args))
+    print("    # > {}".format(msg % args))
+
+
+def vorf_str_to_set(vorf):
+    """
+    Convert a Vorf string into a Python set with the Vorf values in it,
+    appropriately quoted.
+    """
+    bits = [x.strip() for x in vorf.split(',')]
+    bits_str = ["'{}'".format(x) for x in bits]
+    return "{%s}" % ', '.join(bits_str)
 
 
 class Analyser(object):
@@ -14,6 +26,7 @@ class Analyser(object):
         """
         Load the file, and do simple elimination of unwanted rows
         """
+        self.ref = csv_file.split('.')[0]
         with open(csv_file) as f:
             r = csv.DictReader(f)
             self.has_hinweis = False
@@ -76,7 +89,9 @@ class Analyser(object):
         log("Excluded rows with more combinations but no better results: %s combinations left", len(best_by_post))
 
         if len(best_by_post) == 1:
-            log("Only one combination left: %s", list(best_by_post.values())[0]['Vorf'])
+            comb = list(best_by_post.values())[0]['Vorf']
+            log("Only one combination left: %s", comb)
+            print("    '{}': [{}],  # simple".format(self.ref, vorf_str_to_set(comb)))
 
         else:
             log("Human thought required...")
@@ -92,14 +107,16 @@ class Analyser(object):
                 if last_row:
                     my_post_vus = set([x.strip() for x in row['vus_post'].split(',')])
                     his_post_vus = set([x.strip() for x in last_row['vus_post'].split(',')])
-                    log("Combination {%s} explains the following by posterity (compared to {%s}): %s",
-                        row['Vorf'], last_row['Vorf'], my_post_vus - his_post_vus)
+                    log("Combination %s explains the following by posterity (compared to %s): %s",
+                        vorf_str_to_set(row['Vorf']), vorf_str_to_set(last_row['Vorf']), my_post_vus - his_post_vus)
                     if not his_post_vus.issubset(my_post_vus):
                         log("... and the other way round: %s", his_post_vus - my_post_vus)
                 else:
-                    log("Combination {%s} explains the most by agreement", row['Vorf'])
+                    log("Combination %s explains the most by agreement", vorf_str_to_set(row['Vorf']))
 
                 last_row = row
+
+            print("    '{}': [UNKNOWN],".format(self.ref))
 
 
 if __name__ == "__main__":
