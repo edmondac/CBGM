@@ -82,7 +82,7 @@ class Analyser(object):
             if not existing:
                 best_by_post[int(row['Post'])] = row
                 continue
-            if row['Vorfanz'] < existing['Vorfanz']:
+            if int(row['Vorfanz']) < int(existing['Vorfanz']):
                 best_by_post[int(row['Post'])] = row
                 continue
 
@@ -94,16 +94,20 @@ class Analyser(object):
             print("    '{}': [{}],  # simple".format(self.ref, vorf_str_to_set(comb)))
 
         else:
-            log("Human thought required...")
+            log("Human thought required (probably)...")
             last_row = None
             best_post = min(best_by_post.keys())
+            total_considered = 0
 
             for k in sorted(best_by_post.keys()):
                 row = best_by_post[k]
-                if best_post + max_by_posterity < k:
+                if k - best_post > max_by_posterity:
+                    log("Too large a difference by posterity (%s), skipping combination %s",
+                        k - best_post, vorf_str_to_set(row['Vorf']))
                     # That's too many to consider by posterity - abort
-                    break
+                    continue
 
+                total_considered += 1
                 if last_row:
                     my_post_vus = set([x.strip() for x in row['vus_post'].split(',')])
                     his_post_vus = set([x.strip() for x in last_row['vus_post'].split(',')])
@@ -116,7 +120,13 @@ class Analyser(object):
 
                 last_row = row
 
-            print("    '{}': [UNKNOWN],".format(self.ref))
+            if total_considered == 1:
+                # We know last_row will contain the row we care about
+                print("    '{}': [{}],  # simple, in the end".format(self.ref, vorf_str_to_set(last_row['Vorf'])))
+            elif total_considered == 0:
+                log("WARNING: No combinations considered!")
+            else:
+                print("    '{}': [UNKNOWN],".format(self.ref))
 
 
 if __name__ == "__main__":
