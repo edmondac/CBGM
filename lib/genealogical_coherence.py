@@ -55,6 +55,8 @@ class ReadingRelationship(object):
     def identify_relationship(self, other_reading):
         """
         Find out how our reading is related to this other one
+
+        Returns EQUAL, PRIOR, POSTERIOR, UNCL or NOREL
         """
         if self.reading == other_reading:
             return EQUAL

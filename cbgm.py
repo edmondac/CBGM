@@ -14,6 +14,7 @@ from .lib.genealogical_coherence import gen_coherence
 from .lib.pre_genealogical_coherence import pre_gen_coherence
 from .lib.global_stemma import global_stemma, optimal_substemma
 from .lib.nexus import nexus
+from .lib.compare_witnesses import compare_witness_attestations
 from . import populate_db
 
 DEFAULT_DB_FILE = '/tmp/_default_cbgm_db.db'
@@ -195,6 +196,10 @@ if __name__ == "__main__":
                               help='Percentage extant a witnesses must be to be included')
     nexus_parser.add_argument('nexus_file', help='Output filename')
 
+    # Compare witnesses
+    wit_parser = subparsers.add_parser('wit', help='Compare two witness attestations')
+    wit_parser.add_argument('witness', help='A witness name', nargs=2)
+
     args = parser.parse_args()
 
     # Logging
@@ -341,6 +346,9 @@ if __name__ == "__main__":
 
     elif args.cmd == 'nexus':
         nexus(args.file, args.perc, args.nexus_file)
+
+    elif args.cmd == 'wit':
+        print(compare_witness_attestations(db_file, args.witness))
 
     else:
         assert False, "Unexpected cmd: {}".format(args.cmd)
