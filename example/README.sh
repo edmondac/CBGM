@@ -637,8 +637,8 @@ test -e 05.csv && rm 05.csv
 # 27/27: 02     
 # Wrote example.nexus
 
-# Check consistency program
-../bin/bin/check_consistency example_input.py
+# Check consistency program - WARNING - this requires MPI currently, and so won't work on single-core machines.
+mpirun ../bin/check_consistency example_input.py
 # [2018-03-27 12:22:58,841] [4373] [mpisupport.py:220] [INFO] MPI-enabled version with 4 processors available
 # ... output truncated ...
 # [2018-03-27 12:23:48,686] [4375] [textual_flow.py:404] [INFO] Creating textual flow diagram for 24/50-52
