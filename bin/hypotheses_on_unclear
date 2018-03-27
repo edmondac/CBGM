@@ -60,7 +60,6 @@ class Hypotheses(mpisupport.MpiParent):
         self.working_dir = tempfile.mkdtemp()
         os.chdir(self.working_dir)
         self.mpi = mpi
-        assert self.mpi
         self.hypotheses()
 
     def hypotheses(self):
