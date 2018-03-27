@@ -2,11 +2,14 @@
 # encoding: utf-8
 # Script to populate a sqlite database given a suitable input file
 
-
+import importlib.util
 import sqlite3
 import os
 import importlib
 from .lib.shared import INIT, LAC
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class AllBut(object):
@@ -40,8 +43,8 @@ class Reading(object):
         self.parent = parent
 
         if label in parent.split('&'):
-            print("WARNING: Reading {} has parent {} - causing a loop. Greek: {}, MSS: {}"
-                  .format(label, parent, greek, ms_support))
+            logger.warning("Reading {} has parent {} - causing a loop. Greek: {}, MSS: {}"
+                           .format(label, parent, greek, ms_support))
 
     def calc_mss_support(self, all_mss):
         """
@@ -77,14 +80,10 @@ def parse_input_file(filename):
     """
     Import and parse the input file.
     """
-    # We need to add . to the path, so we can import the specified python file
-    # even if this script has been called by a full path.
-    import sys
-    sys.path.append(".")
-
-    if filename.endswith('.py'):
-        filename = filename[:-3]
-    mod = importlib.import_module(filename)
+    modname = os.path.splitext(os.path.basename(filename))[0]
+    spec = importlib.util.spec_from_file_location(modname, filename)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
     assert 'A' not in mod.all_mss
     return mod.struct, mod.all_mss
 
@@ -106,7 +105,7 @@ def populate(data, all_mss, db_file, force=False):
     """
     Populate a database file based on the readings above
     """
-    print("Will populate {}".format(db_file))
+    logger.info("Will populate {}".format(db_file))
 
     if os.path.exists(db_file):
         if force:
@@ -150,16 +149,16 @@ def populate(data, all_mss, db_file, force=False):
                     c.execute(sql)
 
             if all_mss - all_wits_found:
-                print("-------" * 10)
-                print("WARNING " * 10)
-                print("Witnesses don't match for vu {}/{}".format(verse, vu))
-                print("Don't forget to include a LacunaReading if the witness isn't extant")
-                print("Missing witnesses: ", all_mss - all_wits_found)
-                print("-------" * 10)
+                logger.warning("-------" * 10)
+                logger.warning("WARNING " * 10)
+                logger.warning("Witnesses don't match for vu {}/{}".format(verse, vu))
+                logger.warning("Don't forget to include a LacunaReading if the witness isn't extant")
+                logger.warning("Missing witnesses: ", all_mss - all_wits_found)
+                logger.warning("-------" * 10)
 
     conn.commit()
     conn.close()
-    print("Wrote {} variant units".format(vu_count))
+    logger.info("Wrote {} variant units".format(vu_count))
 
 
 def main(in_f, out_f, force):
