@@ -9,11 +9,11 @@ import logging
 
 from copy import deepcopy
 from itertools import product
-from .populate_db import populate, Reading, LacunaReading, parse_input_file
-from .lib.shared import UNCL, INIT, LAC, OL_PARENT
-from .lib.textual_flow import textual_flow
-from .lib.genealogical_coherence import CyclicDependency
-from .lib import mpisupport
+from CBGM.lib.populate_db import create_database, Reading, LacunaReading, parse_input_file
+from CBGM.lib.shared import UNCL, INIT, LAC, OL_PARENT
+from CBGM.lib.textual_flow import textual_flow
+from CBGM.lib.genealogical_coherence import CyclicDependency
+from CBGM.lib import mpisupport
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +28,7 @@ def single_hypothesis(stemmata, unique_ref, all_mss, force,
     os.chdir(mytemp)
     # 1. Populate the db
     db = '{}_{}.db'.format(vu.replace('/', '.'), unique_ref)
-    populate(stemmata, all_mss, db, force)
+    create_database(stemmata, all_mss, db, force)
 
     # 2. Make the textual flow diagram
     try:
@@ -60,6 +60,7 @@ class Hypotheses(mpisupport.MpiParent):
         self.working_dir = tempfile.mkdtemp()
         os.chdir(self.working_dir)
         self.mpi = mpi
+        assert self.mpi
         self.hypotheses()
 
     def hypotheses(self):
@@ -143,10 +144,11 @@ class Hypotheses(mpisupport.MpiParent):
         with open(out_f, 'w') as fh:
             fh.write(html)
 
-        print("View the files in {}/{}".format(self.working_dir, out_f))
+        print("View the files in {}".format(out_f))
 
-        print("Opening browser...")
-        webbrowser.open(os.path.join(self.working_dir, out_f))
+        if not self.mpi:
+            print("Opening browser...")
+            webbrowser.open(out_f)
 
     def mpi_handle_result(self, args, ret):
         """
@@ -248,21 +250,27 @@ if __name__ == "__main__":
         logger.debug("Run with --verbose for debug mode")
 
     is_parent = True
-    if not args.single:
-        if 'OMPI_COMM_WORLD_SIZE' not in os.environ:
-            # Not run with mpiexec
-            print("Running in MPI mode but not executed by mpiexec - aborting")
-            print("Consider running with '-s' or using, e.g., 'mpiexec -np 4'")
-            print("Also consider making a hostfile for mpiexec.")
-            sys.exit(2)
+    is_mpi = 'OMPI_COMM_WORLD_SIZE' in os.environ
+    if not args.single and not is_mpi:
+        # Not single mode and not run with mpiexec
+        print("Running in MPI mode but not executed by mpiexec - aborting")
+        print("Consider running with '-s' or using, e.g., 'mpiexec -np 4'")
+        print("Also consider making a hostfile for mpiexec.")
+        sys.exit(2)
 
+    if is_mpi:
         is_parent = mpisupport.is_parent()
+
+    if args.single and is_mpi:
+        # single mode and running with mpiexec
+        print("You cannot use mpiexec with --single specified")
+        sys.exit(3)
 
     if is_parent:
         # parent or only process
         struct, all_mss = parse_input_file(args.inputfile)
         Hypotheses(struct, all_mss, args.variant_unit, args.force, args.perfect,
-                   args.connectivity, not args.single)
+                   args.connectivity, is_mpi)
     else:
         # child
         mpisupport.mpi_child(mpi_single_hypothesis)
