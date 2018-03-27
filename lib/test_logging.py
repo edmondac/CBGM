@@ -25,7 +25,10 @@ def default_logging():
     rootLogger.setLevel(logging.DEBUG)
 
     stderr_handler = logging.StreamHandler(sys.stderr)
-    stderr_handler.setLevel(logging.WARNING)
+    if '-v' in sys.argv:
+        stderr_handler.setLevel(logging.DEBUG)
+    else:
+        stderr_handler.setLevel(logging.WARNING)
     formatter = logging.Formatter('[%(levelname)s] [%(filename)s:%(lineno)s] %(message)s')
     stderr_handler.setFormatter(formatter)
     rootLogger.addHandler(stderr_handler)
