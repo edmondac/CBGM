@@ -74,7 +74,7 @@ def nexus(input_file, min_extant_perc, output_file):
                         if reading.parent == INIT:
                             sig = reading.label
                     else:
-                        reading.calc_mss_support(witnesses)
+                        reading.calc_mss_support(set(witnesses))
                         if reading.ms_support and wit in reading.ms_support:
                             if reading.label == LAC:
                                 sig = MISSING

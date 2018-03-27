@@ -85,6 +85,7 @@ def parse_input_file(filename):
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     assert 'A' not in mod.all_mss
+    assert type(mod.all_mss) == set
     return mod.struct, mod.all_mss
 
 
