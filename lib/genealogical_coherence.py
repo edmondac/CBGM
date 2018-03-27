@@ -162,8 +162,8 @@ class GenealogicalCoherence(Coherence):
         if self._already_generated:
             return
 
-        if self.use_cache and self.check_cache():
-            self.load_cache()
+        if self.use_cache and self._check_cache():
+            self._load_cache()
             return
 
         logger.debug("Generating genealogical coherence data for %s", self.w1)
@@ -190,7 +190,7 @@ class GenealogicalCoherence(Coherence):
         logger.debug("Generated genealogical coherence data for %s", self.w1)
 
         if self.use_cache:
-            self.store_cache()
+            self._store_cache()
 
     def _calculate_reading_relationships(self):
         """
