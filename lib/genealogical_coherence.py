@@ -184,7 +184,7 @@ class GenealogicalCoherence(Coherence):
         self.rows = new_rows
 
         # Now re-sort
-        self.sort()
+        self._sort()
 
         self._already_generated = True
         logger.debug("Generated genealogical coherence data for %s", self.w1)
@@ -221,7 +221,7 @@ class GenealogicalCoherence(Coherence):
                 rel = reading_obj.identify_relationship(w2_label)
                 self.reading_relationships[w2][vu] = rel
 
-    def add_D(self, w2, row):
+    def _add_D(self, w2, row):
         """
         Direction - this is used in the same way as the CBGM's genealogical
         queries program. So, it shows '-' for no direction.
@@ -246,7 +246,7 @@ class GenealogicalCoherence(Coherence):
 
         return True
 
-    def add_W1_lt_W2(self, w2, row):
+    def _add_W1_lt_W2(self, w2, row):
         """
         How many times W2 has prior variants to W1
         """
@@ -254,7 +254,7 @@ class GenealogicalCoherence(Coherence):
                             if x == POSTERIOR])
         return True
 
-    def add_W1_gt_W2(self, w2, row):
+    def _add_W1_gt_W2(self, w2, row):
         """
         How many times W2 has posterior variants to W1
         """
@@ -262,7 +262,7 @@ class GenealogicalCoherence(Coherence):
                             if x == PRIOR])
         return True
 
-    def add_UNCL(self, w2, row):
+    def _add_UNCL(self, w2, row):
         """
         Count how many passages are unclear
         """
@@ -274,7 +274,7 @@ class GenealogicalCoherence(Coherence):
 
         return True
 
-    def add_NOREL(self, w2, row):
+    def _add_NOREL(self, w2, row):
         """
         Count in how many passages W2's reading has no relation to W1's reading
         """
