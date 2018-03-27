@@ -33,5 +33,5 @@ To create the code documentation, run `doxygen doxygen.conf`
 
 TESTING
 ---
-To run the unit tests, run `test.sh`
+To run the unit tests, run `./test.sh`
 
