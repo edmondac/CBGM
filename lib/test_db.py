@@ -209,12 +209,12 @@ struct = {
 
 
 class TestDatabase(object):
-    def __init__(self):
+    def __init__(self, data=INPUT_DATA):
         self.py_file = mkstemp(suffix='.py')[1]
         self.db_file = mkstemp(suffix='.db')[1]
         with open(self.py_file, 'w') as f:
             logger.debug("Writing python data file %s", self.py_file)
-            f.write(INPUT_DATA)
+            f.write(data)
 
         logger.debug("Populating test database %s", self.db_file)
         populate(self.py_file, self.db_file, force=True)

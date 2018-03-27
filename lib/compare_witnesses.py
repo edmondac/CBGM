@@ -86,7 +86,7 @@ class Attestations(object):
         """
         Attestations for a witness
         """
-        logger.debug("Loaded attestations for %s", wit)
+        logger.debug("Loading attestations for %s", wit)
         ret = {}
         rows = self.cursor.execute("SELECT variant_unit, label, text, parent FROM cbgm WHERE witness=?", (wit, ))
         for (vu, label, text, parent) in rows:
