@@ -26,3 +26,12 @@ Run "./cbgm --help" for info, and for info about the subcommands do, for example
 
 Also see the "examples" folder, including the README.sh in there, which can be executed
 with bash to test the common CBGM features.
+
+DOCUMENTATION
+---
+To create the code documentation, run `doxygen doxygen.conf`
+
+TESTING
+---
+To run the unit tests, run `test.sh`
+

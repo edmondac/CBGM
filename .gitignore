@@ -92,3 +92,5 @@ ENV/
 /.pydevproject
 /.settings
 
+# PyCharm
+/.idea

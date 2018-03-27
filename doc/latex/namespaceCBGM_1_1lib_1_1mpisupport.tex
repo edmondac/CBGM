@@ -1,0 +1,42 @@
+\hypertarget{namespaceCBGM_1_1lib_1_1mpisupport}{}\section{C\+B\+G\+M.\+lib.\+mpisupport Namespace Reference}
+\label{namespaceCBGM_1_1lib_1_1mpisupport}\index{C\+B\+G\+M.\+lib.\+mpisupport@{C\+B\+G\+M.\+lib.\+mpisupport}}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+class \hyperlink{classCBGM_1_1lib_1_1mpisupport_1_1MpiParent}{Mpi\+Parent}
+\end{DoxyCompactItemize}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{namespaceCBGM_1_1lib_1_1mpisupport_a5fe58498f00e2f01927f1c49327376af}\label{namespaceCBGM_1_1lib_1_1mpisupport_a5fe58498f00e2f01927f1c49327376af}} 
+def {\bfseries is\+\_\+parent} ()
+\item 
+def \hyperlink{namespaceCBGM_1_1lib_1_1mpisupport_a83d73a92ab76c25d2d0449d475f5f2ab}{mpi\+\_\+child} (fn)
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{namespaceCBGM_1_1lib_1_1mpisupport_a14a8d159280e7dc4b01e43273072edf4}\label{namespaceCBGM_1_1lib_1_1mpisupport_a14a8d159280e7dc4b01e43273072edf4}} 
+{\bfseries logger} = logging.\+get\+Logger()
+\item 
+\mbox{\Hypertarget{namespaceCBGM_1_1lib_1_1mpisupport_a1464ce45bad40e88e937ab566d33ef4c}\label{namespaceCBGM_1_1lib_1_1mpisupport_a1464ce45bad40e88e937ab566d33ef4c}} 
+int {\bfseries C\+H\+I\+L\+D\+\_\+\+R\+E\+T\+R\+Y\+\_\+\+H\+E\+L\+LO} = 60
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\begin{DoxyVerb}OpenMPI support wrapper
+\end{DoxyVerb}
+ 
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{namespaceCBGM_1_1lib_1_1mpisupport_a83d73a92ab76c25d2d0449d475f5f2ab}\label{namespaceCBGM_1_1lib_1_1mpisupport_a83d73a92ab76c25d2d0449d475f5f2ab}} 
+\index{C\+B\+G\+M\+::lib\+::mpisupport@{C\+B\+G\+M\+::lib\+::mpisupport}!mpi\+\_\+child@{mpi\+\_\+child}}
+\index{mpi\+\_\+child@{mpi\+\_\+child}!C\+B\+G\+M\+::lib\+::mpisupport@{C\+B\+G\+M\+::lib\+::mpisupport}}
+\subsubsection{\texorpdfstring{mpi\+\_\+child()}{mpi\_child()}}
+{\footnotesize\ttfamily def C\+B\+G\+M.\+lib.\+mpisupport.\+mpi\+\_\+child (\begin{DoxyParamCaption}\item[{}]{fn }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}An MPI child wrapper that will call the supplied function in a child
+context - reading its arguments from mpicomm.recv(source=0).
+\end{DoxyVerb}
+ 

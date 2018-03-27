@@ -1,0 +1,60 @@
+\hypertarget{namespacemake__textual__flow__html__page}{}\section{make\+\_\+textual\+\_\+flow\+\_\+html\+\_\+page Namespace Reference}
+\label{namespacemake__textual__flow__html__page}\index{make\+\_\+textual\+\_\+flow\+\_\+html\+\_\+page@{make\+\_\+textual\+\_\+flow\+\_\+html\+\_\+page}}
+\subsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+def \hyperlink{namespacemake__textual__flow__html__page_ac873252a13103c9454e02299b10d4b46}{make\+\_\+page} (folder, overwrite)
+\end{DoxyCompactItemize}
+\subsection*{Variables}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{namespacemake__textual__flow__html__page_ab06f47b4ea13aa69234b309cd76e2007}\label{namespacemake__textual__flow__html__page_ab06f47b4ea13aa69234b309cd76e2007}} 
+{\bfseries H\+E\+RE} = os.\+path.\+dirname(os.\+path.\+abspath(\+\_\+\+\_\+file\+\_\+\+\_\+))
+\item 
+\mbox{\Hypertarget{namespacemake__textual__flow__html__page_a64830ce66454c19115cd7462ac09d077}\label{namespacemake__textual__flow__html__page_a64830ce66454c19115cd7462ac09d077}} 
+string {\bfseries J\+Q\+U\+E\+RY} = \char`\"{}jquery-\/3.\+1.\+1.min.\+js\char`\"{}
+\item 
+\mbox{\Hypertarget{namespacemake__textual__flow__html__page_a33ed252cd2e6eb9eca50df475ebed62f}\label{namespacemake__textual__flow__html__page_a33ed252cd2e6eb9eca50df475ebed62f}} 
+string {\bfseries H\+T\+M\+L\+\_\+\+T\+E\+M\+P\+L\+A\+TE}
+\item 
+\mbox{\Hypertarget{namespacemake__textual__flow__html__page_ad0b500a26639a050927e3ac68255e570}\label{namespacemake__textual__flow__html__page_ad0b500a26639a050927e3ac68255e570}} 
+{\bfseries parser} = argparse.\+Argument\+Parser(description=\char`\"{}Textual flow H\+T\+ML summary generator\char`\"{})
+\item 
+\mbox{\Hypertarget{namespacemake__textual__flow__html__page_a4564734657a6579b8febafcc03d93c7a}\label{namespacemake__textual__flow__html__page_a4564734657a6579b8febafcc03d93c7a}} 
+{\bfseries help}
+\item 
+\mbox{\Hypertarget{namespacemake__textual__flow__html__page_a3158357375e23bb877f6c1baecfaeab3}\label{namespacemake__textual__flow__html__page_a3158357375e23bb877f6c1baecfaeab3}} 
+{\bfseries action}
+\item 
+\mbox{\Hypertarget{namespacemake__textual__flow__html__page_a30689f2be20f9d542e3286f0ba91eec3}\label{namespacemake__textual__flow__html__page_a30689f2be20f9d542e3286f0ba91eec3}} 
+{\bfseries args} = parser.\+parse\+\_\+args()
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\begin{DoxyVerb}Script to create an HTML summary of the files created when running "cbgm -T ...". The folder structure
+is expected to look like:
+folder
+ |
+ |-c5
+ |-c10
+ |-cXX
+ .
+ .
+ .
+ |_c499
+
+Each cXXX folder will contain many .svg files, and they should all contain equivalent listings.
+\end{DoxyVerb}
+ 
+
+\subsection{Function Documentation}
+\mbox{\Hypertarget{namespacemake__textual__flow__html__page_ac873252a13103c9454e02299b10d4b46}\label{namespacemake__textual__flow__html__page_ac873252a13103c9454e02299b10d4b46}} 
+\index{make\+\_\+textual\+\_\+flow\+\_\+html\+\_\+page@{make\+\_\+textual\+\_\+flow\+\_\+html\+\_\+page}!make\+\_\+page@{make\+\_\+page}}
+\index{make\+\_\+page@{make\+\_\+page}!make\+\_\+textual\+\_\+flow\+\_\+html\+\_\+page@{make\+\_\+textual\+\_\+flow\+\_\+html\+\_\+page}}
+\subsubsection{\texorpdfstring{make\+\_\+page()}{make\_page()}}
+{\footnotesize\ttfamily def make\+\_\+textual\+\_\+flow\+\_\+html\+\_\+page.\+make\+\_\+page (\begin{DoxyParamCaption}\item[{}]{folder,  }\item[{}]{overwrite }\end{DoxyParamCaption})}
+
+\begin{DoxyVerb}Takes a path to a folder and creates an HTML summary page at index.html within it.
+\end{DoxyVerb}
+ 
