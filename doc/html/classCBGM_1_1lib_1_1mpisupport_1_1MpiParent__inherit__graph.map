@@ -1,5 +1,4 @@
 <map id="CBGM.lib.mpisupport.MpiParent" name="CBGM.lib.mpisupport.MpiParent">
-<area shape="rect" id="node3" href="$classCBGM_1_1check__consistency_1_1CheckConsistency.html" title="CBGM.check_consistency.Check\lConsistency" alt="" coords="369,5,589,47"/>
-<area shape="rect" id="node4" href="$classCBGM_1_1lib_1_1combinations__of__ancestors_1_1MpiHandler.html" title="CBGM.lib.combinations\l_of_ancestors.MpiHandler" alt="" coords="392,71,567,112"/>
-<area shape="rect" id="node5" href="$classCBGM_1_1lib_1_1textual__flow_1_1MpiHandler.html" title="CBGM.lib.textual_flow.Mpi\lHandler" alt="" coords="390,136,569,177"/>
+<area shape="rect" id="node3" href="$classCBGM_1_1lib_1_1combinations__of__ancestors_1_1MpiHandler.html" title="CBGM.lib.combinations\l_of_ancestors.MpiHandler" alt="" coords="5,155,180,196"/>
+<area shape="rect" id="node4" href="$classCBGM_1_1lib_1_1textual__flow_1_1MpiHandler.html" title="CBGM.lib.textual_flow.Mpi\lHandler" alt="" coords="205,155,383,196"/>
 </map>

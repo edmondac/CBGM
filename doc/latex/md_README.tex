@@ -1,0 +1,28 @@
+This is my implementation of the C\+B\+GM. It was designed for testing and changing the various algorithms and is not (therefore) the fastest user-\/facing package. The idea was that everything be calculated from scratch each time -\/ although in later development I added a Genealogical Coherence Cache for convenience (and speed). If you change the input data then remember to delete the old cache...
+
+\subsection*{I\+N\+S\+T\+A\+LL }
+
+1) You need these packages installed (these are the Ubuntu names)\+:
+\begin{DoxyItemize}
+\item openmpi-\/bin
+\item libopenmpi-\/dev
+\item graphviz
+\item python3-\/dev
+\item libgraphviz-\/dev 2) You need a python 3.\+5 virtualenv, using the provided requirements.\+txt
+\end{DoxyItemize}
+
+\subsection*{U\+SE }
+
+The main program is ./bin/cbgm. Run {\ttfamily ./bin/cbgm -\/-\/help} for info, and for info about the subcommands do, for example, {\ttfamily ./bin/cbgm combanc -\/-\/help}.
+
+Similarly, see the help for the other programs in bin.
+
+\subsection*{D\+O\+C\+U\+M\+E\+N\+T\+A\+T\+I\+ON }
+
+To create the code documentation, run {\ttfamily doxygen doxygen.\+conf}
+
+\subsection*{T\+E\+S\+T\+I\+NG }
+
+To run the unit tests, run {\ttfamily ./test.sh}
+
+Also see the \char`\"{}examples\char`\"{} folder, including the R\+E\+A\+D\+M\+E.\+sh in there, which can be executed with bash to execute the common C\+B\+GM features. 

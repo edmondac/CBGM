@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['hypotheses',['Hypotheses',['../classCBGM_1_1hypotheses__on__unclear_1_1Hypotheses.html',1,'CBGM.hypotheses_on_unclear.Hypotheses'],['../classCBGM_1_1hypotheses__on__unclear_1_1Hypotheses.html#a1a3028848ce6ab8da0dde0036194d42d',1,'CBGM.hypotheses_on_unclear.Hypotheses.hypotheses()']]]
+  ['identify_5frelationship',['identify_relationship',['../classCBGM_1_1lib_1_1genealogical__coherence_1_1ReadingRelationship.html#a5c32a031e1f4f8aceffb2197786e0900',1,'CBGM::lib::genealogical_coherence::ReadingRelationship']]],
+  ['introduction',['INTRODUCTION',['../md_README.html',1,'']]]
 ];

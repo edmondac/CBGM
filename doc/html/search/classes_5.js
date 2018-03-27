@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['labelmapper',['LabelMapper',['../classCBGM_1_1stripes_1_1LabelMapper.html',1,'CBGM::stripes']]],
-  ['lacunareading',['LacunaReading',['../classCBGM_1_1populate__db_1_1LacunaReading.html',1,'CBGM::populate_db']]]
+  ['mpihandler',['MpiHandler',['../classCBGM_1_1lib_1_1textual__flow_1_1MpiHandler.html',1,'CBGM.lib.textual_flow.MpiHandler'],['../classCBGM_1_1lib_1_1combinations__of__ancestors_1_1MpiHandler.html',1,'CBGM.lib.combinations_of_ancestors.MpiHandler']]],
+  ['mpiparent',['MpiParent',['../classCBGM_1_1lib_1_1mpisupport_1_1MpiParent.html',1,'CBGM::lib::mpisupport']]]
 ];

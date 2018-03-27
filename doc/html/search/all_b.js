@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['queue_5ftextual_5fflow',['queue_textual_flow',['../classCBGM_1_1lib_1_1textual__flow_1_1MpiHandler.html#a866c669ed6a88f73639cb286582582db',1,'CBGM::lib::textual_flow::MpiHandler']]]
+  ['reading',['Reading',['../classCBGM_1_1lib_1_1populate__db_1_1Reading.html',1,'CBGM::lib::populate_db']]],
+  ['readingrelationship',['ReadingRelationship',['../classCBGM_1_1lib_1_1genealogical__coherence_1_1ReadingRelationship.html',1,'CBGM::lib::genealogical_coherence']]]
 ];

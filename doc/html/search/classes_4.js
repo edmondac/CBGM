@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['hypotheses',['Hypotheses',['../classCBGM_1_1hypotheses__on__unclear_1_1Hypotheses.html',1,'CBGM::hypotheses_on_unclear']]]
+  ['lacunareading',['LacunaReading',['../classCBGM_1_1lib_1_1populate__db_1_1LacunaReading.html',1,'CBGM::lib::populate_db']]]
 ];
