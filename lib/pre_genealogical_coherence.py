@@ -63,15 +63,15 @@ class Coherence(object):
         # Add data to existing columns
         for row in self.rows:
             for col in ['READING', 'TEXT']:
-                self.add_item(row['W2'], col, row)
+                self._add_item(row['W2'], col, row)
 
-    def check_cache(self):
+    def _check_cache(self):
         """
         Does a cache entry exist for this?
         """
         return os.path.exists(self._cache_key)
 
-    def store_cache(self):
+    def _store_cache(self):
         """
         Store all rows in a cache
         """
@@ -92,7 +92,7 @@ class Coherence(object):
 
         logger.debug("Stored cache to {}".format(self._cache_key))
 
-    def load_cache(self):
+    def _load_cache(self):
         """
         Load all rows from a cache. This isn't called automatically - you
         need to call it if you want it (see textual_flow.py for example).
@@ -118,9 +118,9 @@ class Coherence(object):
             for w2 in self.all_mss:
                 if self.w1 == w2:
                     continue
-                self.add_row(w2)
+                self._add_row(w2)
 
-            self.sort()
+            self._sort()
         logger.debug("Generated pre-genealogical coherence data for %s", self.w1)
 
     def generate(self):
@@ -130,8 +130,8 @@ class Coherence(object):
         if self._already_generated:
             return
 
-        if self.use_cache and self.check_cache():
-            self.load_cache()
+        if self.use_cache and self._check_cache():
+            self._load_cache()
             return
 
         self._generate_rows()
@@ -139,9 +139,9 @@ class Coherence(object):
         self._already_generated = True
 
         if self.use_cache:
-            self.store_cache()
+            self._store_cache()
 
-    def add_row(self, w2):
+    def _add_row(self, w2):
         """
         Add a table row for witness w2
         """
@@ -152,13 +152,13 @@ class Coherence(object):
                 if col in done:
                     continue
 
-                ok = self.add_item(w2, col, row)
+                ok = self._add_item(w2, col, row)
                 if ok:
                     done.append(col)
 
         self.rows.append(row)
 
-    def add_item(self, w2, col, row):
+    def _add_item(self, w2, col, row):
         """
         Calculate the requested item (col) for w2 to the provided row dict.
 
@@ -166,10 +166,10 @@ class Coherence(object):
         """
         col = col.replace('<', '_lt_')
         col = col.replace('>', '_gt_')
-        fn = getattr(self, 'add_{}'.format(col))
+        fn = getattr(self, '_add_{}'.format(col))
         return fn(w2, row)
 
-    def add_W2(self, w2, row):
+    def _add_W2(self, w2, row):
         """
         Just add the w2 ident
         """
@@ -178,14 +178,14 @@ class Coherence(object):
         row['W2'] = w2
         return True
 
-    def add_NR(self, w2, row):
+    def _add_NR(self, w2, row):
         """
         Rank number - this is worked out later in the sort function.
         """
         row['NR'] = None
         return True
 
-    def add_PERC1(self, w2, row):
+    def _add_PERC1(self, w2, row):
         """
         Percentage of agreement == coherence
         """
@@ -199,7 +199,7 @@ class Coherence(object):
             row['PERC1'] = 0.0
         return True
 
-    def add_EQ(self, w2, row):
+    def _add_EQ(self, w2, row):
         """
         Number of passages in which both witnesses agree
         """
@@ -213,7 +213,7 @@ class Coherence(object):
         row['EQ'] = list(self.cursor.execute(sql))[0][0]
         return True
 
-    def add_PASS(self, w2, row):
+    def _add_PASS(self, w2, row):
         """
         Number of passages in which both witnesses are extant
         """
@@ -224,6 +224,27 @@ class Coherence(object):
                  AND cbgm1.variant_unit = cbgm2.variant_unit;
               """
         row['PASS'] = list(self.cursor.execute(sql, (self.w1, w2)))[0][0]
+        return True
+
+    def _add_READING(self, w2, row):
+        """
+        Reading label (a, b, etc.) attested to by this witness in this variant
+        unit.
+        """
+        assert self.variant_unit, "Can't call add_READING if self.variant_unit is None"
+        row['READING'] = self.get_attestation(w2, self.variant_unit)
+        return True
+
+    def _add_TEXT(self, w2, row):
+        """
+        Reading text attested to by this witness in this variant unit.
+        """
+        assert self.variant_unit, "Can't call add_TEXT if self.variant_unit is None"
+        sql = """SELECT text FROM cbgm
+                 WHERE witness = ?
+                 AND variant_unit = ?;"""
+        val = list(self.cursor.execute(sql, (w2, self.variant_unit)))
+        row['TEXT'] = val[0][0] if val else None
         return True
 
     def all_attestations(self):
@@ -248,28 +269,7 @@ class Coherence(object):
         """
         return self.all_attestations()[witness].get(vu)
 
-    def add_READING(self, w2, row):
-        """
-        Reading label (a, b, etc.) attested to by this witness in this variant
-        unit.
-        """
-        assert self.variant_unit, "Can't call add_READING if self.variant_unit is None"
-        row['READING'] = self.get_attestation(w2, self.variant_unit)
-        return True
-
-    def add_TEXT(self, w2, row):
-        """
-        Reading text attested to by this witness in this variant unit.
-        """
-        assert self.variant_unit, "Can't call add_TEXT if self.variant_unit is None"
-        sql = """SELECT text FROM cbgm
-                 WHERE witness = ?
-                 AND variant_unit = ?;"""
-        val = list(self.cursor.execute(sql, (w2, self.variant_unit)))
-        row['TEXT'] = val[0][0] if val else None
-        return True
-
-    def sort(self):
+    def _sort(self):
         """
         Sort the (pre-populated) rows and supply the NR value in each case.
         """

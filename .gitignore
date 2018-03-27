@@ -94,3 +94,6 @@ ENV/
 
 # PyCharm
 /.idea
+
+# CBGM cache
+CoherenceCache

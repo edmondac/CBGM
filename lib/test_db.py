@@ -6,7 +6,7 @@ from tempfile import mkstemp
 import logging
 import os
 
-from CBGM.populate_db import main as populate
+from CBGM.lib.populate_db import populate
 
 logger = logging.getLogger(__name__)
 
