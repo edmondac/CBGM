@@ -444,7 +444,7 @@ test -e 05.csv && rm 05.csv
 
 
 ### Apparatus ###
-../bin/apparatus.py /tmp/test.db
+../bin/apparatus /tmp/test.db
 # Using database: /tmp/test.db
 
 # 21/2
