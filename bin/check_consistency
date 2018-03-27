@@ -162,7 +162,7 @@ if __name__ == "__main__":
         logger.debug("Run with --verbose for debug mode")
 
     if is_parent:
-        # parent or only process
+        # parent
         CheckConsistency(os.path.abspath(args.inputfile), args.connectivity)
     else:
         # child
