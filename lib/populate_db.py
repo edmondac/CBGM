@@ -6,7 +6,7 @@ import importlib.util
 import sqlite3
 import os
 import importlib
-from .lib.shared import INIT, LAC
+from .shared import INIT, LAC
 import logging
 
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ SCHEMA = ["CREATE TABLE cbgm (witness, variant_unit, label, text, parent);",
           "VACUUM;", "ANALYZE;"]
 
 
-def populate(data, all_mss, db_file, force=False):
+def create_database(data, all_mss, db_file, force=False):
     """
     Populate a database file based on the readings above
     """
@@ -161,24 +161,16 @@ def populate(data, all_mss, db_file, force=False):
     logger.info("Wrote {} variant units".format(vu_count))
 
 
-def main(in_f, out_f, force):
+def populate(in_f, out_f, force):
     """
+    Convert a CBGM python data file into a SQLite database.
+
     @param in_f: struct filename
     @param out_f: db output filename
     @param force: overwrite things if they're in the way
     """
     struct, all_mss = parse_input_file(in_f)
-    return populate(struct, all_mss, out_f, force=force)
+    return create_database(struct, all_mss, out_f, force=force)
 
 
-if __name__ == "__main__":
-    import argparse
 
-    parser = argparse.ArgumentParser(description="Populate sqlite database")
-    parser.add_argument('inputfile', help='file containing variant reading definitions')
-    parser.add_argument('dbfile', help='filename for new sqlite db')
-    parser.add_argument('--force', default=False, action='store_true',
-                        help='force mode - overwrite any files that get in the way')
-
-    args = parser.parse_args()
-    main(args.inputfile, args.dbfile, force=args.force)

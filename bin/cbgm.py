@@ -6,16 +6,16 @@ import sys
 import logging
 import time
 import os
-from .lib.local_stemma import local_stemma
-from .lib.shared import sort_mss, sorted_vus
-from .lib.textual_flow import textual_flow
-from .lib.combinations_of_ancestors import combinations_of_ancestors, combanc_for_all_witnesses_mpi
-from .lib.genealogical_coherence import gen_coherence
-from .lib.pre_genealogical_coherence import pre_gen_coherence
-from .lib.global_stemma import global_stemma, optimal_substemma
-from .lib.nexus import nexus
-from .lib.compare_witnesses import compare_witness_attestations
-from . import populate_db
+from CBGM.lib.local_stemma import local_stemma
+from CBGM.lib.shared import sort_mss, sorted_vus
+from CBGM.lib.textual_flow import textual_flow
+from CBGM.lib.combinations_of_ancestors import combinations_of_ancestors, combanc_for_all_witnesses_mpi
+from CBGM.lib.genealogical_coherence import gen_coherence
+from CBGM.lib.pre_genealogical_coherence import pre_gen_coherence
+from CBGM.lib.global_stemma import global_stemma, optimal_substemma
+from CBGM.lib.nexus import nexus
+from CBGM.lib.compare_witnesses import compare_witness_attestations
+from CBGM.lib import populate_db
 
 DEFAULT_DB_FILE = '/tmp/_default_cbgm_db.db'
 
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Ed's CBGM implementation.")
-    parser.add_argument('--verbose', action='count')
+    parser.add_argument('--verbose', action='store_true')
     subparsers = parser.add_subparsers(help='Main commands', dest='cmd')
     subparsers.required = True
 
@@ -224,7 +224,7 @@ if __name__ == "__main__":
     # Input data
     if args.file:
         db_file = DEFAULT_DB_FILE
-        populate_db.main(args.file, db_file, force=True)
+        populate_db.populate(args.file, db_file, force=True)
     elif args.db_file:
         db_file = args.db_file
     else:

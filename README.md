@@ -1,6 +1,5 @@
 INTRODUCTION
 ------------
-
 This is my implementation of the CBGM. It was designed for testing and changing the 
 various algorithms and is not (therefore) the fastest user-facing package. The idea
 was that everything be calculated from scratch each time - although in later development
@@ -9,7 +8,6 @@ input data then remember to delete the old cache...
 
 INSTALL
 -------
-
 1) You need these packages installed (these are the Ubuntu names):
  - openmpi-bin
  - libopenmpi-dev
@@ -20,12 +18,11 @@ INSTALL
 
 USE
 ---
+The main program is ./bin/cbgm.
+Run `./bin/cbgm --help` for info, and for info about the subcommands do, for example,
+`./bin/cbgm combanc --help`.
 
-Run "./cbgm --help" for info, and for info about the subcommands do, for example,
-"./cbgm combanc --help".
-
-Also see the "examples" folder, including the README.sh in there, which can be executed
-with bash to test the common CBGM features.
+Similarly, see the help for the other programs in bin.
 
 DOCUMENTATION
 ---
@@ -34,4 +31,7 @@ To create the code documentation, run `doxygen doxygen.conf`
 TESTING
 ---
 To run the unit tests, run `./test.sh`
+
+Also see the "examples" folder, including the README.sh in there, which can be executed
+with bash to execute the common CBGM features.
 

@@ -601,7 +601,9 @@ class TextualFlow(object):
 
         G.write(dotfile)
 
-        subprocess.check_call(['dot', '-Tsvg', dotfile], stdout=open(svgfile, 'w'))
+        with open(svgfile, 'w') as sf:
+            subprocess.check_call(['dot', '-Tsvg', dotfile], stdout=sf)
+
         logger.info("Written to {} and {}".format(dotfile, svgfile))
 
     def mpi_result(self, args, ret):

@@ -7,7 +7,7 @@ import sys
 import networkx
 from tempfile import NamedTemporaryFile
 import subprocess
-from .. import populate_db
+from . import populate_db
 
 DEFAULT_DB_FILE = '/tmp/glob_stem.db'
 
@@ -70,7 +70,7 @@ def optimal_substemma(inputfile, w1, suffix=''):
     """
     output_file = 'optimal_substemma_{}{}.svg'.format(w1, suffix)
 
-    populate_db.main(inputfile, DEFAULT_DB_FILE, force=True)
+    populate_db.populate(inputfile, DEFAULT_DB_FILE, force=True)
     optsub = load(inputfile)
     comb_anc = optsub[w1]
 
@@ -101,7 +101,7 @@ def global_stemma(inputfile, suffix='', hide_initial_text=False):
     output_file = 'global_stemma{}.svg'.format(suffix)
     dot_file = 'global_stemma{}.dot'.format(suffix)
 
-    populate_db.main(inputfile, DEFAULT_DB_FILE, force=True)
+    populate_db.populate(inputfile, DEFAULT_DB_FILE, force=True)
     optsub = load(inputfile)
     G = networkx.DiGraph()
     for w1, comb_anc in optsub.items():

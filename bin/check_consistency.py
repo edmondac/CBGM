@@ -1,20 +1,23 @@
+#!/usr/bin/env python
 # Check consistency of all local stemmata (where there are no UNCL relationships).
 
 
 import tempfile
-import shutil
 import os
+import sys
 import sqlite3
 import webbrowser
+import logging
+import time
 
-from lib.shared import sorted_vus
-from lib.textual_flow import textual_flow
-from populate_db import parse_input_file, populate
-import populate_db
-from lib.shared import UNCL
-from lib.mpisupport import MpiParent, mpi_child, is_parent
-from lib.genealogical_coherence import CyclicDependency
+from CBGM.lib.shared import sorted_vus
+from CBGM.lib.textual_flow import textual_flow
+from CBGM.lib import populate_db
+from CBGM.lib.shared import UNCL
+from CBGM.lib.mpisupport import MpiParent, mpi_child, is_parent
+from CBGM.lib.genealogical_coherence import CyclicDependency
 
+logger = logging.getLogger(__name__)
 
 def has_unclear(vu, cursor):
     """
@@ -30,18 +33,18 @@ def has_unclear(vu, cursor):
 class CheckConsistency(MpiParent):
     def __init__(self, inputfile, connectivity):
         super().__init__()
+        logger.info("Starting")
         self.results = {}
         self.connectivity = connectivity
 
         self.working_dir = tempfile.mkdtemp()
-        shutil.copyfile(inputfile, os.path.join(self.working_dir, inputfile))
         os.chdir(self.working_dir)
 
-        struct, all_mss = parse_input_file(inputfile)
+        struct, all_mss = populate_db.parse_input_file(inputfile)
 
         # Make our own temporary db
         with tempfile.NamedTemporaryFile() as db:
-            populate_db.main(inputfile, db.name, force=True)
+            populate_db.populate(inputfile, db.name, force=True)
             conn = sqlite3.connect(db.name)
             cursor = conn.cursor()
             self.vus = list(sorted_vus(cursor))
@@ -51,10 +54,14 @@ class CheckConsistency(MpiParent):
                     self.results[vu] = "UNCL relationships detected"
                     continue
 
+                logger.debug("Queuing %s", vu)
                 self.mpi_queue.put((struct, all_mss, vu, connectivity))
 
+        logger.info("Waiting for workers")
         self.mpi_wait()
+        logger.info("Collating results")
         self.collate_results()
+        logger.info("Done")
 
     def collate_results(self):
         """
@@ -106,17 +113,21 @@ def child(struct, all_mss, vu, connectivity):
     """
     MPI child function
     """
+    logger.debug("Child starting for %s", vu)
     # Do this in our own temp dir
     mytemp = tempfile.mkdtemp()
     os.chdir(mytemp)
 
     # 1. Populate the db
     db = '_temp.db'
-    populate(struct, all_mss, db)
+    populate_db.create_database(struct, all_mss, db)
 
     # 2. Make the textual flow diagram
+    conn_str = str(connectivity)
     try:
-        svg = textual_flow(db, vu, connectivity, perfect_only=False)
+        logger.debug("Calculating textual flow for %s (conn=%s)", vu, conn_str)
+        svg = textual_flow(db, variant_units=[vu], connectivity=[conn_str],
+                           perfect_only=False, force_serial=True)[conn_str] + '.svg'
     except CyclicDependency:
         return None
 
@@ -131,13 +142,28 @@ if __name__ == "__main__":
     parser.add_argument('inputfile', help='file containing variant reading definitions')
     parser.add_argument('-c', '--connectivity', default=499, metavar='N', type=int,
                         help='Maximum allowed connectivity in a textual flow diagram')
+    parser.add_argument('--verbose', action='store_true')
 
     args = parser.parse_args()
     is_parent = is_parent()
 
+    # Logging
+    h1 = logging.StreamHandler(sys.stderr)
+    rootLogger = logging.getLogger()
+    rootLogger.addHandler(h1)
+    formatter = logging.Formatter('[%(asctime)s] [%(process)s] [%(filename)s:%(lineno)s] [%(levelname)s] %(message)s')
+    h1.setFormatter(formatter)
+
+    if args.verbose:
+        rootLogger.setLevel(logging.DEBUG)
+        logger.debug("Verbose mode")
+    else:
+        rootLogger.setLevel(logging.INFO)
+        logger.debug("Run with --verbose for debug mode")
+
     if is_parent:
         # parent or only process
-        CheckConsistency(args.inputfile, args.connectivity)
+        CheckConsistency(os.path.abspath(args.inputfile), args.connectivity)
     else:
         # child
         mpi_child(child)

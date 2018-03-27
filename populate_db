@@ -1,9 +1,0 @@
-#!/bin/bash
-
-# Wrapper for populate_db.py
-
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PARENT="$( dirname ${DIR} )"
-export PYTHONPATH=${PYTHONPATH}:${PARENT}
-
-exec python -m CBGM.populate_db $@
