@@ -33,5 +33,5 @@ TESTING
 To run the unit tests, run `./test.sh`
 
 Also see the "examples" folder, including the README.sh in there, which can be executed
-with bash to execute the common CBGM features.
+with bash to test the common CBGM features.
 
