@@ -14,7 +14,7 @@ INSTALL
  - graphviz
  - python3-dev
  - libgraphviz-dev
-2) You need a python 3.5 virtualenv, using the provided requirements.txt
+2) You need a python 3.5+ virtualenv, using the provided requirements.txt
 
 USE
 ---
