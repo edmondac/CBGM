@@ -11,13 +11,13 @@ set -x
 test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 ### Populate database ###
-../bin/populate_db example_input.py --force /tmp/test.db
+cbgm_populate_db example_input.py --force /tmp/test.db
 # Will populate /tmp/test.db
 # Wrote 41 variant units
 
 
 ### Pre-genealogical coherence ###
-../bin/cbgm -d /tmp/test.db coh -P P75
+cbgm -d /tmp/test.db coh -P P75
 # Using database: /tmp/test.db
 # Pre-genealogicalcoherenceforW1=P75
 # W2  NR  PERC1   EQ  PASS
@@ -51,8 +51,8 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Genealogical coherence ###
-../bin/cbgm -d /tmp/test.db coh -G P75 --cache
-../bin/cbgm -d /tmp/test.db --verbose coh -G P75 --cache  # This time it should load from cache
+cbgm -d /tmp/test.db coh -G P75 --cache
+cbgm -d /tmp/test.db --verbose coh -G P75 --cache  # This time it should load from cache
 # Using database: /tmp/test.db
 # PotentialancestorsforW1=P75
 # W2  NR  D   PERC1   EQ  PASS    W1<W2   W1>W2   UNCL    NOREL
@@ -60,7 +60,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 # 03  0   -   94.444  34  36  0   0   2   0
 # A   1       93.333  14  15  1   0   0   0
 # 091 0   -   88.889  16  18  0   0   2   0
-../bin/cbgm -d /tmp/test.db coh -G 011 --cache
+cbgm -d /tmp/test.db coh -G 011 --cache
 # [2017-08-01 14:04:59,277] [27661] [cbgm.py:152] [INFO] Using database: /tmp/test.db
 # [2017-08-01 14:04:59,346] [27661] [cbgm.py:310] [INFO] Output was:
 # PotentialancestorsforW1=011
@@ -81,7 +81,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 # A   7       80.000  12  15  3           
 # 091 8       77.778  14  18  1       3   
 test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
-../bin/cbgm -d /tmp/test.db coh -G 011 --cache --min-strength=2
+cbgm -d /tmp/test.db coh -G 011 --cache --min-strength=2
 # [2017-08-01 14:05:00,170] [27678] [cbgm.py:152] [INFO] Using database: /tmp/test.db
 # [2017-08-01 14:05:00,243] [27678] [cbgm.py:310] [INFO] Output was:
 # PotentialancestorsforW1=011[min_strength=2]
@@ -105,7 +105,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Local Stemmata ###
-../bin/cbgm -d /tmp/test.db local 21/2
+cbgm -d /tmp/test.db local 21/2
 # Using database: /tmp/test.db
 # Creating graph with 2 nodes and 1 edges
 # Couldn't import dot_parser, loading of dot files will not be possible.
@@ -119,7 +119,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Textual flow diagram ###
-../bin/cbgm -d /tmp/test.db tf all -c 2,499
+cbgm -d /tmp/test.db tf all -c 2,499
 # [2017-01-26 22:10:11,364] [7317] [cbgm.py:125] [INFO] Using database: /tmp/test.db
 # [2017-01-26 22:10:11,385] [7317] [textual_flow.py:215] [INFO] Creating textual flow diagram for 22/20
 # [2017-01-26 22:10:11,385] [7317] [textual_flow.py:216] [INFO] Setting connectivity to [2, 499]
@@ -256,12 +256,12 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 # ** See examples/textual_flow_22_20_c2.svg and examples/textual_flow_22_20_c499.svg
 
 # Same but with the individual readings in boxes in their own diagrams
-../bin/cbgm -d /tmp/test.db tf all -c 2,499,85%,90% --box-readings
+cbgm -d /tmp/test.db tf all -c 2,499,85%,90% --box-readings
 # ...
 
 
 ### Stripes (summary of attestations) ###
-../bin/stripes /tmp/test.db
+cbgm_stripes /tmp/test.db
 # Using database: /tmp/test.db
 # A a???aa?a?bb?aaaaba?a?a?a???????a????a???a
 # P75 aab?aaaab?b???aaaabaaaaabaaaaaaaaabaaaaba
@@ -294,7 +294,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 
 ### Summary of variant units ###
-../bin/cbgm -d /tmp/test.db status
+cbgm -d /tmp/test.db status
 # Using database: /tmp/test.db
 # All variant units (41): 21/2, 21/6-8, 21/20-24, 21/28-30, 21/36, 22/3, 22/10, 22/12, 22/20, 22/40, 22/40-52, 22/42, 22/46, 22/52, 22/60, 22/61, 22/62-66, 22/68-70, 22/76, 22/80, 22/88, 23/1, 23/2-10, 23/3, 23/4-10, 23/12-16, 23/20-22, 23/26-30, 24/2-10, 24/6, 24/14, 24/14-20, 24/28, 24/30, 24/30-32, 24/30-38, 24/31, 24/32, 24/36, 24/38, 24/50-52
 
@@ -328,7 +328,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 ### Hypotheses on unclear ###
 # This script creates textual flow diagrams for all conceivable hypotheses for
 # currently UNCL relationships in a specified variant unit.
-../bin/hypotheses_on_unclear -s -v 21/28-30 example_input.py
+cbgm_hypotheses_on_unclear -s -v 21/28-30 example_input.py
 # Will populate 21.28-30_0.db
 # Wrote 41 variant units
 # Creating textual flow diagram for 21/28-30
@@ -403,7 +403,7 @@ test -e GenealogicalCoherenceCache && rm -rf GenealogicalCoherenceCache
 
 ### Combinations of Ancestors ###
 test -e 05.csv && rm 05.csv
-../bin/cbgm -d /tmp/test.db combanc 05 --max-comb-len=100000
+cbgm -d /tmp/test.db combanc 05 --max-comb-len=100000
 # Using database: /tmp/test.db
 # Found 20 potential ancestors for 05
 # Witness 05 has reading 'a' at 21/2 with parent INIT
@@ -444,7 +444,7 @@ test -e 05.csv && rm 05.csv
 
 
 ### Apparatus ###
-../bin/apparatus /tmp/test.db
+cbgm_apparatus /tmp/test.db
 # Using database: /tmp/test.db
 
 # 21/2
@@ -629,7 +629,7 @@ test -e 05.csv && rm 05.csv
 # a τον ιησουν A, P75, 01, 02, 03, 05, 07, 011, 013, 019, 021, 022, 028, 030, 031, 032, 034, 036, 037, 038, 044, 045, 047, 063, 0141, 0211
 # b αυτον 017
 
-../bin/cbgm -f example_input.py nexus example.nexus
+cbgm -f example_input.py nexus example.nexus
 # Will populate /tmp/_default_cbgm_db.db
 # Wrote 41 variant units
 # [2017-08-29 11:40:53,490] [20620] [cbgm.py:226] [INFO] Using database: /tmp/_default_cbgm_db.db
@@ -638,7 +638,7 @@ test -e 05.csv && rm 05.csv
 # Wrote example.nexus
 
 # Check consistency program - WARNING - this requires MPI currently, and so won't work on single-core machines.
-mpirun ../bin/check_consistency example_input.py
+mpirun cbgm_check_consistency example_input.py
 # [2018-03-27 12:22:58,841] [4373] [mpisupport.py:220] [INFO] MPI-enabled version with 4 processors available
 # ... output truncated ...
 # [2018-03-27 12:23:48,686] [4375] [textual_flow.py:404] [INFO] Creating textual flow diagram for 24/50-52

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
-from .compare_witnesses import Attestations, variant_unit
-from . import test_db
-from .test_logging import default_logging
+from CBGM.compare_witnesses import Attestations, variant_unit
+from CBGM import test_db
+from CBGM.test_logging import default_logging
 
 default_logging()
 

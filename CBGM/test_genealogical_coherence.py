@@ -1,8 +1,8 @@
 from unittest import TestCase
 import logging
-from .genealogical_coherence import GenealogicalCoherence
-from . import test_db
-from .test_logging import default_logging
+from CBGM.genealogical_coherence import GenealogicalCoherence
+from CBGM import test_db
+from CBGM.test_logging import default_logging
 
 default_logging()
 logger = logging.getLogger(__name__)

@@ -1,9 +1,9 @@
 from unittest import TestCase
 import os
 import logging
-from .pre_genealogical_coherence import Coherence
-from . import test_db
-from .test_logging import default_logging
+from CBGM.pre_genealogical_coherence import Coherence
+from CBGM import test_db
+from CBGM.test_logging import default_logging
 
 default_logging()
 logger = logging.getLogger(__name__)
