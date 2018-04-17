@@ -10,7 +10,7 @@ setup(
     author_email='ed@rameus.org.uk',
     description='Ed\'s implmenetation of the Coherence-Based Genealogical Method',
     install_requires=[
-        'coverage,
+        'coverage',
         'decorator',
         'graphviz',
         'mpi4py',
