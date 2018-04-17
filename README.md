@@ -22,7 +22,7 @@ INSTALL
 
 USE
 ---
-The main program is ./bin/cbgm.
+The main program is cbgm.
 Run `cbgm --help` for info, and for info about the subcommands do, for example,
 `cbgm combanc --help`.
 
