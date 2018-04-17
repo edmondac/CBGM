@@ -32,6 +32,11 @@ class ParentCombination(object):
                 "strength={}, undirected={}>".format(
             self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior, self.strength, self.undirected))
 
+    def __eq__(self, other):
+        this = (self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior, self.undirected)
+        that = (other.parent, other.rank, other.perc, other.gen, other.prior, other.posterior, other.undirected)
+        return this ==  that
+
 
 class TooManyAborts(Exception):
     pass

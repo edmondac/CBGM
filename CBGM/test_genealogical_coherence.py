@@ -1,6 +1,9 @@
 from unittest import TestCase
 import logging
+import tempfile
+import shutil
 from CBGM.genealogical_coherence import GenealogicalCoherence
+from CBGM.pre_genealogical_coherence import Coherence
 from CBGM import test_db
 from CBGM.test_logging import default_logging
 
@@ -81,10 +84,13 @@ class TestGenealogicalCoherence(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_db = test_db.TestDatabase(TEST_DATA)
+        cls.tmpdir = tempfile.mkdtemp(__name__)
+        Coherence.CACHE_BASEDIR = cls.tmpdir
 
     @classmethod
     def tearDownClass(cls):
         cls.test_db.cleanup()
+        shutil.rmtree(cls.tmpdir)
 
     def test_generate(self):
         """

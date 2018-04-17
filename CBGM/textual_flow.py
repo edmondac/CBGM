@@ -227,7 +227,7 @@ def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
                  ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
                  weak_strength_threshold=25, very_weak_strength_threshold=5,
                  show_strength_values=False, suffix='', box_readings=False, force_serial=False,
-                 min_strength=None, include_undirected=False):
+                 min_strength=None, include_undirected=False, path='.'):
     """
     Create a textual flow diagram for the specified variant units. This will
     work out if we're using MPI and act accordingly...
@@ -280,7 +280,7 @@ def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
                     show_strengths=show_strengths, weak_strength_threshold=weak_strength_threshold,
                     very_weak_strength_threshold=very_weak_strength_threshold,
                     show_strength_values=show_strength_values, suffix=suffix, box_readings=box_readings,
-                    min_strength=min_strength, include_undirected=include_undirected)
+                    min_strength=min_strength, include_undirected=include_undirected, path=path)
 
             return mpihandler.mpi_wait(stop=True)
         else:
@@ -296,7 +296,7 @@ def textual_flow(db_file, *, variant_units, connectivity, perfect_only=False,
                             show_strengths=show_strengths, weak_strength_threshold=weak_strength_threshold,
                             very_weak_strength_threshold=very_weak_strength_threshold,
                             show_strength_values=show_strength_values, suffix=suffix, box_readings=box_readings,
-                            min_strength=min_strength, include_undirected=include_undirected)
+                            min_strength=min_strength, include_undirected=include_undirected, path=path)
             t.calculate_textual_flow()
 
         if len(variant_units) == 1:
@@ -310,7 +310,7 @@ class TextualFlow(object):
                  ranks_on_edges=True, include_perc_in_label=True, show_strengths=True,
                  weak_strength_threshold=25, very_weak_strength_threshold=5,
                  show_strength_values=False, suffix='', box_readings=False,
-                 min_strength=None, include_undirected=None, mpihandler=None):
+                 min_strength=None, include_undirected=None, path='.', mpihandler=None):
         """
         @param db_file: sqlite database
         @param variant_unit: draw the textual flow of this variant unit
@@ -326,11 +326,13 @@ class TextualFlow(object):
         @param box_readings: Draw a diagram for each reading in a box
         @param min_strength: Minimum strength for genealogical coherence relationships (default None = disabled)
         @param include_undirected: Include undirected relationships (as a group)
+        @param path: the path under which to write the output files
         @param mpihandler: optional MpiHandler instance
         """
         assert type(connectivity) == list, "Connectivity must be a list (was %s)" % connectivity
         # Fast abort if it already exists
         self.output_files = {}
+        self.output_path = path
         self.connectivity = []
 
         # Fetch reading info
@@ -346,10 +348,10 @@ class TextualFlow(object):
         # Work out if we can quickly abort, and calculate the output filenames
         for conn_value in connectivity:
             assert type(conn_value) == str, "Connectivity values must be strings (was %s:%s)" % (conn_value, type(conn_value))
-            dirname = "c{}".format(conn_value.replace('%', 'perc'))
+            dirname = os.path.join(self.output_path, "c{}".format(conn_value.replace('%', 'perc')))
             if not os.path.exists(dirname):
                 os.mkdir(dirname)
-            output_file = os.path.join(os.getcwd(), dirname, "textual_flow_{}_c{}{}".format(
+            output_file = os.path.join(dirname, "textual_flow_{}_c{}{}".format(
                 variant_unit.replace('/', '_'), conn_value.replace('%', 'perc'), suffix))
 
             if box_readings:

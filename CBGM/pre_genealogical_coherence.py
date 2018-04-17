@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class Coherence(object):
+    CACHE_BASEDIR = os.getcwd()
+
     """
     Class representing pre-genealogical coherence that can be extended
     to give more info.
@@ -33,7 +35,7 @@ class Coherence(object):
         self._already_generated = False
         self.variant_unit = None
         self.use_cache = use_cache
-        self._cache_key = os.path.join(os.getcwd(),
+        self._cache_key = os.path.join(self.CACHE_BASEDIR,
                                        "{}Cache".format(self.__class__.__name__),
                                        "{}.{}.{}.cache".format(db_file.replace('/', '_'),
                                                                self.w1, self.pretty_p))

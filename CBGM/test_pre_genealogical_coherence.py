@@ -1,6 +1,7 @@
 from unittest import TestCase
-import os
+import shutil
 import logging
+import tempfile
 from CBGM.pre_genealogical_coherence import Coherence
 from CBGM import test_db
 from CBGM.test_logging import default_logging
@@ -76,14 +77,13 @@ class TestCoherence(TestCase):
     @classmethod
     def setUpClass(cls):
         cls.test_db = test_db.TestDatabase(TEST_DATA)
+        cls.tmpdir = tempfile.mkdtemp(__name__)
+        Coherence.CACHE_BASEDIR = cls.tmpdir
 
     @classmethod
     def tearDownClass(cls):
         cls.test_db.cleanup()
-        for f in os.listdir('CoherenceCache'):
-            if cls.test_db.db_file.replace('/', '_') in f:
-                logger.debug("Cleaning up cache file %s", f)
-                os.unlink(os.path.join('CoherenceCache', f))
+        shutil.rmtree(cls.tmpdir)
 
     def test_cache(self):
         """
