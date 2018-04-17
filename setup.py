@@ -14,7 +14,7 @@ setup(
         'bin/populate_db',
         'bin/apparatus'],
     data_files=[
-        ('cbgm/example', 'example/*'),
+        ('cbgm/', ['example', 'scripts', 'bin']),
     ],
     install_requires=[
         'coverage',
