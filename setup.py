@@ -9,6 +9,10 @@ setup(
     author='Andrew Edmondson',
     author_email='ed@rameus.org.uk',
     description='Ed\'s implmenetation of the Coherence-Based Genealogical Method',
+    scripts=[
+        'bin/cbgm',
+        'bin/populate_db',
+        'bin/apparatus'],
     install_requires=[
         'coverage',
         'decorator',
