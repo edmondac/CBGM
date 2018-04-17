@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='CBGM',
     version='1.14',
-    packages=['', 'lib', 'example'],
+    packages=['', 'lib', 'cbgm/example'],
     url='https://github.com/edmondac/CBGM',
     license='MIT',
     author='Andrew Edmondson',
@@ -13,7 +13,7 @@ setup(
         'bin/cbgm',
         'bin/populate_db',
         'bin/apparatus'],
-    package_data={'example': ['example/*']},
+    package_data={'cbgm/example': ['example/example_input.py', 'example/README.sh']},
     install_requires=[
         'coverage',
         'decorator',
