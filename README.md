@@ -14,9 +14,9 @@ INSTALL
  - graphviz
  - python3-dev
  - libgraphviz-dev
-1. You can install using pip straight from github, like this:
+2. You can install using pip straight from github, like this:
  - pip install git+https://github.com/edmondac/CBGM
-1. OR clone the repository and do one of the following:
+3. OR clone the repository and do one of the following:
  - python setup.py develop  # if you want to edit the code
  - python setup.py install  # if you just want to use it 
 
