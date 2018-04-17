@@ -16,7 +16,6 @@ setup(
                                      'cbgm_hypotheses_on_unclear',
                                      'cbgm_stripes']
     ],
-    data_files={'CBGM/example': ['example/example_input.py', 'example/README.sh']},
     install_requires=[
         'coverage',
         'decorator',
