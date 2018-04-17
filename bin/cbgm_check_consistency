@@ -10,12 +10,12 @@ import webbrowser
 import logging
 import time
 
-from CBGM.lib.shared import sorted_vus
-from CBGM.lib.textual_flow import textual_flow
-from CBGM.lib import populate_db
-from CBGM.lib.shared import UNCL
-from CBGM.lib.mpisupport import MpiParent, mpi_child, is_parent
-from CBGM.lib.genealogical_coherence import CyclicDependency
+from CBGM.shared import sorted_vus
+from CBGM.textual_flow import textual_flow
+from CBGM import populate_db
+from CBGM.shared import UNCL
+from CBGM.mpisupport import MpiParent, mpi_child, is_parent
+from CBGM.genealogical_coherence import CyclicDependency
 
 logger = logging.getLogger(__name__)
 

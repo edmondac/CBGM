@@ -6,15 +6,15 @@ from tempfile import mkstemp
 import logging
 import os
 
-from CBGM.lib.populate_db import populate
+from CBGM.populate_db import populate
 
 logger = logging.getLogger(__name__)
 
 INPUT_DATA = """# -*- coding: utf-8 -*-
 # Stage three - first pass at local stemmata
 
-from CBGM.lib.populate_db import Reading, LacunaReading, AllBut
-from CBGM.lib.shared import UNCL, INIT, OL_PARENT
+from CBGM.populate_db import Reading, LacunaReading, AllBut
+from CBGM.shared import UNCL, INIT, OL_PARENT
 
 all_mss = set(['P75', '01', '02', '03', '05', '07', '011', '013', '017', '019', '021', '022', '028', '030', '031', '032', '034', '036', '037', '038', '044', '045', '047', '063', '091', '0141', '0211'])
 

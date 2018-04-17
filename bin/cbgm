@@ -6,16 +6,16 @@ import sys
 import logging
 import time
 import os
-from CBGM.lib.local_stemma import local_stemma
-from CBGM.lib.shared import sort_mss, sorted_vus
-from CBGM.lib.textual_flow import textual_flow
-from CBGM.lib.combinations_of_ancestors import combinations_of_ancestors, combanc_for_all_witnesses_mpi
-from CBGM.lib.genealogical_coherence import gen_coherence
-from CBGM.lib.pre_genealogical_coherence import pre_gen_coherence
-from CBGM.lib.global_stemma import global_stemma, optimal_substemma
-from CBGM.lib.nexus import nexus
-from CBGM.lib.compare_witnesses import compare_witness_attestations
-from CBGM.lib import populate_db
+from CBGM.local_stemma import local_stemma
+from CBGM.shared import sort_mss, sorted_vus
+from CBGM.textual_flow import textual_flow
+from CBGM.combinations_of_ancestors import combinations_of_ancestors, combanc_for_all_witnesses_mpi
+from CBGM.genealogical_coherence import gen_coherence
+from CBGM.pre_genealogical_coherence import pre_gen_coherence
+from CBGM.global_stemma import global_stemma, optimal_substemma
+from CBGM.nexus import nexus
+from CBGM.compare_witnesses import compare_witness_attestations
+from CBGM import populate_db
 
 DEFAULT_DB_FILE = '/tmp/_default_cbgm_db.db'
 

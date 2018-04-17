@@ -4,7 +4,7 @@
 import re
 import sqlite3
 from collections import defaultdict
-from CBGM.lib.shared import witintify
+from CBGM.shared import witintify
 
 
 def intify(x):

@@ -9,8 +9,8 @@ default_logging()
 TEST_DATA = """# -*- coding: utf-8 -*-
 # This is a made up data set, purely for testing.
 
-from CBGM.lib.populate_db import Reading, LacunaReading, AllBut
-from CBGM.lib.shared import UNCL, INIT, OL_PARENT
+from CBGM.populate_db import Reading, LacunaReading, AllBut
+from CBGM.shared import UNCL, INIT, OL_PARENT
 
 all_mss = set(['B', 'C', 'D', 'E'])
 

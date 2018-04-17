@@ -9,11 +9,11 @@ import logging
 
 from copy import deepcopy
 from itertools import product
-from CBGM.lib.populate_db import create_database, Reading, LacunaReading, parse_input_file
-from CBGM.lib.shared import UNCL, INIT, LAC, OL_PARENT
-from CBGM.lib.textual_flow import textual_flow
-from CBGM.lib.genealogical_coherence import CyclicDependency
-from CBGM.lib import mpisupport
+from CBGM.populate_db import create_database, Reading, LacunaReading, parse_input_file
+from CBGM.shared import UNCL, INIT, LAC, OL_PARENT
+from CBGM.textual_flow import textual_flow
+from CBGM.genealogical_coherence import CyclicDependency
+from CBGM import mpisupport
 
 logger = logging.getLogger(__name__)
 

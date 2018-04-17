@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Script to populate a sqlite database given a suitable input file
 
-from CBGM.lib.populate_db import populate
+from CBGM.populate_db import populate
 
 if __name__ == "__main__":
     import argparse
