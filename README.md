@@ -1,10 +1,10 @@
 INTRODUCTION
 ------------
-This is my implementation of the CBGM. It was designed for testing and changing the 
-various algorithms and is not (therefore) the fastest user-facing package. The idea
-was that everything be calculated from scratch each time - although in later development
-I added a Genealogical Coherence Cache for convenience (and speed). If you change the
-input data then remember to delete the old cache...
+This is my implementation of the [CBGM](https://www.uni-muenster.de/INTF/Genealogical_method.html).
+It was designed for testing and changing the various algorithms and is not (therefore) the fastest
+user-facing package. The idea was that everything be calculated from scratch each time - although
+in later development I added a Genealogical Coherence Cache for convenience (and speed). If you 
+change the input data then remember to delete the old cache...
 
 INSTALL
 -------
@@ -14,7 +14,7 @@ INSTALL
  - graphviz
  - python3-dev
  - libgraphviz-dev
-2. You can install using pip straight from github, like this:
+2. Then you can install using pip straight from github, like this:
  - pip install git+https://github.com/edmondac/CBGM
 3. OR clone the repository and do one of the following:
  - python setup.py develop  # if you want to edit the code
