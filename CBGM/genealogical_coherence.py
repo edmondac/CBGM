@@ -33,10 +33,18 @@ class ParentCombination(object):
             self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior, self.strength, self.undirected))
 
     def __eq__(self, other):
+        """
+        Provide a simple test of equality, base on our input data
+        """
         this = (self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior, self.undirected)
         that = (other.parent, other.rank, other.perc, other.gen, other.prior, other.posterior, other.undirected)
         return this ==  that
 
+    def __hash__(self):
+        """
+        Generate a hash on the same principle that the __eq__method uses to test equality
+        """
+        return hash((self.parent, self.rank, self.perc, self.gen, self.prior, self.posterior, self.undirected))
 
 class TooManyAborts(Exception):
     pass
