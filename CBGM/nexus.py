@@ -2,7 +2,7 @@
 #!/usr/bin/python
 
 import sys
-import importlib
+import importlib.util
 import unicodedata
 from .shared import LAC, INIT
 
@@ -14,13 +14,9 @@ def load(inputfile):
     """
     Load the specified file and return the data
     """
-    # We need to add . to the path, so we can import the specified python file
-    # even if this script has been called by a full path.
-    sys.path.append(".")
-
-    if inputfile.endswith('.py'):
-        inputfile = inputfile[:-3]
-    mod = importlib.import_module(inputfile)
+    spec = importlib.util.spec_from_file_location("inputdata", inputfile)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
     return mod.struct, sorted(mod.all_mss)
 
 
@@ -40,6 +36,7 @@ def sanitise_wit(wit):
         wit = wit.replace(f, t)
 
     return wit
+
 
 def nexus(input_file, min_extant_perc, output_file):
     """
