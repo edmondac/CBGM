@@ -14,14 +14,15 @@ setup(
                                      'cbgm_populate_db',
                                      'cbgm_apparatus',
                                      'cbgm_hypotheses_on_unclear',
-                                     'cbgm_stripes']
+                                     'cbgm_stripes',
+                                     'cbgm']
     ],
     install_requires=[
         'coverage',
         'decorator',
         'graphviz',
         'mpi4py',
-        'networkx',
+        'networkx==1.10',
         'pkg-resources',
         'pydot',
         'pygraphviz',
