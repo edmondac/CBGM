@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='CBGM',
-    version='2.0',
+    version='2.1',
     packages=['CBGM'],
     url='https://github.com/edmondac/CBGM',
     license='MIT',
