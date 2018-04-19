@@ -8,7 +8,6 @@ import sys
 import sqlite3
 import webbrowser
 import logging
-import time
 
 from CBGM.shared import sorted_vus
 from CBGM.textual_flow import textual_flow
@@ -103,6 +102,8 @@ class CheckConsistency(MpiParent):
             self.results[vu] = None
         else:
             # recreate the svg locally
+            if not os.path.exists(os.path.dirname(ret['svgname'])):
+                os.makedirs(os.path.dirname(ret['svgname']))
             with open(ret['svgname'], 'wb') as f:
                 f.write(ret['svgdata'])
 
