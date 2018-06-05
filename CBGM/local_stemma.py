@@ -5,6 +5,7 @@ import sqlite3
 import subprocess
 import logging
 import re
+import os
 from tempfile import NamedTemporaryFile
 from .shared import INIT, OL_PARENT, UNCL, sort_mss
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ def _post_process_dot(dotfile):
         w.write(''.join(output))
 
 
-def local_stemma(db_file, variant_units, suffix=''):
+def local_stemma(db_file, variant_units, suffix='', path='.'):
     """
     Create a local stemma for the specified variant units (list).
     """
@@ -39,16 +40,16 @@ def local_stemma(db_file, variant_units, suffix=''):
     for i, vu in enumerate(variant_units):
         logger.debug("Running for variant unit {} ({} of {})"
                      .format(vu, i + 1, len(variant_units)))
-        ret += _one_local_stemma(db_file, vu, suffix)
+        ret += _one_local_stemma(db_file, vu, suffix=suffix, path=path)
 
     return ret
 
 
-def _one_local_stemma(db_file, variant_unit, suffix=''):
+def _one_local_stemma(db_file, variant_unit, suffix='', path='.'):
     """
     Create a local stemma for the specified variant unit.
     """
-    output_file = "{}{}.svg".format(variant_unit.replace('/', '_'), suffix)
+    output_file = os.path.join(path, "{}{}.svg".format(variant_unit.replace('/', '_'), suffix))
 
     G = networkx.DiGraph()
 
