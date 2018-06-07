@@ -8,7 +8,7 @@ setup(
     license='MIT',
     author='Andrew Edmondson',
     author_email='ed@rameus.org.uk',
-    description='Ed\'s implmenetation of the Coherence-Based Genealogical Method',
+    description='Ed\'s implementation of the Coherence-Based Genealogical Method',
     scripts=[
         'bin/{}'.format(x) for x in ['cbgm_check_consistency',
                                      'cbgm_populate_db',
