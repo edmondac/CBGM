@@ -39,3 +39,8 @@ To run the unit tests, run `./test.sh` or just `python -m unittest discover CBGM
 Also see the "examples" folder, including the README.sh in there, which can be executed
 with bash to test the common CBGM features.
 
+REFERENCING
+---
+To reference this software, please use the DOI: [![DOI](https://zenodo.org/badge/78880568.svg)](https://zenodo.org/badge/latestdoi/78880568)
+
+
