@@ -4,7 +4,7 @@ setup(
     name='CBGM',
     version='2.2',
     packages=['CBGM'],
-    url='https://github.com/edmondac/CBGM',
+    url='https://github.com/catsmith/CBGM',
     license='MIT',
     author='Andrew Edmondson',
     author_email='ed@rameus.org.uk',
