@@ -23,7 +23,6 @@ setup(
         'graphviz',
         'mpi4py',
         'networkx==1.10',
-        'pkg-resources',
         'pydot',
         'pygraphviz',
         'Pympler',
