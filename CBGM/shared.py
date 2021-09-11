@@ -110,13 +110,13 @@ def numify(vu):
         a = 100000 * bits[0] + 1000 * bits[1] + bits[2]
     elif re_context.match(a):
         # this is the context
-        bits = [int(x) for x in re_context.match(a).groups()]
+        bits = [x for x in re_context.match(a).groups()]
         if bits[0] == 'inscriptio':
             a = 100000 + 1000 * 0 + 0
         elif bits[0] == 'subscriptio':
             a = 100000 + 1000 * 99 + 0
         else:
-            a = 100000 + 1000 * bits[1] + bits[2]
+            a = 100000 + 1000 * int(bits[0]) + int(bits[1])
     else:
         # Assume it's a simple verse number
         a = int(a)
