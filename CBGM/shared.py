@@ -23,7 +23,7 @@ LAC = "LAC"  # Lacuna
 
 
 re_vref = re.compile("B([0-9]+)K([0-9]+)V([0-9]+)")
-
+re_context = re.compile(r"[^.]+\.(\d+|\w+)\.?(\d+)?")
 
 def memoize(f):
     """
@@ -107,6 +107,15 @@ def numify(vu):
         # This is a full ref
         bits = [int(x) for x in re_vref.match(a).groups()]
         a = 100000 * bits[0] + 1000 * bits[1] + bits[2]
+    elif re_context.match(a):
+        # this is the context
+        bits = [int(x) for x in re_context.match(a).groups()]
+        if bits[0] == 'inscriptio':
+            a = 100000 + 1000 * 0 + 0
+        elif bits[0] == 'subscriptio':
+            a = 100000 + 1000 * 99 + 0
+        else:
+            a = 100000 + 1000 * bits[1] + bits[2]
     else:
         # Assume it's a simple verse number
         a = int(a)
