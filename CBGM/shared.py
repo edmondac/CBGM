@@ -93,7 +93,11 @@ def numify(vu):
         * Simple case: B04K01V04/5-7
         * Composite case: B04K01V50/2-36,B04K01V51/2-22,B04K01V52/2-6
     """
-    a, b = vu.split('/', 1)
+    try:
+        a, b = vu.split('/', 1)
+    except ValueError:
+        a = vu
+        b = '0'
 
     # For composite variant units, we'll lose everything after the comma
     b = b.split(',')[0]
